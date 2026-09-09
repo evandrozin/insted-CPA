@@ -1,0 +1,32 @@
+{
+  "name": "insted-cpa",
+  "private": true,
+  "packageManager": "npm@11.13.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npx turbo run dev",
+    "build": "npx turbo run build",
+    "lint": "npx turbo run lint",
+    "test": "npx turbo run test",
+    "db:generate": "npm run db:generate -w @insted/database",
+    "db:migrate": "npm run db:migrate -w @insted/database",
+    "db:seed": "npm run db:seed -w @insted/database",
+    "db:studio": "npm run db:studio -w @insted/database",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "jacad": "npm run jacad -w @insted/jacad --",
+    "db:formularios": "npm run db:formularios -w @insted/database",
+    "alvos": "npm run alvos -w @insted/avaliacao --",
+    "admin": "npm run admin -w @insted/database --"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

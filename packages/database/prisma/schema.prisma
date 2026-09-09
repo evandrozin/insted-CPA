@@ -1,0 +1,1085 @@
+// ============================================================================
+// Insted Centro Universitário — Sistema de Avaliação Institucional (CPA)
+// Schema Prisma / PostgreSQL
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Role {
+  ADMIN // CPA / TI — acesso total
+  GESTOR // Coordenador / Diretor — relatórios apenas do seu escopo
+  PROFESSOR
+  ALUNO
+}
+
+enum UserStatus {
+  ATIVO
+  INATIVO
+  BLOQUEADO
+}
+
+enum Shift {
+  MATUTINO
+  VESPERTINO
+  NOTURNO
+  INTEGRAL
+  EAD
+}
+
+enum PeriodStatus {
+  RASCUNHO // sendo configurado, invisível para respondentes
+  AGENDADO // datas definidas, aguardando abertura automática
+  ABERTO
+  ENCERRADO
+  PUBLICADO // resultados liberados para gestores/professores
+}
+
+enum FormAudience {
+  ALUNO
+  PROFESSOR
+  TECNICO_ADMIN
+}
+
+enum FormStatus {
+  RASCUNHO
+  PUBLICADO // imutável a partir daqui
+  ARQUIVADO
+}
+
+/// Define "sobre o que" um bloco de perguntas fala. Blocos com alvo repetível
+/// (PROFESSOR_DISCIPLINA) são instanciados N vezes por respondente, conforme
+/// suas alocações no semestre.
+enum TargetType {
+  INSTITUICAO
+  INFRAESTRUTURA
+  DEPARTAMENTO // setores: biblioteca, secretaria, financeiro, TI...
+  COORDENACAO
+  CURSO
+  DISCIPLINA
+  PROFESSOR_DISCIPLINA // repetível: 1 alvo por professor alocado
+  AUTOAVALIACAO // o próprio respondente (professor)
+}
+
+enum QuestionType {
+  LIKERT // escala 1..N com rótulos
+  ESCOLHA_UNICA
+  ESCOLHA_MULTIPLA
+  TEXTO_LIVRE
+  SIM_NAO
+  NPS // 0..10
+}
+
+enum TaskStatus {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDA
+  DISPENSADA // ex.: aluno trancou matrícula durante o ciclo
+}
+
+enum ImportStatus {
+  PENDENTE
+  PROCESSANDO
+  CONCLUIDO
+  FALHOU
+}
+
+enum ImportKind {
+  USUARIOS
+  CURSOS
+  TURMAS
+  DISCIPLINAS
+  MATRICULAS
+  ALOCACOES_DOCENTES
+}
+
+enum NotificationChannel {
+  EMAIL
+  PUSH
+  IN_APP
+}
+
+enum NotificationStatus {
+  ENFILEIRADA
+  ENVIADA
+  FALHOU
+  LIDA
+}
+
+// ============================================================================
+// IDENTIDADE E ACESSO
+// ============================================================================
+
+model User {
+  id              String     @id @default(uuid())
+  nome            String
+  email           String     @unique
+  matricula       String     @unique // RA (aluno) ou matrícula funcional (docente)
+  cpf             String?    @unique
+  senhaHash       String
+  role            Role
+  status          UserStatus @default(ATIVO)
+  avatarUrl       String?
+  telefone        String?
+  campusId        String?
+  ultimoAcesso    DateTime?
+  senhaProvisoria Boolean    @default(true) // força troca no 1º login
+
+  /// Cadastrado à mão pelo painel, não importado do JACAD.
+  ///
+  /// A CPA tem membros que não fazem parte dos quadros da Insted — a
+  /// representação da sociedade civil, por exemplo — e eles nunca vão aparecer
+  /// numa importação. Marcar a origem evita que alguém, meses depois, tente
+  /// "corrigir" pela reimportação um cadastro que a API nunca teve.
+  criadoManualmente Boolean  @default(false)
+
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  deletadoEm   DateTime? // soft delete — preserva histórico de avaliações
+
+  campus               Campus?              @relation(fields: [campusId], references: [id])
+  matriculas           Enrollment[]
+  alocacoesDocente     TeachingAssignment[] @relation("DocenteAlocacao")
+  inscricoesDisciplina StudentSubject[]
+  tarefas              EvaluationTask[]
+  refreshTokens        RefreshToken[]
+  notificacoes         Notification[]
+  logs                 AuditLog[]
+  importacoes          ImportJob[]
+  cursosCoordenados    Course[]             @relation("CoordenadorCurso")
+  departamentosGeridos Department[]         @relation("GestorDepartamento")
+
+  // Quando este usuário é o PROFESSOR AVALIADO (nunca o respondente)
+  respostasRecebidas ResponseSet[] @relation("ProfessorAvaliado")
+
+  @@index([role, status])
+  @@index([campusId])
+  @@map("users")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  device     String? // "expo-android", "web-chrome"
+  expiraEm   DateTime
+  revogadoEm DateTime?
+  criadoEm   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ============================================================================
+// ESTRUTURA ACADÊMICA
+// ============================================================================
+
+model Campus {
+  id       String  @id @default(uuid())
+  nome     String
+  sigla    String  @unique
+  cidade   String?
+  endereco String?
+  ativo    Boolean @default(true)
+
+  usuarios User[]
+  cursos   Course[]
+  salas    Room[]
+
+  @@map("campi")
+}
+
+/// Setores/departamentos avaliáveis: Biblioteca, Secretaria, Financeiro,
+/// TI, Coordenação Geral, Núcleo de Apoio Psicopedagógico etc.
+model Department {
+  id        String  @id @default(uuid())
+  nome      String
+  sigla     String  @unique
+  descricao String?
+  gestorId  String?
+  ativo     Boolean @default(true)
+
+  gestor    User?         @relation("GestorDepartamento", fields: [gestorId], references: [id])
+  respostas ResponseSet[] @relation("DepartamentoAvaliado")
+
+  @@map("departments")
+}
+
+model Course {
+  id               String  @id @default(uuid())
+  nome             String
+  codigo           String  @unique
+  grau             String? // Bacharelado, Licenciatura, Tecnólogo
+  modalidade       String? // Presencial, Híbrido, EAD
+  duracaoSemestres Int?
+  campusId         String?
+  coordenadorId    String?
+  ativo            Boolean @default(true)
+  /// Marca que o status foi definido À MÃO pelo painel. A importação do JACAD
+  /// não sobrescreve o que alguém decidiu aqui — senão o próximo sync desfaz
+  /// silenciosamente a configuração do ciclo.
+  statusManual     Boolean @default(false)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  campus      Campus?       @relation(fields: [campusId], references: [id])
+  coordenador User?         @relation("CoordenadorCurso", fields: [coordenadorId], references: [id])
+  turmas      SchoolClass[]
+  disciplinas Subject[]
+
+  respostasAlvo        ResponseSet[] @relation("CursoAvaliado")
+  respostasRespondente ResponseSet[] @relation("CursoRespondente")
+
+  @@index([campusId])
+  @@map("courses")
+}
+
+model Subject {
+  id           String  @id @default(uuid())
+  nome         String
+  codigo       String  @unique
+  cargaHoraria Int?
+  ementa       String?
+  periodoGrade Int? // semestre da matriz curricular
+  courseId     String?
+  ativo        Boolean @default(true)
+  /// Idem Course.statusManual.
+  statusManual Boolean @default(false)
+  /// Modalidade informada à mão, usada quando o JACAD não informa a da oferta.
+  /// Última posição na cadeia: turma ofertante > curso > esta.
+  modalidadePadrao Modalidade?
+
+  course    Course?              @relation(fields: [courseId], references: [id])
+  alocacoes TeachingAssignment[]
+  respostas ResponseSet[]        @relation("DisciplinaAvaliada")
+
+  @@index([courseId])
+  @@map("subjects")
+}
+
+/// Semestre letivo (ex.: 2026.1). Não confundir com EvaluationPeriod, que é a
+/// janela de coleta da CPA dentro de um semestre.
+model AcademicTerm {
+  id       String   @id @default(uuid())
+  codigo   String   @unique // "2026.1"
+  ano      Int
+  semestre Int
+  inicioEm DateTime
+  fimEm    DateTime
+  ativo    Boolean  @default(false)
+
+  turmas    SchoolClass[]
+  alocacoes TeachingAssignment[]
+  periodos  EvaluationPeriod[]
+  ciclos    EvaluationPeriodTerm[]
+
+  @@map("academic_terms")
+}
+
+model SchoolClass {
+  id       String  @id @default(uuid())
+  nome     String // "ADS 3º Semestre A"
+  codigo   String
+  courseId String
+  termId   String
+  turno    Shift
+  periodo  Int? // semestre em curso
+  ativo    Boolean @default(true)
+
+  course     Course               @relation(fields: [courseId], references: [id])
+  term       AcademicTerm         @relation(fields: [termId], references: [id])
+  matriculas Enrollment[]
+  alocacoes  TeachingAssignment[]
+
+  respostasRespondente ResponseSet[] @relation("TurmaRespondente")
+
+  @@unique([codigo, termId])
+  @@index([courseId, termId])
+  @@map("school_classes")
+}
+
+model Room {
+  id         String  @id @default(uuid())
+  nome       String
+  bloco      String?
+  capacidade Int?
+  tipo       String? // sala, laboratório, auditório
+  campusId   String?
+  ativo      Boolean @default(true)
+
+  campus    Campus?              @relation(fields: [campusId], references: [id])
+  alocacoes TeachingAssignment[]
+
+  @@map("rooms")
+}
+
+/// Vínculo Aluno ↔ Turma.
+model Enrollment {
+  id        String   @id @default(uuid())
+  studentId String
+  classId   String
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+
+  student User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, classId])
+  @@index([classId])
+  @@map("enrollments")
+}
+
+/// Alocação docente: Professor ↔ Disciplina ↔ Turma ↔ Semestre (+ sala).
+/// É a partir daqui que o sistema descobre QUEM cada aluno deve avaliar.
+model TeachingAssignment {
+  id        String  @id @default(uuid())
+  teacherId String
+  subjectId String
+  classId   String
+  termId    String
+  roomId    String?
+  papel     String? // titular, auxiliar, convidado
+  /// Presencial ou EAD — decide QUAIS perguntas o aluno recebe sobre esta oferta.
+  modalidade Modalidade @default(NAO_INFORMADA)
+  ativo      Boolean    @default(true)
+
+  /// Alguém corrigiu esta alocação pelo painel (professor, modalidade ou
+  /// situação). A importação do JACAD não desfaz o que foi decidido aqui —
+  /// caso contrário, a correção duraria até o próximo sync.
+  edicaoManual Boolean @default(false)
+  /// Quem era o docente antes da troca manual, para auditoria e para saber
+  /// que o dado do JACAD diverge.
+  teacherOriginalId String?
+  observacao        String?
+
+  criadoEm DateTime @default(now())
+
+  teacher User         @relation("DocenteAlocacao", fields: [teacherId], references: [id])
+  subject Subject      @relation(fields: [subjectId], references: [id])
+  class   SchoolClass  @relation(fields: [classId], references: [id])
+  term    AcademicTerm @relation(fields: [termId], references: [id])
+  room    Room?        @relation(fields: [roomId], references: [id])
+
+  alunos StudentSubject[]
+
+  @@unique([teacherId, subjectId, classId, termId])
+  @@index([classId, termId])
+  @@index([teacherId, termId])
+  @@map("teaching_assignments")
+}
+
+/// Matrícula do aluno em uma alocação específica. Opcional: quando não houver
+/// registro, assume-se que todo aluno da turma cursa todas as disciplinas dela.
+/// Necessário para optativas, DPs e turmas mescladas.
+model StudentSubject {
+  id           String  @id @default(uuid())
+  studentId    String
+  assignmentId String
+  ativo        Boolean @default(true)
+
+  student    User               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  assignment TeachingAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, assignmentId])
+  @@map("student_subjects")
+}
+
+// ============================================================================
+// MOTOR DE FORMULÁRIOS
+// ============================================================================
+
+model FormTemplate {
+  id          String       @id @default(uuid())
+  nome        String
+  descricao   String?
+  publico     FormAudience
+  versao      Int          @default(1)
+  status      FormStatus   @default(RASCUNHO)
+  /// Snapshot imutável do formulário no momento da publicação (auditoria CPA)
+  snapshot    Json?
+  publicadoEm DateTime?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  blocos      QuestionBlock[]
+  periodForms PeriodForm[]
+
+  @@unique([nome, versao])
+  @@map("form_templates")
+}
+
+model QuestionBlock {
+  id           String     @id @default(uuid())
+  formId       String
+  titulo       String // "Bloco 1 — Infraestrutura"
+  descricao    String?
+  ordem        Int
+  targetType   TargetType
+  /// Se true, o bloco é instanciado uma vez por alvo do respondente
+  /// (ex.: um card por professor alocado).
+  repetivel    Boolean    @default(false)
+  /// Restringe quais alvos este bloco gera. Formas aceitas:
+  ///   { "modalidades": ["EAD"] }        -> só ofertas EAD
+  ///   { "departmentIds": ["..."] }        -> só estes setores
+  ///   { "semestres": ["2026.1"] }         -> só disciplinas deste semestre
+  targetFiltro Json?
+  obrigatorio  Boolean    @default(true)
+
+  form     FormTemplate @relation(fields: [formId], references: [id], onDelete: Cascade)
+  questoes Question[]
+
+  @@unique([formId, ordem])
+  @@index([formId])
+  @@map("question_blocks")
+}
+
+model Question {
+  id          String       @id @default(uuid())
+  blockId     String
+  enunciado   String
+  ajuda       String? // texto auxiliar exibido abaixo do enunciado
+  tipo        QuestionType
+  ordem       Int
+  obrigatoria Boolean      @default(true)
+  /// LIKERT/NPS: { "min":1, "max":5, "labels":{"1":"Péssimo"...},
+  ///               "permiteNaoSeAplica": true }
+  /// TEXTO_LIVRE: { "maxLength": 500 }
+  config      Json?
+  /// Peso na média do bloco. Peso 0 = questão informativa, fora do cálculo.
+  peso        Decimal      @default(1) @db.Decimal(4, 2)
+  /// Exibição condicional: { "questionId":"...", "operador":"eq", "valor":1 }
+  condicao    Json?
+  ativa       Boolean      @default(true)
+
+  block   QuestionBlock    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  opcoes  QuestionOption[]
+  answers Answer[]
+  drafts  DraftAnswer[]
+
+  @@unique([blockId, ordem])
+  @@index([blockId])
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String @id @default(uuid())
+  questionId String
+  rotulo     String
+  valor      Int? // valor numérico para agregação
+  ordem      Int
+
+  question      Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answerOptions AnswerOption[]
+
+  @@unique([questionId, ordem])
+  @@map("question_options")
+}
+
+// ============================================================================
+// CICLO DE AVALIAÇÃO
+// ============================================================================
+
+model EvaluationPeriod {
+  id        String  @id @default(uuid())
+  nome      String // "Avaliação Institucional 2026"
+  descricao String?
+  /// O ciclo da CPA é ANUAL. O ano é a identidade do ciclo e o eixo da série
+  /// histórica; os semestres cobertos vêm de EvaluationPeriodTerm.
+  ano       Int
+  /// Semestre de referência — em que momento do ano o ciclo foi aplicado.
+  termId                  String
+  status                  PeriodStatus @default(RASCUNHO)
+  abreEm                  DateTime
+  fechaEm                 DateTime
+  /// Libera os relatórios para gestores/professores
+  publicaResultadosEm     DateTime?
+  /// Nº mínimo de respostas por alvo para exibir resultado (k-anonimato).
+  minimoRespostasExibicao Int          @default(5)
+  mensagemBoasVindas      String?
+  mensagemConclusao       String?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  term         AcademicTerm     @relation(fields: [termId], references: [id])
+  /// Semestres abrangidos além do principal — ver EvaluationPeriodTerm.
+  semestres    EvaluationPeriodTerm[]
+  formularios  PeriodForm[]
+  tarefas      EvaluationTask[]
+  respostas    ResponseSet[]
+  notificacoes Notification[]
+
+  @@index([ano])
+  @@index([status, abreEm, fechaEm])
+  @@map("evaluation_periods")
+}
+
+/// Associa um formulário publicado a um período, para um público específico.
+model PeriodForm {
+  id          String       @id @default(uuid())
+  periodId    String
+  formId      String
+  publico     FormAudience
+  obrigatorio Boolean      @default(true)
+  anonimo     Boolean      @default(true)
+
+  period    EvaluationPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  form      FormTemplate     @relation(fields: [formId], references: [id])
+  tarefas   EvaluationTask[]
+  respostas ResponseSet[]
+
+  @@unique([periodId, formId])
+  @@map("period_forms")
+}
+
+/// A "pendência" que aparece na home do aluno/professor.
+/// Contém apenas METADADOS (quem, status, quando) — NUNCA respostas.
+/// A constraint única garante a submissão única por ciclo.
+model EvaluationTask {
+  id           String     @id @default(uuid())
+  periodId     String
+  periodFormId String
+  respondentId String
+  status       TaskStatus @default(PENDENTE)
+  progresso    Int        @default(0) // 0..100, alimenta a barra do wizard
+  iniciadaEm   DateTime?
+  concluidaEm  DateTime?
+  criadoEm     DateTime   @default(now())
+
+  /// Lote da submissão — o ÚNICO vínculo entre esta pessoa e as respostas que
+  /// ela gravou, e ele existe de propósito: sem vínculo não há como retratar
+  /// um envio feito por engano.
+  ///
+  /// Vive só enquanto o ciclo está aberto. `encerrarCiclo` apaga este campo de
+  /// todas as tarefas, e a partir daí nem quem tem o banco consegue reagrupar
+  /// as respostas de alguém. É uma janela de retratação, não um registro.
+  loteId       String?
+
+  period     EvaluationPeriod       @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  periodForm PeriodForm             @relation(fields: [periodFormId], references: [id], onDelete: Cascade)
+  respondent User                   @relation(fields: [respondentId], references: [id], onDelete: Cascade)
+  alvos      EvaluationTaskTarget[]
+  rascunhos  DraftAnswer[]
+
+  @@unique([periodFormId, respondentId])
+  @@index([respondentId, status])
+  @@index([periodId, status])
+  @@map("evaluation_tasks")
+}
+
+/// Alvos materializados da tarefa (ex.: 1 institucional + 6 professores).
+/// Alimenta o carrossel/wizard do app e evita recalcular alocações a cada
+/// requisição.
+model EvaluationTaskTarget {
+  id          String     @id @default(uuid())
+  taskId      String
+  blockId     String
+  targetType  TargetType
+  /// Id do alvo conforme targetType. Para PROFESSOR_DISCIPLINA é o id da
+  /// TeachingAssignment; para CURSO o id do Course; null para INSTITUICAO.
+  targetRefId String?
+  rotulo      String // "Prof. Ana Lima — Banco de Dados"
+  subtitulo   String?
+  ordem       Int
+  concluido   Boolean    @default(false)
+
+  task EvaluationTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, blockId, targetRefId])
+  @@index([taskId])
+  @@map("evaluation_task_targets")
+}
+
+// ============================================================================
+// RESPOSTAS  (desacopladas do respondente — anonimato por construção)
+// ============================================================================
+
+/// Um conjunto de respostas referente a UM alvo.
+/// NÃO possui FK para o usuário respondente: a única prova de que alguém
+/// respondeu vive em EvaluationTask. Os campos "respondent*" guardam apenas o
+/// recorte agregado (perfil/curso/turma) necessário para os relatórios.
+model ResponseSet {
+  id           String @id @default(uuid())
+  periodId     String
+  periodFormId String
+  blockId      String
+
+  targetType  TargetType
+  targetRefId String?
+
+  // ---- Alvo denormalizado (acelera a agregação nos relatórios) ----
+  courseId     String?
+  subjectId    String?
+  teacherId    String?
+  departmentId String?
+
+  // ---- Recorte do respondente (SEM identificação individual) ----
+  respondentRole     Role
+  respondentCourseId String?
+  respondentClassId  String?
+  respondentPeriodo  Int?
+  respondentTurno    Shift?
+
+  anonimo     Boolean  @default(true)
+
+  /// Data do envio, arredondada para o DIA.
+  ///
+  /// Não é desleixo: com precisão de milissegundo, o carimbo daqui e o
+  /// `concluidaEm` da tarefa ficam a poucos milissegundos um do outro, e
+  /// reagrupar as respostas de cada pessoa vira uma consulta de uma linha —
+  /// o que anula o anonimato que a ausência de FK deveria garantir.
+  submetidoEm DateTime
+
+  /// Par do `loteId` da tarefa. Só preenchido durante o ciclo; ao encerrar,
+  /// vira null junto com o da tarefa e o vínculo desaparece dos dois lados.
+  loteId      String?
+
+  period           EvaluationPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  periodForm       PeriodForm       @relation(fields: [periodFormId], references: [id])
+  course           Course?          @relation("CursoAvaliado", fields: [courseId], references: [id])
+  subject          Subject?         @relation("DisciplinaAvaliada", fields: [subjectId], references: [id])
+  teacher          User?            @relation("ProfessorAvaliado", fields: [teacherId], references: [id])
+  department       Department?      @relation("DepartamentoAvaliado", fields: [departmentId], references: [id])
+  respondentCourse Course?          @relation("CursoRespondente", fields: [respondentCourseId], references: [id])
+  respondentClass  SchoolClass?     @relation("TurmaRespondente", fields: [respondentClassId], references: [id])
+
+  answers Answer[]
+
+  @@index([periodId, targetType])
+  @@index([loteId])
+  @@index([periodId, teacherId])
+  @@index([periodId, courseId])
+  @@index([blockId])
+  @@map("response_sets")
+}
+
+model Answer {
+  id            String @id @default(uuid())
+  responseSetId String
+  questionId    String
+
+  valorNumerico Int? // LIKERT, NPS
+  valorTexto    String?  @db.Text // TEXTO_LIVRE (moderar antes de exibir)
+  valorBooleano Boolean? // SIM_NAO
+  naoSeAplica   Boolean  @default(false)
+
+  responseSet ResponseSet    @relation(fields: [responseSetId], references: [id], onDelete: Cascade)
+  question    Question       @relation(fields: [questionId], references: [id])
+  opcoes      AnswerOption[]
+
+  @@unique([responseSetId, questionId])
+  @@index([questionId])
+  @@map("answers")
+}
+
+model AnswerOption {
+  answerId String
+  optionId String
+
+  answer Answer         @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  option QuestionOption @relation(fields: [optionId], references: [id])
+
+  @@id([answerId, optionId])
+  @@map("answer_options")
+}
+
+/// Rascunho (autosave). Vinculado à TASK — portanto ao usuário. É apagado na
+/// submissão, quando os dados migram para ResponseSet/Answer já anonimizados.
+model DraftAnswer {
+  id           String   @id @default(uuid())
+  taskId       String
+  questionId   String
+  targetRefId  String   @default("__global__")
+  /// { numerico? | texto? | booleano? | opcoes[]? | naoSeAplica? }
+  valor        Json
+  atualizadoEm DateTime @updatedAt
+
+  task     EvaluationTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  question Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, questionId, targetRefId])
+  @@index([taskId])
+  @@map("draft_answers")
+}
+
+// ============================================================================
+// OPERAÇÃO: IMPORTAÇÃO, NOTIFICAÇÕES, AUDITORIA, CACHE DE RESULTADOS
+// ============================================================================
+
+model ImportJob {
+  id             String       @id @default(uuid())
+  tipo           ImportKind
+  arquivoNome    String
+  arquivoUrl     String?
+  status         ImportStatus @default(PENDENTE)
+  totalLinhas    Int          @default(0)
+  processadas    Int          @default(0)
+  sucesso        Int          @default(0)
+  erros          Int          @default(0)
+  /// [{ "linha": 12, "campo": "email", "mensagem": "e-mail duplicado" }]
+  relatorioErros Json?
+  criadoPorId    String
+  criadoEm       DateTime     @default(now())
+  concluidoEm    DateTime?
+
+  criadoPor User @relation(fields: [criadoPorId], references: [id])
+
+  @@index([status])
+  @@map("import_jobs")
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String
+  periodId  String?
+  canal     NotificationChannel
+  titulo    String
+  corpo     String
+  deepLink  String?
+  status    NotificationStatus  @default(ENFILEIRADA)
+  enviadaEm DateTime?
+  lidaEm    DateTime?
+  criadoEm  DateTime            @default(now())
+
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  period EvaluationPeriod? @relation(fields: [periodId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  acao        String // "PERIOD_OPEN", "FORM_PUBLISH", "USER_IMPORT"
+  entidade    String
+  entidadeId  String?
+  dadosAntes  Json?
+  dadosDepois Json?
+  ip          String?
+  userAgent   String?
+  criadoEm    DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entidade, entidadeId])
+  @@index([criadoEm])
+  @@map("audit_logs")
+}
+
+/// Cache de resultados agregados, recalculado ao encerrar o período (ou sob
+/// demanda). Evita varrer milhões de linhas de Answer a cada abertura do
+/// dashboard.
+model AggregateSnapshot {
+  id             String   @id @default(uuid())
+  periodId       String
+  escopo         String // "GERAL" | "CURSO" | "PROFESSOR" | "BLOCO" | "DEPARTAMENTO"
+  escopoRefId    String?
+  blockId        String?
+  questionId     String?
+  media          Decimal? @db.Decimal(5, 2)
+  desvioPadrao   Decimal? @db.Decimal(5, 2)
+  totalRespostas Int      @default(0)
+  distribuicao   Json? // { "1": 3, "2": 10, ... }
+  calculadoEm    DateTime @default(now())
+
+  @@unique([periodId, escopo, escopoRefId, blockId, questionId])
+  @@index([periodId, escopo])
+  @@map("aggregate_snapshots")
+}
+
+// ============================================================================
+// INTEGRAÇÃO JACAD  (staging da API acadêmica)
+//
+// Espelha o padrão já usado pelo Insted Hub Digital (app/Services/Jacad):
+// os dados chegam crus da API e ficam AQUI, em tabelas jacad_*, com o payload
+// original em `raw`. Só depois um passo de promoção os transforma nas
+// entidades do CPA (User, Course, SchoolClass, TeachingAssignment...).
+//
+// Duas camadas em vez de uma porque:
+//   - a API do JACAD é a fonte de verdade, mas não tem o formato do CPA;
+//   - reprocessar o mapeamento não deve exigir bater na API de novo;
+//   - `raw` preserva campos que hoje não usamos e amanhã podem importar.
+// ============================================================================
+
+enum JacadRecurso {
+  PERIODOS_LETIVOS
+  CURSOS
+  TURMAS
+  MATRICULAS // alunos + vínculo com turma
+  MATRICULA_DISCIPLINA // disciplinas cursadas + professor
+}
+
+enum JacadSyncStatus {
+  EXECUTANDO
+  CONCLUIDO
+  FALHOU
+}
+
+model JacadPeriodoLetivo {
+  idPeriodoLetivo Int     @id
+  descricao       String?
+  ano             Int?
+  semestre        Int?
+  idOrg           Int?
+  orgDescricao    String?
+
+  raw            Json?
+  sincronizadoEm DateTime @default(now())
+
+  @@index([ano, semestre])
+  @@map("jacad_periodos_letivos")
+}
+
+model JacadCurso {
+  idCursoBase   Int     @id
+  nomeImpressao String?
+  nomeReduzido  String?
+  codigoCurso   String?
+  modalidade    String?
+  grau          String?
+  idOrg         Int?
+
+  raw            Json?
+  sincronizadoEm DateTime @default(now())
+
+  @@map("jacad_cursos")
+}
+
+model JacadTurma {
+  idTurma         Int     @id
+  nome            String?
+  nomeReduzido    String?
+  idCurso         Int?
+  curso           String?
+  idMatriz        Int?
+  matriz          String?
+  idPeriodoLetivo Int?
+  periodoLetivo   String?
+  idUnidadeFisica Int?
+  unidadeFisica   String?
+  turno           String?
+  periodoItem     String?
+  periodoNumero   Int? // extraído de periodoItem ("3º Semestre" -> 3)
+  status          String? // ATIVA · AGUARDANDO · ENCERRADA · CANCELADA
+  idOrg           Int?
+  dataInicio      DateTime?
+  dataFim         DateTime?
+  qtdeDisciplina  Int?
+
+  raw            Json?
+  sincronizadoEm DateTime @default(now())
+
+  @@index([idPeriodoLetivo, status])
+  @@index([idCurso])
+  @@map("jacad_turmas")
+}
+
+/// Uma linha por aluno matriculado em um período. É a fonte dos ALUNOS.
+model JacadMatricula {
+  idMatricula             Int     @id
+  idTurma                 Int?
+  idPeriodoLetivo         Int?
+  idAluno                 Int?
+  idPerfilAluno           Int?
+  idAlunoCursoIngresso    Int?
+  aluno                   String?
+  ra                      String?
+  alunoEmail              String?
+  alunoEmailInstitucional String?
+  idCursoBase             Int?
+  curso                   String?
+  turma                   String?
+  idCursoMatriz           Int?
+  matriz                  String?
+  status                  String?
+  idUnidadeFisica         Int?
+  unidadeFisica           String?
+  idOrg                   Int?
+  organizacao             String?
+  dataMatricula           DateTime?
+  dataAtivacao            DateTime?
+  dataTrancamento         DateTime?
+
+  raw            Json?
+  sincronizadoEm DateTime @default(now())
+
+  @@index([idPeriodoLetivo, status])
+  @@index([idTurma])
+  @@index([ra])
+  @@map("jacad_matriculas")
+}
+
+/// Disciplinas cursadas por matrícula. É a fonte das DISCIPLINAS e — hoje — a
+/// única fonte de PROFESSOR, que vem apenas como nome em texto (sem id).
+/// Ver docs/05-integracao-jacad.md, seção "O problema do professor".
+model JacadMatriculaDisciplina {
+  idMatriculaDisciplina Int     @id
+  idMatricula           Int
+  idAluno               Int?
+  idPerfilAluno         Int?
+  idPeriodoLetivo       Int?
+  idCursoBase           Int?
+  disciplina            String?
+  professor             String? // nome em texto — ver JacadDocenteConciliacao
+  /// Id do VÍNCULO disciplina×professor×turma — não identifica a pessoa:
+  /// o mesmo docente tem ids diferentes em disciplinas diferentes.
+  idDisciplinaProfessor Int?
+  /// Turma que OFERTA a disciplina. Difere da turma do aluno em DPs,
+  /// adiantamentos e ofertas EAD — é dela que sai a modalidade.
+  idTurmaDisciplina     Int?
+  turma                 String?
+  modulo                String?
+  statusDisciplina      String?
+  statusMatricula       String?
+
+  raw            Json?
+  sincronizadoEm DateTime @default(now())
+
+  @@index([idMatricula])
+  @@index([idPeriodoLetivo])
+  @@index([professor])
+  @@map("jacad_matricula_disciplinas")
+}
+
+/// Trilha de execução das sincronizações — equivalente a `ingestao_logs` do Hub.
+model JacadSyncLog {
+  id             String          @id @default(uuid())
+  recurso        JacadRecurso
+  referencia     String? // "periodo=38 curso=5"
+  status         JacadSyncStatus @default(EXECUTANDO)
+  totalRegistros Int             @default(0)
+  paginas        Int             @default(0)
+  erros          Int             @default(0)
+  mensagem       String?
+  iniciadoEm     DateTime        @default(now())
+  concluidoEm    DateTime?
+
+  @@index([recurso, iniciadoEm])
+  @@map("jacad_sync_logs")
+}
+
+/// Parâmetros da integração editáveis sem deploy — espelha `api_parametros`.
+/// O TOKEN não mora aqui: vem de JACAD_TOKEN no ambiente, para não circular
+/// credencial em dump de banco nem em backup.
+model IntegrationSetting {
+  id       String  @id @default(uuid())
+  nome     String  @unique // "jacad"
+  baseUrl  String
+  usuario  String?
+  pageSize Int     @default(200)
+  sleepMs  Int     @default(150) // rate limit do JACAD: 10 req/s por IP
+  timeoutS Int     @default(60)
+  ativo    Boolean @default(true)
+
+  atualizadoEm DateTime @updatedAt
+
+  @@map("integration_settings")
+}
+
+// ---------------------------------------------------------------------------
+// Conciliação de docentes
+//
+// `matricula-disciplina` só dá o NOME do professor. `/basicos/perfis?search=`
+// devolve o cadastro real da pessoa — idPerfil, e-mail e CPF —, que é o que
+// permite ao docente entrar no sistema e receber a autoavaliação.
+//
+// A busca por nome pode ser ambígua; por isso o resultado é registrado e
+// auditável, em vez de aplicado às cegas.
+// ---------------------------------------------------------------------------
+
+enum ConciliacaoStatus {
+  CONCILIADO // exatamente 1 perfil encontrado
+  AMBIGUO // vários perfis com o mesmo nome — exige decisão humana
+  NAO_ENCONTRADO // nenhum perfil corresponde
+  MANUAL // resolvido à mão por um administrador
+}
+
+model JacadPerfil {
+  idPerfil      Int     @id
+  nome          String?
+  nomeImpressao String?
+  email         String?
+  cpf           String?
+  cargo         String?
+  status        String?
+
+  raw            Json?
+  sincronizadoEm DateTime @default(now())
+
+  @@index([nome])
+  @@map("jacad_perfis")
+}
+
+model JacadDocenteConciliacao {
+  /// Nome do docente normalizado (sem acento, minúsculo) — a chave que vem
+  /// de matricula-disciplina.
+  nomeNormalizado String            @id
+  nomeOriginal    String
+  status          ConciliacaoStatus
+  idPerfil        Int?
+  email           String?
+  cpf             String?
+  /// Quando AMBIGUO: os perfis candidatos, para decisão no painel.
+  candidatos      Json?
+  observacao      String?
+  conciliadoEm    DateTime          @default(now())
+
+  @@index([status])
+  @@map("jacad_docente_conciliacoes")
+}
+
+// ---------------------------------------------------------------------------
+// Modalidade de oferta
+//
+// A mesma disciplina pode ser ofertada como presencial num semestre e EAD em
+// outro, e o instrumento da CPA pergunta coisas diferentes em cada caso — em
+// 2025 isso era resolvido com dois formulários separados no Drive
+// ("...- EAD" e "...- Presencial").
+//
+// A modalidade mora na OFERTA (TeachingAssignment), não na disciplina: é a
+// oferta daquele semestre que é EAD ou presencial.
+// ---------------------------------------------------------------------------
+
+enum Modalidade {
+  PRESENCIAL
+  EAD
+  SEMIPRESENCIAL
+  /// O JACAD não informou. Em 2026.2, 35% dos alunos estão em cursos com
+  /// modalidade em branco — tratar como pendência de cadastro, não como
+  /// presencial por omissão.
+  NAO_INFORMADA
+}
+
+/// Semestres letivos que um ciclo de avaliação abrange.
+///
+/// A CPA avalia o ANO, não o semestre: em 2026.2 o aluno responde sobre as
+/// disciplinas que cursa agora E sobre as que cursou em 2026.1. Um período com
+/// dois `AcademicTerm` vinculados gera alvos dos dois.
+model EvaluationPeriodTerm {
+  periodId String
+  termId   String
+  /// Rótulo mostrado ao aluno para situar a disciplina no tempo
+  /// ("cursada em 2026.1").
+  rotulo String?
+
+  period EvaluationPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  term   AcademicTerm     @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@id([periodId, termId])
+  @@map("evaluation_period_terms")
+}

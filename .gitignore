@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.next/
+.turbo/
+.expo/
+*.log
+.env
+.env.*
+!.env.example
+# `.env-hub.example` guardava o token JACAD real — segredo em arquivo chamado
+# "example" é o jeito mais fácil de vazar sem perceber.
+.env-hub.example
+coverage/
+uploads/
+
+# Material de origem baixado do Drive da CPA: questionários, planilhas e as
+# RESPOSTAS de 2025. É insumo, não código — e respostas de avaliação não vão
+# para repositório. Remova esta linha se decidir versioná-lo num repo privado.
+CPA/
+
+# Artefatos de build
+*.tsbuildinfo

@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/*
+ * Identidade visual institucional.
+ *
+ * Os tokens brand-* são os MESMOS nomes e valores usados pelo Insted Hub
+ * Digital (dev.insted.digital), para que quem conhece um sistema encontre o
+ * mesmo vocabulário no outro. Não renomeie nem "ajuste" esses valores aqui:
+ * se a marca mudar, ela muda no Hub primeiro e este arquivo acompanha.
+ *
+ * Para neutros (textos secundários, linhas, fundos de tabela) use a escala
+ * `slate` padrão do Tailwind, como o Hub faz — não crie tokens paralelos.
+ */
+@theme {
+  --color-brand-teal: #00bfb2;
+  --color-brand-teal-hover: #00998e;
+  --color-brand-navy: #1a2d42;
+  --color-brand-blue: #5c88da;
+  --color-brand-orange: #ff8200;
+  --color-brand-yellow: #ffb600;
+  --color-brand-black: #2d2e30;
+  --color-brand-dark: #262626;
+  --color-brand-light: #f6f8fc;
+  --color-brand-white: #efefe8;
+
+  --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: var(--font-raleway), "Raleway", var(--font-sans);
+  --font-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", Consolas, monospace;
+}
+
+html,
+body {
+  background: var(--color-brand-light);
+  color: var(--color-brand-navy);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Faixa de marca no topo dos cards — assinatura visual do Hub. */
+@utility brand-rule {
+  background-image: linear-gradient(
+    to right,
+    var(--color-brand-teal) 0%,
+    var(--color-brand-navy) 100%
+  );
+}

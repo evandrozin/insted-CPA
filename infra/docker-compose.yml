@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: insted-cpa-db
+    environment:
+      POSTGRES_USER: insted
+      POSTGRES_PASSWORD: insted
+      POSTGRES_DB: insted_cpa
+    ports:
+      - "5433:5432"   # 5432 já está ocupada pelo Postgres nativo da máquina
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U insted -d insted_cpa"]
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: insted-cpa-redis
+    ports:
+      - "6379:6379"
+
+  mailhog:
+    image: axllent/mailpit
+    container_name: insted-cpa-mail
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  pgdata:
