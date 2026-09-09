@@ -27,11 +27,25 @@ import {
 const prisma = new PrismaClient();
 const log = (m = '') => console.log(m);
 
+/**
+ * Lê `--chave=valor`, remontando valores que o shell partiu.
+ *
+ * `--nome="Fulano de Tal"` chega aqui como três argumentos: o shell consome as
+ * aspas antes do Node ver. Sem remontar, o cadastro fica com o primeiro nome
+ * só — e ninguém percebe até olhar a listagem.
+ */
 function opcoes(argv: string[]): Record<string, string> {
   const o: Record<string, string> = {};
+  let ultima: string | null = null;
+
   for (const a of argv) {
     const m = a.match(/^--([^=]+)=(.*)$/);
-    if (m) o[m[1]] = m[2];
+    if (m) {
+      o[m[1]] = m[2];
+      ultima = m[1];
+    } else if (ultima && !a.startsWith('--')) {
+      o[ultima] += ' ' + a;
+    }
   }
   return o;
 }
@@ -70,7 +84,7 @@ async function criar(o: Record<string, string>): Promise<void> {
     log(`\n✅ ${usuario.nome} agora é ${usuario.role} (cadastro que já existia foi promovido).`);
   } else {
     log(`\n✅ ${usuario.nome} criado como ${usuario.role}.`);
-    log(`   matrícula interna: ${matriculaInterna(email)} (o login funciona pelo e-mail)`);
+    log(`   matrícula interna: ${matriculaInterna(email, usuario.role)} (o login funciona pelo e-mail)`);
   }
   mostrarSenha(usuario.email, senha);
 }
@@ -152,13 +166,16 @@ async function main(): Promise<void> {
       log(`Contas de painel da CPA:
 
   npm run admin -- listar
-  npm run admin -- criar --email=<e-mail> --nome="<nome>" [--papel=ADMIN|GESTOR]
+  npm run admin -- criar --email=<e-mail> --nome="<nome>" [--papel=ADMIN|GESTOR|TECNICO_ADMIN]
   npm run admin -- senha --email=<e-mail>       gera nova senha provisória
   npm run admin -- revogar --email=<e-mail>     tira o acesso ao painel
 
 ADMIN administra tudo, inclusive as contas da comissão. GESTOR usa o painel mas
 não gerencia contas, e passa a ver só o próprio escopo quando os relatórios
 entrarem (Fase 4).
+
+TECNICO_ADMIN não abre o painel: responde a avaliação. O caminho normal para
+esses é a tela Cadastros → Técnico-administrativo.
 
 Depois da primeira conta, o caminho normal é a tela: Cadastros → Comissão.
 A senha aparece uma única vez, no terminal de quem roda o comando.`);

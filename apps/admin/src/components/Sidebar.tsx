@@ -27,6 +27,7 @@ const grupos: { titulo: string; itens: Item[] }[] = [
       { href: '/cadastros/salas', label: 'Salas', fase: null },
       { href: '/cadastros/usuarios', label: 'Usuários', fase: null },
       { href: '/cadastros/comissao', label: 'Comissão', fase: null },
+      { href: '/cadastros/tecnicos', label: 'Técnico-administrativo', fase: null },
       { href: '/cadastros/importar', label: 'Importar planilha', fase: null },
     ],
   },

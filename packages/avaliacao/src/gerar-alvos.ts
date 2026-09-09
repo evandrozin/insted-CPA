@@ -57,6 +57,117 @@ export class GeradorDeAlvos {
     this.onProgresso(m);
   }
 
+
+  /**
+   * Tarefas de quem não é aluno: docente e técnico-administrativo.
+   *
+   * O respondente aqui não avalia disciplina cursada, então não há oferta de
+   * onde derivar alvo. Recebe os blocos fixos do formulário — autoavaliação,
+   * instituição, setores — e os repetíveis por DEPARTAMENTO, que são os
+   * únicos que fazem sentido fora da matrícula.
+   *
+   * Bloco repetível por disciplina num formulário destes é configuração
+   * equivocada: ele geraria um card por oferta que o respondente não tem.
+   * Em vez de gerar nada em silêncio, entra como aviso.
+   */
+  private async gerarParaEquipe(
+    periodId: string,
+    periodForm: {
+      id: string;
+      publico: string;
+      form: { nome: string; blocos: { id: string; titulo: string; ordem: number; targetType: TargetType; repetivel: boolean; targetFiltro: unknown }[] };
+    },
+    departamentos: { id: string; nome: string }[],
+    r: ResultadoGeracao,
+  ): Promise<void> {
+    const papel = periodForm.publico as 'PROFESSOR' | 'TECNICO_ADMIN';
+
+    const pessoas = await this.prisma.user.findMany({
+      where: { role: papel, status: 'ATIVO', deletadoEm: null },
+      select: { id: true },
+    });
+
+    this.log(`${pessoas.length} respondentes para "${periodForm.form.nome}" (${papel}).`);
+    if (pessoas.length === 0) {
+      r.avisos.push(
+        `"${periodForm.form.nome}" não tem respondente: nenhum usuário ativo com papel ${papel}.`,
+      );
+      return;
+    }
+
+    const alvosBase: {
+      blockId: string;
+      targetType: TargetType;
+      targetRefId: string | null;
+      rotulo: string;
+      subtitulo: string | null;
+      ordem: number;
+    }[] = [];
+    let ordem = 0;
+
+    for (const bloco of periodForm.form.blocos) {
+      const porDisciplina =
+        bloco.repetivel &&
+        (bloco.targetType === 'PROFESSOR_DISCIPLINA' || bloco.targetType === 'DISCIPLINA');
+
+      if (porDisciplina) {
+        r.avisos.push(
+          `Bloco "${bloco.titulo}" de "${periodForm.form.nome}" é repetível por disciplina, ` +
+            `mas o público é ${papel} — ficou de fora.`,
+        );
+        continue;
+      }
+
+      if (bloco.repetivel && bloco.targetType === 'DEPARTAMENTO') {
+        const filtro = lerFiltro(bloco.targetFiltro);
+        const lista = filtro.departmentIds?.length
+          ? departamentos.filter((d) => filtro.departmentIds!.includes(d.id))
+          : departamentos;
+        for (const d of lista) {
+          alvosBase.push({
+            blockId: bloco.id,
+            targetType: 'DEPARTAMENTO',
+            targetRefId: d.id,
+            rotulo: d.nome,
+            subtitulo: null,
+            ordem: ordem++,
+          });
+        }
+        continue;
+      }
+
+      alvosBase.push({
+        blockId: bloco.id,
+        targetType: bloco.targetType,
+        targetRefId: null,
+        rotulo: bloco.titulo,
+        subtitulo: null,
+        ordem: ordem++,
+      });
+    }
+
+    for (const pessoa of pessoas) {
+      const task = await this.prisma.evaluationTask.upsert({
+        where: {
+          periodFormId_respondentId: { periodFormId: periodForm.id, respondentId: pessoa.id },
+        },
+        create: { periodId, periodFormId: periodForm.id, respondentId: pessoa.id },
+        update: {},
+        select: { id: true, status: true },
+      });
+
+      if (task.status === 'CONCLUIDA') continue;
+
+      await this.prisma.evaluationTaskTarget.deleteMany({ where: { taskId: task.id } });
+      await this.prisma.evaluationTaskTarget.createMany({
+        data: alvosBase.map((a) => ({ ...a, taskId: task.id })),
+      });
+
+      r.tarefas++;
+      r.alvos += alvosBase.length;
+    }
+  }
+
   async gerar(periodId: string): Promise<ResultadoGeracao> {
     const r: ResultadoGeracao = {
       tarefas: 0,
@@ -123,8 +234,10 @@ export class GeradorDeAlvos {
 
     for (const periodForm of periodo.formularios) {
       if (periodForm.publico !== 'ALUNO') {
-        // Docentes e técnicos não têm alvos derivados de matrícula; a geração
-        // deles é direta e entra quando esses fluxos existirem.
+        // Docente e técnico-administrativo não derivam alvos de matrícula: o
+        // que eles avaliam não depende de disciplina cursada. Cada um recebe
+        // uma tarefa com os blocos fixos do formulário, e é só.
+        await this.gerarParaEquipe(periodId, periodForm, departamentos, r);
         continue;
       }
 

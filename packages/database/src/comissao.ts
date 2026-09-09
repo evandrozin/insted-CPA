@@ -15,8 +15,18 @@ import type { PrismaClient, Role, User } from '@prisma/client';
 import { randomInt } from 'node:crypto';
 import { hash } from 'bcryptjs';
 
-/** Papéis que administram a avaliação. */
+/** Papéis que administram a avaliação — os que abrem o painel. */
 export const PAPEIS_PAINEL: Role[] = ['ADMIN', 'GESTOR'];
+
+/**
+ * Papéis cuja conta nasce aqui, com senha provisória.
+ *
+ * Inclui o técnico-administrativo, que não administra nada mas também não vem
+ * do JACAD: a API acadêmica não conhece quem não é aluno nem docente. Ele não
+ * tem RA para usar no primeiro acesso, então recebe a senha da mesma forma que
+ * a comissão — pela mão de quem cadastrou.
+ */
+export const PAPEIS_CADASTRADOS: Role[] = ['ADMIN', 'GESTOR', 'TECNICO_ADMIN'];
 
 /** Custo do bcrypt para conta de painel. Mais alto que o do respondente. */
 const CUSTO = 12;
@@ -37,6 +47,9 @@ export function senhaProvisoria(): string {
   return [bloco(), bloco(), bloco(), bloco()].join('-');
 }
 
+/** Prefixo da matrícula interna, por papel. */
+const PREFIXO: Partial<Record<Role, string>> = { TECNICO_ADMIN: 'tec' };
+
 /**
  * Matrícula interna para quem não tem RA.
  *
@@ -45,8 +58,9 @@ export function senhaProvisoria(): string {
  * próprio, prefixado — o login é sempre pelo e-mail, e ninguém precisa saber
  * que este campo existe.
  */
-export function matriculaInterna(email: string): string {
-  return `cpa-${email.split('@')[0].replace(/[^a-z0-9._-]/gi, '')}`.slice(0, 40);
+export function matriculaInterna(email: string, papel: Role = 'ADMIN'): string {
+  const prefixo = PREFIXO[papel] ?? 'cpa';
+  return `${prefixo}-${email.split('@')[0].replace(/[^a-z0-9._-]/gi, '')}`.slice(0, 40);
 }
 
 export type ResultadoCriacao = {
@@ -72,11 +86,11 @@ export async function criarConta(
 
   if (!email.includes('@')) throw new Error('Informe um e-mail válido.');
   if (nome.length < 3) throw new Error('Informe o nome completo.');
-  if (!PAPEIS_PAINEL.includes(papel)) {
-    throw new Error(`O papel deve ser ${PAPEIS_PAINEL.join(' ou ')}.`);
+  if (!PAPEIS_CADASTRADOS.includes(papel)) {
+    throw new Error(`O papel deve ser ${PAPEIS_CADASTRADOS.join(', ')}.`);
   }
 
-  const matricula = (entrada.matricula?.trim() || matriculaInterna(email)).slice(0, 40);
+  const matricula = (entrada.matricula?.trim() || matriculaInterna(email, papel)).slice(0, 40);
 
   const existente = await prisma.user.findFirst({
     where: { OR: [{ email }, { matricula }] },
@@ -131,8 +145,8 @@ export async function redefinirSenha(
     select: { id: true, nome: true, email: true, role: true },
   });
   if (!user) throw new Error('Conta não encontrada.');
-  if (!PAPEIS_PAINEL.includes(user.role)) {
-    throw new Error(`${user.nome} não é conta de painel.`);
+  if (!PAPEIS_CADASTRADOS.includes(user.role)) {
+    throw new Error(`${user.nome} não é uma conta cadastrada pelo painel.`);
   }
 
   const senha = senhaProvisoria();
@@ -175,8 +189,8 @@ export async function revogarAcesso(
     },
   });
   if (!user) throw new Error('Conta não encontrada.');
-  if (!PAPEIS_PAINEL.includes(user.role)) {
-    throw new Error(`${user.nome} não é conta de painel.`);
+  if (!PAPEIS_CADASTRADOS.includes(user.role)) {
+    throw new Error(`${user.nome} não é uma conta cadastrada pelo painel.`);
   }
 
   if (user.role === 'ADMIN') {

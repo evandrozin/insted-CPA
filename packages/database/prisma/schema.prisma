@@ -21,6 +21,15 @@ enum Role {
   GESTOR // Coordenador / Diretor — relatórios apenas do seu escopo
   PROFESSOR
   ALUNO
+  /// Corpo técnico-administrativo: secretaria, biblioteca, TI, financeiro.
+  ///
+  /// Existe como público em `FormAudience` desde o início — o instrumento da
+  /// CPA para eles é de 2024 —, mas não existia como papel de usuário. O
+  /// resultado era um formulário sem ninguém que pudesse respondê-lo.
+  ///
+  /// Não vem do JACAD: a API acadêmica não conhece quem não é aluno nem
+  /// docente. Esses cadastros nascem no painel.
+  TECNICO_ADMIN
 }
 
 enum UserStatus {
