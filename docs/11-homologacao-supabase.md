@@ -27,6 +27,24 @@ O script usa a conexão **direta** para migrar e nunca imprime a senha — só o
 host de destino, porque errar de banco em homologação é fácil e descobrir
 depois é caro.
 
+### Use o Session pooler, não a conexão direta
+
+O host da *Direct connection* (`db.<ref>.supabase.co`) resolve **apenas em
+IPv6** — a Supabase moveu a conexão direta para lá e IPv4 virou add-on pago. De
+uma rede sem IPv6, o erro é `P1001: Can't reach database server`, que parece
+firewall e não é.
+
+O **Session pooler** (`aws-0-sa-east-1.pooler.supabase.com:5432`, usuário
+`postgres.<ref>`) é IPv4 e mantém a sessão entre comandos, então serve para
+migração. É o que está em `DATABASE_URL_DIRETA`.
+
+### Senha com caractere especial
+
+A senha gerada pelo Supabase costuma trazer `@` e `#`, que têm significado numa
+URI. O script percent-encoda antes de usar, mas ao colar a string na Vercel
+**use a versão já codificada** — `@` vira `%40`, `#` vira `%23`. Sem isso o erro
+aparece como "não consegui conectar" a um host que não existe.
+
 ### Por que duas conexões
 
 Migração precisa de conexão direta: o pooler de transação não mantém a sessão
