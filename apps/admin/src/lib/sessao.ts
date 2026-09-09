@@ -19,11 +19,26 @@ import { prisma } from '@insted/database';
 const COOKIE = 'insted_sessao';
 const DURACAO_H = 12;
 
+/** Tamanho mínimo do segredo que assina o cookie de sessão. */
+const MINIMO_SEGREDO = 16;
+
 function segredo(): string {
   const s = process.env.SESSION_SECRET ?? process.env.JWT_ACCESS_SECRET;
-  if (!s || s.length < 16) {
+
+  // A mensagem diz o tamanho encontrado de propósito. Um segredo curto demais
+  // é rejeitado como se não existisse, e "ausente" manda procurar a variável
+  // que está lá — o diagnóstico só fecha quando o número aparece.
+  if (!s) {
     throw new Error(
-      'SESSION_SECRET ausente ou curto demais. Defina no .env antes de abrir a avaliação.',
+      `SESSION_SECRET ausente. Defina uma string de ao menos ${MINIMO_SEGREDO} caracteres ` +
+        'no ambiente antes de abrir a avaliação: ' +
+        'node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64url\'))"',
+    );
+  }
+  if (s.length < MINIMO_SEGREDO) {
+    throw new Error(
+      `SESSION_SECRET tem ${s.length} caracteres e o mínimo é ${MINIMO_SEGREDO}. ` +
+        'Gere outro: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64url\'))"',
     );
   }
   return s;
