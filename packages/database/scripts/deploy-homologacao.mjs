@@ -33,21 +33,62 @@ for (const linha of readFileSync(arquivo, 'utf8').split('\n')) {
   if (m) env[m[1]] = m[2];
 }
 
-const direta = env.DATABASE_URL_DIRETA || env.DATABASE_URL;
-if (!direta || direta.includes('SENHA')) {
+const bruta = env.DATABASE_URL_DIRETA || env.DATABASE_URL;
+if (!bruta || bruta.includes('SENHA')) {
   console.error('\n❌ DATABASE_URL_DIRETA ainda está com o placeholder SENHA.\n');
   process.exit(1);
 }
 
+/**
+ * Escapa a senha dentro da URL.
+ *
+ * A senha gerada pelo Supabase costuma trazer `@`, `#` e outros caracteres com
+ * significado numa URI: o `@` separa credencial de host, o `#` inicia
+ * fragmento. Colada crua, a string faz o driver enxergar um host que não
+ * existe — o erro sai como "não consegui conectar ao servidor X", que manda
+ * investigar rede quando o problema é pontuação.
+ *
+ * A senha vai até o ÚLTIMO `@`, não o primeiro: o primeiro pode ser dela.
+ */
+function escaparSenha(url) {
+  const i = url.indexOf('://');
+  if (i < 0) return url;
+  const proto = url.slice(0, i + 3);
+  const resto = url.slice(i + 3);
+
+  const fim = resto.lastIndexOf('@');
+  const inicio = resto.indexOf(':');
+  if (fim < 0 || inicio < 0 || inicio > fim) return url;
+
+  const usuario = resto.slice(0, inicio);
+  const senha = resto.slice(inicio + 1, fim);
+  const host = resto.slice(fim + 1);
+
+  // Já percent-encoded? Codificar de novo viraria %2540.
+  if (/%[0-9A-Fa-f]{2}/.test(senha)) return url;
+
+  return `${proto}${usuario}:${encodeURIComponent(senha)}@${host}`;
+}
+
+const direta = escaparSenha(bruta);
+if (direta !== bruta) {
+  console.log('→ senha percent-encoded (tinha caractere com significado em URL)');
+}
+
 // Mostra o destino sem a credencial — errar de banco em homologação é fácil,
 // e descobrir depois é caro.
-const alvo = direta.replace(/\/\/([^:]+):[^@]+@/, '//$1:***@');
+const alvo = direta.replace(/:\/\/([^:]+):[^@]*@/, '://$1:***@');
 console.log(`\n→ migrando ${alvo}\n`);
 
-const schema = resolve(raiz, 'packages/database/prisma/schema.prisma');
+// Roda de dentro de packages/database com caminho RELATIVO. O caminho absoluto
+// contém espaço ("Insted - CPA") e, com `shell: true` no Windows, o cmd
+// reparte os argumentos no espaço — o Prisma recebia "...\Insted" e reclamava
+// de datasource ausente, erro que não tem nada a ver com a causa.
+const cwd = resolve(raiz, 'packages/database');
 const rodar = (args) =>
-  execFileSync('npx', ['prisma', ...args, '--schema', schema], {
+  execFileSync('npx', ['prisma', ...args, '--schema', 'prisma/schema.prisma'], {
     stdio: 'inherit',
+    cwd,
     env: { ...process.env, DATABASE_URL: direta },
     shell: process.platform === 'win32',
   });
