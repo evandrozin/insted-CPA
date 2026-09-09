@@ -20,7 +20,7 @@ Ambiente de homologação do CPA, separado do desenvolvimento local.
 3. Rode:
 
 ```bash
-npm.cmd run db:homolog
+npm.cmd run homolog -- migrar
 ```
 
 O script usa a conexão **direta** para migrar e nunca imprime a senha — só o
@@ -56,12 +56,20 @@ exatamente o caso para o qual o pooler existe — daí `?pgbouncer=true` e
 ## Depois do schema
 
 ```bash
-npm.cmd run db:formularios     # blocos e questões da CPA
-npm.cmd run admin -- criar --email=… --nome="…"
+npm.cmd run homolog -- formularios
+npm.cmd run homolog -- admin criar --email=… --nome="…"
+npm.cmd run homolog -- admin listar
 ```
 
-Ambos leem `DATABASE_URL` do `.env` — aponte para homologação antes de rodar,
-ou vai popular o banco local sem perceber.
+Todos os comandos de homologação passam por esse mesmo invólucro, e é de
+propósito: a alternativa seria exportar `DATABASE_URL` no terminal antes de
+rodar, e aquela variável fica valendo pelo resto da sessão — o comando
+seguinte, um seed ou um reset, iria para homologação sem avisar. Aqui a
+conexão vive só durante o processo filho, e o destino aparece na primeira
+linha da saída.
+
+Os mesmos comandos sem o invólucro (`npm run admin`, `npm run db:formularios`)
+continuam valendo para o banco local.
 
 ## O que NÃO replicar de desenvolvimento
 

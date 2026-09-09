@@ -14,7 +14,7 @@
     "db:reset": "prisma migrate reset",
     "db:formularios": "tsx prisma/formularios-2025.ts",
     "admin": "tsx prisma/admin.ts",
-    "db:homolog": "node ./scripts/deploy-homologacao.mjs"
+    "homolog": "node ./scripts/homologacao.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
