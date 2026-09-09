@@ -22,7 +22,8 @@
     "alvos": "npm run alvos -w @insted/avaliacao --",
     "admin": "npm run admin -w @insted/database --",
     "homolog": "npm run homolog -w @insted/database --",
-    "db:formularios-2026": "npm run db:formularios-2026 -w @insted/database"
+    "db:formularios-2026": "npm run db:formularios-2026 -w @insted/database",
+    "db:demo": "npm run db:demo -w @insted/database"
   },
   "devDependencies": {
     "turbo": "^2.3.0",
