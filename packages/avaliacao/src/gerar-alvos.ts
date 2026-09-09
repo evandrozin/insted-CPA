@@ -12,8 +12,11 @@
  * 2. **Modalidade muda a pergunta.** Uma disciplina EAD e uma presencial não
  *    recebem o mesmo questionário — em 2025 isso eram dois formulários
  *    separados no Drive. Aqui um bloco declara
- *    `targetFiltro = { "modalidades": ["EAD"] }` e só gera alvos das ofertas
- *    daquela modalidade.
+ *    `targetFiltro = { "modalidades": ["EAD"] }`. Num bloco repetível isso
+ *    gera alvos só das ofertas daquela modalidade; num bloco fixo, faz o
+ *    bloco inteiro aparecer só para quem cursa aquela modalidade — é o que
+ *    separa a infraestrutura perguntada ao aluno EAD (AVA, tutoria) da
+ *    perguntada ao presencial (laboratório, convivência).
  *
  * Ofertas com modalidade NAO_INFORMADA não entram em bloco filtrado — entram
  * só em bloco sem filtro. Elas são relatadas ao final: silenciar isso faria o
@@ -183,10 +186,29 @@ export class GeradorDeAlvos {
         }[] = [];
         let ordem = 0;
 
+        // Modalidades que este aluno de fato cursa nos semestres do ciclo.
+        // Serve para os blocos NÃO repetíveis: a infraestrutura perguntada a
+        // quem estuda a distância não é a mesma — laboratório e espaço de
+        // convivência não fazem sentido para ele, e o AVA e a tutoria não
+        // fazem para quem é presencial.
+        const modalidadesDoAluno = new Set(ofertas.map(({ assignment: a }) => a.modalidade));
+
         for (const bloco of periodForm.form.blocos) {
           const filtro = lerFiltro(bloco.targetFiltro);
 
           if (!bloco.repetivel) {
+            // Bloco fixo com filtro de modalidade só aparece para quem cursa
+            // aquela modalidade. Sem nenhuma oferta identificada, o bloco
+            // filtrado não entra: é melhor faltar pergunta do que fazer a
+            // errada — e a contagem de ofertas sem modalidade é relatada no
+            // fim justamente para que isso não passe batido.
+            if (
+              filtro.modalidades?.length &&
+              !filtro.modalidades.some((m) => modalidadesDoAluno.has(m))
+            ) {
+              continue;
+            }
+
             alvos.push({
               blockId: bloco.id,
               targetType: bloco.targetType,

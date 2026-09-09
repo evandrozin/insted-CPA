@@ -1,0 +1,5081 @@
+{
+ "questionario_discente_EAD": [
+  {
+   "titulo": "Questões",
+   "grupo": "perfil",
+   "questoes": [
+    {
+     "n": 1,
+     "grupo": null,
+     "secao": "Caracterização do Curso e da Turma",
+     "enunciado": "Qual o seu curso?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Administração",
+      "Gestão Comercial",
+      "Gestão de Recursos Humanos",
+      "Gestão Pública",
+      "Pedagogia",
+      "2. Qual a sua turma? *",
+      "1º semestre - N1",
+      "2º semestre - N2",
+      "3º semestre - N3",
+      "4º semestre - N4",
+      "5º semestre - N5",
+      "6º semestre - N6",
+      "7º semestre - N7",
+      "8º semestre - N8"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 3,
+     "grupo": null,
+     "secao": "Infraestrutura",
+     "enunciado": "Como você avalia a infraestrutura das salas de aula (iluminação, ventilação, cadeiras, quadros, projetores, etc.)?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 4,
+     "grupo": null,
+     "secao": "Infraestrutura",
+     "enunciado": "Como você avalia o acesso à biblioteca (física e/ou digital), em termos de acervo, espaço e recursos disponíveis?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 5,
+     "grupo": null,
+     "secao": "Infraestrutura",
+     "enunciado": "Como você avalia a estruturação e a usabilidade do Ambiente Virtual de Aprendizagem (AVA)?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": true,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 6,
+     "grupo": null,
+     "secao": "Tutoria",
+     "enunciado": "Como você avalia a atuação dos tutores com relação a: tempo de resposta às solicitações; qualidade das respostas; resolução dos problemas apresentados?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 7,
+     "grupo": null,
+     "secao": "Tutoria",
+     "enunciado": "Deseja fazer algum comentário sobre seu curso ou sobre a TUTORIA a distância?",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 8,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "Como você avalia o domínio do conteúdo demonstrado pelos professores nas disciplinas?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 9,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "Como você avalia a didática utilizada pelos professores para facilitar a compreensão dos conteúdos?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 10,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "Como você avalia a articulação do professor com o ambiente virtual (AVA) para a promoção das aulas?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 11,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "Como você avalia o comprometimento dos professores com o processo de ensino-aprendizagem?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 12,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "Como você avalia a qualificação e diversidade do corpo docente (formação acadêmica, experiências profissionais, atuação em diferentes áreas)?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 13,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "CAMPO DISSERTATIVO (Até 500 caracteres) Prezado(a) acadêmico(a), estamos muito felizes que você chegou até aqui! No campo abaixo você pode deixar alguma sugestão, consideração ou elogio sobre a infraestrutura, o corpo docente ou qualquer outra área da faculdade. Por favor, não se identifique. (ATENÇÃO: PREENCHIMENTO OPCIONAL).",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    }
+   ]
+  }
+ ],
+ "questionario_discente_presencial_exemplo": [
+  {
+   "titulo": "Questões",
+   "grupo": "perfil",
+   "questoes": [
+    {
+     "n": 1,
+     "grupo": null,
+     "secao": "Caracterização do Curso e Turma",
+     "enunciado": "Qual o seu curso?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Odontologia"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 2,
+     "grupo": null,
+     "secao": "Caracterização do Curso e Turma",
+     "enunciado": "Qual a sua turma?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "2º semestre (Matutino) - M2"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 3,
+     "grupo": null,
+     "secao": "Infraestrutura",
+     "enunciado": "Como você avalia a infraestrutura das salas de aula (iluminação, ventilação, cadeiras, quadros, projetores, etc.)?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 4,
+     "grupo": null,
+     "secao": "Infraestrutura",
+     "enunciado": "Como você avalia o acesso à biblioteca (física e/ou digital), em termos de acervo, espaço e recursos disponíveis?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 5,
+     "grupo": null,
+     "secao": "Infraestrutura",
+     "enunciado": "Como você avalia a estrutura e os equipamentos dos laboratórios utilizados em seu curso (se aplicável)?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": true,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 6,
+     "grupo": null,
+     "secao": "Infraestrutura",
+     "enunciado": "Como você avalia os espaços de convivência (cantina, banheiros, conectividade, etc.) da faculdade?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 7,
+     "grupo": null,
+     "secao": "Infraestrutura",
+     "enunciado": "Considerando o ambiente geral da instituição (limpeza, sinalização, acessibilidade, segurança, manutenção), como você o avalia?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 8,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "Como você avalia o domínio do conteúdo demonstrado pelos professores nas disciplinas?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 9,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "Como você avalia a didática utilizada pelos professores para facilitar a compreensão dos conteúdos?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 10,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "Como você avalia a articulação do professor com o ambiente virtual (AVA) para a promoção das aulas?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 11,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "Como você avalia o comprometimento dos professores com o processo de ensino-aprendizagem?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 12,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "Como você avalia a qualificação e diversidade do corpo docente (formação acadêmica, experiências profissionais, atuação em diferentes áreas)?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Ruim",
+       "2": "Regular",
+       "3": "Bom",
+       "4": "Muito bom",
+       "5": "Excelente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "qualidade"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 13,
+     "grupo": null,
+     "secao": "Corpo Docente",
+     "enunciado": "CAMPO DISSERTATIVO (Até 500 caracteres) Prezado(a) acadêmico(a), estamos muito felizes que você chegou até aqui! No campo abaixo você pode deixar alguma sugestão, consideração ou elogio sobre a infraestrutura, o corpo docente ou qualquer outra área da faculdade. Por favor, não se identifique. (ATENÇÃO: PREENCHIMENTO OPCIONAL). As próximas questões referem-se à Eficácia Docente, à Condução da Disciplina, ao Não são perguntas obrigatórias. Ao final, você poderá fazer comentários sobre cada professor.",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 14,
+     "grupo": null,
+     "secao": "Como você avalia:",
+     "enunciado": "Prof. MARCO PETRY LAUREANO LEME Disciplina: Anatomia de Cabeça e Pescoço",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "1 2 3 4 5",
+      "A apresentação",
+      "da disciplina,",
+      "incluindo Plano de",
+      "ensino, propostas",
+      "e ações, feitas",
+      "pelo docente no",
+      "início do",
+      "semestre?",
+      "A clareza do(a)",
+      "docente no",
+      "compartilhamento",
+      "do conhecimento?",
+      "A organização e a",
+      "dinâmica das",
+      "aulas conduzidas",
+      "pelo(a) docente?",
+      "A utilização de",
+      "metodologias",
+      "ativas, como a",
+      "postagem",
+      "antecipada de",
+      "materiais no AVA?",
+      "O relacionamento",
+      "entre professor(a)",
+      "e aluno(a), no que",
+      "se refere ao",
+      "favorecimento do",
+      "aprendizado?",
+      "O ambiente da",
+      "sala de aula, no",
+      "que se refere à",
+      "promoção do",
+      "debate de ideias e",
+      "à interação entre",
+      "os alunos?",
+      "AO parmombieonçtãeoddaa",
+      "rseafllaexdãeoasuolab,renoos",
+      "cqounetseeúdreofseeresàua",
+      "rperloemvâonçcãiao pdaora as",
+      "ddeembaatneddaesiddaeias e",
+      "sàoicniteedraaçdãeo? entre",
+      "A atuação do(a)",
+      "dAopcreonmteodçãiaontdeade",
+      "creofmlepxãoortasmobernetooss",
+      "icnoandteeqúudaodsoesseuma",
+      "srealleavdâencaiualap?ara as",
+      "demandas da",
+      "Osoccoiemdpardoem? isso",
+      "do(a) docente",
+      "cAoamtuoação do(a)",
+      "adporceenndtiezaddiaonrteeadl e",
+      "dcoosmaplourntoasm?entos",
+      "inadequados em",
+      "Osarleasdpeeiatouldao?(a)",
+      "docente ao",
+      "hOocráormiopdroeminiíscsioo e",
+      "tdéorm(ai)ndoodcaesnte",
+      "acuolmaso?",
+      "aprendizado real",
+      "Adocsoanleuxnãoose?ntre",
+      "os conteúdos",
+      "eOnrseinspadeiotos edoo(aq)ue",
+      "édoccoebnratedoaonas",
+      "ahvoaráliariçoõdeesidnaício e",
+      "dtéisrmcipinlionad?as",
+      "aulas?",
+      "A conexão entre",
+      "ensinados e o que",
+      "é cobrado nas",
+      "avaliações da",
+      "disciplina?"
+     ],
+     "obrigatoria": false
+    },
+    {
+     "n": 15,
+     "grupo": null,
+     "secao": "Como você avalia:",
+     "enunciado": "Deseja fazer algum comentário sobre o(a) professor(a)? Aqui é o espaço pra deixar um elogio, reclamação, observação, etc.",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 16,
+     "grupo": null,
+     "secao": "Como você avalia:",
+     "enunciado": "Profª. ALESSANDRA CARDOSO DA SILVA NASCIMENTO Disciplina: Bioquímica Geral e Aplicada",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "1 2 3 4 5",
+      "A apresentação",
+      "da disciplina,",
+      "incluindo Plano de",
+      "ensino, propostas",
+      "e ações, feitas",
+      "pelo docente no",
+      "início do",
+      "semestre?",
+      "A clareza do(a)",
+      "docente no",
+      "compartilhamento",
+      "do conhecimento?",
+      "A organização e a",
+      "dinâmica das",
+      "aulas conduzidas",
+      "pelo(a) docente?",
+      "A utilização de",
+      "metodologias",
+      "ativas, como a",
+      "postagem",
+      "antecipada de",
+      "materiais no AVA?",
+      "O relacionamento",
+      "entre professor(a)",
+      "e aluno(a), no que",
+      "se refere ao",
+      "favorecimento do",
+      "aprendizado?",
+      "O ambiente da 11/24",
+      "sala de aula, no",
+      "que se refere à",
+      "promoção do",
+      "debate de ideias e",
+      "à interação entre",
+      "os alunos?",
+      "AO parmombieonçtãeoddaa",
+      "rseafllaexdãeoasuolab,renoos",
+      "cqounetseeúdreofseeresàua",
+      "rperloemvâonçcãiao pdaora as",
+      "ddeembaatneddaesiddaeias e",
+      "sàoicniteedraaçdãeo? entre",
+      "A atuação do(a)",
+      "dAopcreonmteodçãiaontdeade",
+      "creofmlepxãoortasmobernetooss",
+      "icnoandteeqúudaodsoesseuma",
+      "srealleavdâencaiualap?ara as",
+      "demandas da",
+      "Osoccoiemdpardoem? isso",
+      "do(a) docente",
+      "cAoamtuoação do(a)",
+      "adporceenndtiezaddiaonrteeadl e",
+      "dcoosmaplourntoasm?entos",
+      "inadequados em",
+      "Osarleasdpeeiatouldao?(a)",
+      "docente ao",
+      "hOocráormiopdroeminiíscsioo e",
+      "tdéorm(ai)ndoodcaesnte",
+      "acuolmaso?",
+      "aprendizado real",
+      "Adocsoanleuxnãoose?ntre",
+      "os conteúdos",
+      "eOnrseinspadeiotos edoo(aq)ue",
+      "édoccoebnratedoaonas",
+      "ahvoaráliariçoõdeesidnaício e",
+      "dtéisrmcipinlionad?as",
+      "aulas?",
+      "A conexão entre",
+      "ensinados e o que",
+      "é cobrado nas",
+      "avaliações da",
+      "disciplina?"
+     ],
+     "obrigatoria": false
+    },
+    {
+     "n": 17,
+     "grupo": null,
+     "secao": "Como você avalia:",
+     "enunciado": "Deseja fazer algum comentário sobre o(a) professor(a)? Aqui é o espaço pra deixar um elogio, reclamação, observação, etc.",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 18,
+     "grupo": null,
+     "secao": "Como você avalia:",
+     "enunciado": "Profª. MICHELE SCHUEROFF SIQUEIRA Disciplina: Ciências dos Materiais Odontológicos",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "1 2 3 4 5",
+      "A apresentação",
+      "da disciplina,",
+      "incluindo Plano de",
+      "ensino, propostas",
+      "e ações, feitas",
+      "pelo docente no",
+      "início do",
+      "semestre?",
+      "A clareza do(a)",
+      "docente no",
+      "compartilhamento",
+      "do conhecimento?",
+      "A organização e a",
+      "dinâmica das",
+      "aulas conduzidas",
+      "pelo(a) docente?",
+      "A utilização de",
+      "metodologias",
+      "ativas, como a",
+      "postagem",
+      "antecipada de",
+      "materiais no AVA?",
+      "O relacionamento",
+      "entre professor(a)",
+      "e aluno(a), no que",
+      "se refere ao",
+      "favorecimento do",
+      "aprendizado?",
+      "O ambiente da 14/24",
+      "sala de aula, no",
+      "que se refere à",
+      "promoção do",
+      "debate de ideias e",
+      "à interação entre",
+      "os alunos?",
+      "AO parmombieonçtãeoddaa",
+      "rseafllaexdãeoasuolab,renoos",
+      "cqounetseeúdreofseeresàua",
+      "rperloemvâonçcãiao pdaora as",
+      "ddeembaatneddaesiddaeias e",
+      "sàoicniteedraaçdãeo? entre",
+      "A atuação do(a)",
+      "dAopcreonmteodçãiaontdeade",
+      "creofmlepxãoortasmobernetooss",
+      "icnoandteeqúudaodsoesseuma",
+      "srealleavdâencaiualap?ara as",
+      "demandas da",
+      "Osoccoiemdpardoem? isso",
+      "do(a) docente",
+      "cAoamtuoação do(a)",
+      "adporceenndtiezaddiaonrteeadl e",
+      "dcoosmaplourntoasm?entos",
+      "inadequados em",
+      "Osarleasdpeeiatouldao?(a)",
+      "docente ao",
+      "hOocráormiopdroeminiíscsioo e",
+      "tdéorm(ai)ndoodcaesnte",
+      "acuolmaso?",
+      "aprendizado real",
+      "Adocsoanleuxnãoose?ntre",
+      "os conteúdos",
+      "eOnrseinspadeiotos edoo(aq)ue",
+      "édoccoebnratedoaonas",
+      "ahvoaráliariçoõdeesidnaício e",
+      "dtéisrmcipinlionad?as",
+      "aulas?",
+      "A conexão entre",
+      "ensinados e o que",
+      "é cobrado nas",
+      "avaliações da",
+      "disciplina?"
+     ],
+     "obrigatoria": false
+    },
+    {
+     "n": 19,
+     "grupo": null,
+     "secao": "Como você avalia:",
+     "enunciado": "Deseja fazer algum comentário sobre o(a) professor(a)? Aqui é o espaço pra deixar um elogio, reclamação, observação, etc.",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 20,
+     "grupo": null,
+     "secao": "Como você avalia:",
+     "enunciado": "Profª. ALESSANDRA CARDOSO DA SILVA NASCIMENTO Disciplina: Fundamentos de Atenção em Saúde I",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "1 2 3 4 5",
+      "A apresentação",
+      "da disciplina,",
+      "incluindo Plano de",
+      "ensino, propostas",
+      "e ações, feitas",
+      "pelo docente no",
+      "início do",
+      "semestre?",
+      "A clareza do(a)",
+      "docente no",
+      "compartilhamento",
+      "do conhecimento?",
+      "A organização e a",
+      "dinâmica das",
+      "aulas conduzidas",
+      "pelo(a) docente?",
+      "A utilização de",
+      "metodologias",
+      "ativas, como a",
+      "postagem",
+      "antecipada de",
+      "materiais no AVA?",
+      "O relacionamento",
+      "entre professor(a)",
+      "e aluno(a), no que",
+      "se refere ao",
+      "favorecimento do",
+      "aprendizado?",
+      "O ambiente da 17/24",
+      "sala de aula, no",
+      "que se refere à",
+      "promoção do",
+      "debate de ideias e",
+      "à interação entre",
+      "os alunos?",
+      "AO parmombieonçtãeoddaa",
+      "rseafllaexdãeoasuolab,renoos",
+      "cqounetseeúdreofseeresàua",
+      "rperloemvâonçcãiao pdaora as",
+      "ddeembaatneddaesiddaeias e",
+      "sàoicniteedraaçdãeo? entre",
+      "A atuação do(a)",
+      "dAopcreonmteodçãiaontdeade",
+      "creofmlepxãoortasmobernetooss",
+      "icnoandteeqúudaodsoesseuma",
+      "srealleavdâencaiualap?ara as",
+      "demandas da",
+      "Osoccoiemdpardoem? isso",
+      "do(a) docente",
+      "cAoamtuoação do(a)",
+      "adporceenndtiezaddiaonrteeadl e",
+      "dcoosmaplourntoasm?entos",
+      "inadequados em",
+      "Osarleasdpeeiatouldao?(a)",
+      "docente ao",
+      "hOocráormiopdroeminiíscsioo e",
+      "tdéorm(ai)ndoodcaesnte",
+      "acuolmaso?",
+      "aprendizado real",
+      "Adocsoanleuxnãoose?ntre",
+      "os conteúdos",
+      "eOnrseinspadeiotos edoo(aq)ue",
+      "édoccoebnratedoaonas",
+      "ahvoaráliariçoõdeesidnaício e",
+      "dtéisrmcipinlionad?as",
+      "aulas?",
+      "A conexão entre",
+      "ensinados e o que",
+      "é cobrado nas",
+      "avaliações da",
+      "disciplina?"
+     ],
+     "obrigatoria": false
+    },
+    {
+     "n": 21,
+     "grupo": null,
+     "secao": "Como você avalia:",
+     "enunciado": "Deseja fazer algum comentário sobre o(a) professor(a)? Aqui é o espaço pra deixar um elogio, reclamação, observação, etc.",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 22,
+     "grupo": null,
+     "secao": "Como você avalia:",
+     "enunciado": "Profª. MAYARA SCHUEROFF SIQUEIRA Disciplina: Histologia e Embriologia Geral",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "1 2 3 4 5",
+      "A apresentação",
+      "da disciplina,",
+      "incluindo Plano de",
+      "ensino, propostas",
+      "e ações, feitas",
+      "pelo docente no",
+      "início do",
+      "semestre?",
+      "A clareza do(a)",
+      "docente no",
+      "compartilhamento",
+      "do conhecimento?",
+      "A organização e a",
+      "dinâmica das",
+      "aulas conduzidas",
+      "pelo(a) docente?",
+      "A utilização de",
+      "metodologias",
+      "ativas, como a",
+      "postagem",
+      "antecipada de",
+      "materiais no AVA?",
+      "O relacionamento",
+      "entre professor(a)",
+      "e aluno(a), no que",
+      "se refere ao",
+      "favorecimento do",
+      "aprendizado?",
+      "O ambiente da 20/24",
+      "sala de aula, no",
+      "que se refere à",
+      "promoção do",
+      "debate de ideias e",
+      "à interação entre",
+      "os alunos?",
+      "AO parmombieonçtãeoddaa",
+      "rseafllaexdãeoasuolab,renoos",
+      "cqounetseeúdreofseeresàua",
+      "rperloemvâonçcãiao pdaora as",
+      "ddeembaatneddaesiddaeias e",
+      "sàoicniteedraaçdãeo? entre",
+      "A atuação do(a)",
+      "dAopcreonmteodçãiaontdeade",
+      "creofmlepxãoortasmobernetooss",
+      "icnoandteeqúudaodsoesseuma",
+      "srealleavdâencaiualap?ara as",
+      "demandas da",
+      "Osoccoiemdpardoem? isso",
+      "do(a) docente",
+      "cAoamtuoação do(a)",
+      "adporceenndtiezaddiaonrteeadl e",
+      "dcoosmaplourntoasm?entos",
+      "inadequados em",
+      "Osarleasdpeeiatouldao?(a)",
+      "docente ao",
+      "hOocráormiopdroeminiíscsioo e",
+      "tdéorm(ai)ndoodcaesnte",
+      "acuolmaso?",
+      "aprendizado real",
+      "Adocsoanleuxnãoose?ntre",
+      "os conteúdos",
+      "eOnrseinspadeiotos edoo(aq)ue",
+      "édoccoebnratedoaonas",
+      "ahvoaráliariçoõdeesidnaício e",
+      "dtéisrmcipinlionad?as",
+      "aulas?",
+      "A conexão entre",
+      "ensinados e o que",
+      "é cobrado nas",
+      "avaliações da",
+      "disciplina?"
+     ],
+     "obrigatoria": false
+    },
+    {
+     "n": 23,
+     "grupo": null,
+     "secao": "Como você avalia:",
+     "enunciado": "Deseja fazer algum comentário sobre o(a) professor(a)? Aqui é o espaço pra deixar um elogio, reclamação, observação, etc.",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 24,
+     "grupo": null,
+     "secao": "Avaliação da Disciplina EAD",
+     "enunciado": "Disciplina: Competências Pessoais e Profissionais II: Metodologia Científica",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "1 2 3 4 5",
+      "A qualidade da",
+      "gravação das",
+      "aulas?",
+      "O tempo de",
+      "duração das",
+      "A explicação do",
+      "professor(a) dos",
+      "assuntos",
+      "abordados?",
+      "A demonstração",
+      "da disciplina em",
+      "conexão com vida",
+      "profissional e",
+      "demandas da",
+      "sociedade?",
+      "A clareza do(a)",
+      "docente no",
+      "compartilhamento",
+      "do conhecimento?",
+      "A organização",
+      "do(a) docente e o",
+      "desenvolvimento",
+      "de uma aula",
+      "dinâmica?",
+      "Conexão entre o",
+      "que é ensinado",
+      "em aula e o que é",
+      "cobrado na",
+      "avaliação da",
+      "disciplina?"
+     ],
+     "obrigatoria": false
+    },
+    {
+     "n": 25,
+     "grupo": null,
+     "secao": "Avaliação da Disciplina EAD",
+     "enunciado": "Deseja fazer algum comentário sobre a oferta da disciplina EAD?",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    }
+   ]
+  }
+ ],
+ "questionario_docente__": [
+  {
+   "titulo": "Perfil e formação docente",
+   "grupo": "perfil",
+   "questoes": [
+    {
+     "n": 1,
+     "grupo": null,
+     "secao": "TÉCNICO E DO CURSO PELO DOCENTE.",
+     "enunciado": "Em qual ou quais Cursos atua ou já atuou?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Administração Presencial",
+      "Ciências Contábeis",
+      "Odontologia",
+      "TADS",
+      "Estética e Cosmética",
+      "Pedagogia Presencial",
+      "Direito",
+      "Psicologia",
+      "EAD Gestão Pública",
+      "EAD Recursos Humanos",
+      "EAD Comercial",
+      "EAD Pedagogia",
+      "EAD Administração",
+      "Outro:"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 2,
+     "grupo": null,
+     "secao": "TÉCNICO E DO CURSO PELO DOCENTE.",
+     "enunciado": "Quando foi contratado pela Faculdade INSTED? (exemplo: 2021/2)",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 3,
+     "grupo": null,
+     "secao": "TÉCNICO E DO CURSO PELO DOCENTE.",
+     "enunciado": "Em que ano você nasceu?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Entre 1946 e 1964",
+      "entre 1965 e 1980",
+      "entre 1981 e 1996",
+      "entre 1997 e 2010",
+      "a partir de 2010"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 4,
+     "grupo": null,
+     "secao": "TÉCNICO E DO CURSO PELO DOCENTE.",
+     "enunciado": "Desde que foi contratado, teve algum treinamento ou capacitação em Metodologias Ativas?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Nunca",
+      "Só me explicaram de uma forma INFORMAL",
+      "A coordenação de curso me orientou/explicou o uso das metodologias",
+      "Frequentemente conversamos com nossos pares sobre o uso das metodologias",
+      "ativas",
+      "Participei de treinamentos formais sobre metodologias ativas",
+      "Estudo por conta própria e utilizo as metodologias ativas",
+      "Outro:"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 5,
+     "grupo": null,
+     "secao": "TÉCNICO E DO CURSO PELO DOCENTE.",
+     "enunciado": "Qual seu nível de preparo e utilização das Metodologias Ativas?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Me sinto muito preparado e utilizo as metodologias ativas",
+      "Me sinto preparado, mas tenho dificuldade em utilizar as metodologias ativas",
+      "Consigo mesclar o uso de metodologias ativas e ensino tradicional",
+      "Não me sinto preparado e não utilizo as metodologias ativas",
+      "Não me sinto preparado e gostaria de ter mais capacitação em metodologias",
+      "ativas",
+      "Não consigo visualizar utilizar metodologias ativas em minhas disciplinas",
+      "Outro:"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 6,
+     "grupo": null,
+     "secao": "TÉCNICO E DO CURSO PELO DOCENTE.",
+     "enunciado": "Gostaríamos de um breve relato sobre sua visão da utilização das Metodologias ativas em suas disciplinas.",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 7,
+     "grupo": null,
+     "secao": "TÉCNICO E DO CURSO PELO DOCENTE.",
+     "enunciado": "Em uma nota de 0 a 10, quanto você indicaria a nossa faculdade a um amigo ou familiar?",
+     "tipo": "NPS",
+     "config": {
+      "min": 0,
+      "max": 10
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Autoavaliação — condução das disciplinas",
+   "grupo": "7",
+   "questoes": [
+    {
+     "n": 8,
+     "grupo": "7",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão bem você apresentou e discutiu o Plano de Ensino e Aprendizagem (PEA) no início do semestre?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 9,
+     "grupo": "7",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão bem você cumpriu e avaliou o Plano de Ensino ao final do semestre?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 10,
+     "grupo": "7",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão atualizado e cumprido foi o conteúdo proposto no Plano de Ensino?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 11,
+     "grupo": "7",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão seguro(a) você se sente na transmissão dos conhecimentos durante as aulas?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 12,
+     "grupo": "7",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão clara foi a condução das aulas para o desenvolvimento dos assuntos propostos?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 13,
+     "grupo": "7",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão bem planejadas e preparadas foram suas aulas?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 14,
+     "grupo": "7",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão bem você desenvolveu as avaliações como parte do processo de ensino-aprendizagem?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 15,
+     "grupo": "7",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão eficazes e diversificadas foram as formas que você utilizou para promover a aprendizagem ativa dos estudantes?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 16,
+     "grupo": "7",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão frequentemente você participou das formações em Metodologias Ativas oferecidas pela Instituição?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 17,
+     "grupo": "7",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão bem organizada foi a preparação prévia da sala de aula invertida?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 18,
+     "grupo": "7",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão bem você cumpriu os prazos solicitados pela Coordenação de Curso?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "12345",
+      "8 - AUTO-AVALIAÇÃO - Avalie sua atuação com relação ao Relacionamento com",
+      "os Discentes"
+     ],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Autoavaliação — relacionamento com os discentes",
+   "grupo": "8",
+   "questoes": [
+    {
+     "n": 19,
+     "grupo": "8",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão bem a relação docente-discente favoreceu o aprendizado dos alunos?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 20,
+     "grupo": "8",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão eficaz foi o ambiente de sala de aula em favorecer o debate de ideias?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 21,
+     "grupo": "8",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão bem você discutiu os erros e acertos dos discentes como forma de encorajamento no seu desenvolvimento?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 22,
+     "grupo": "8",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão eficazmente você respondeu aos questionamentos dos discentes?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "12345",
+      "9 - AUTO-AVALIAÇÃO - Avalie sua atuação com relação a sua capacidade de",
+      "motivação à capacitação dos Discentes"
+     ],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Autoavaliação — aprendizagem significativa",
+   "grupo": "9",
+   "questoes": [
+    {
+     "n": 23,
+     "grupo": "9",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão eficaz foi a apresentação de situações reais para favorecer a aprendizagem ativa dos estudantes?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 24,
+     "grupo": "9",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão eficaz foi a apresentação de situações-problema e a discussão das possíveis soluções para o aprendizado dos estudantes?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 25,
+     "grupo": "9",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão bem você promoveu, no início do semestre, a importância do módulo e sua relação com outras áreas do conhecimento?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 26,
+     "grupo": "9",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão eficaz foi o incentivo dado ao discente para desenvolver a capacidade de contextualização dos conteúdos ministrados, bem como o uso do raciocínio e criatividade para a solução de problemas?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 27,
+     "grupo": "9",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Quão eficaz você foi no incentivo a busca de capacitações pelos discentes fora de sala de aula?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "12345",
+      "10 - AUTO-AVALIAÇÃO - Avalie sua atuação com relação ao seu Compromisso",
+      "como Educador(a)"
+     ],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Autoavaliação — comprometimento e comportamento",
+   "grupo": "10",
+   "questoes": [
+    {
+     "n": 28,
+     "grupo": "10",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Procedimento e postura frente ao comportamento inadequado dos discentes?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 29,
+     "grupo": "10",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Comprometimento em valorizar o desenvolvimento dos discentes para a efetiva aprendizagem no módulo?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 30,
+     "grupo": "10",
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Respeito ao horário de início e término das aulas?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 31,
+     "grupo": null,
+     "secao": "Condução das suas Disciplinas",
+     "enunciado": "Deseja fazer algum comentário sobre sua AUTO AVALIAÇÃO? (Aqui pode descrever alguma opinião sobre pontos não abordados, ou justificar alguma resposta)",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    }
+   ]
+  },
+  {
+   "titulo": "Instituição — conhecimento dos documentos institucionais",
+   "grupo": "12",
+   "questoes": [
+    {
+     "n": 32,
+     "grupo": "12",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Qual é o seu grau de conhecimento do PDI (Plano de Desenvolvimento Institucional) da Faculdade Insted?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 33,
+     "grupo": "12",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Qual é o seu grau de conhecimento do PPC (Projeto Pedagógico de Curso) do(s) curso(s) em que você atua ou já atuou na Faculdade Insted?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 34,
+     "grupo": "12",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Quão eficaz é a prática de gestão compartilhada na tomada de decisões pela sua Coordenação de Curso?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 35,
+     "grupo": "12",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Quão clara é comunicada ao docente a sistemática de atividades acadêmicas da Faculdade Insted?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 36,
+     "grupo": "12",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Qual é o seu grau de conhecimento do Plano de Carreira Docente da Faculdade Insted?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 37,
+     "grupo": "12",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a existência de um ambiente propício para o seu desenvolvimento profissional na Faculdade Insted?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "12345",
+      "13 - Em relação a atuação das diversas equipes e setores da Faculdade Insted"
+     ],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Atuação das equipes e setores",
+   "grupo": "13",
+   "questoes": [
+    {
+     "n": 38,
+     "grupo": "13",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "- Como você avalia a atuação da Diretoria da Faculdade Insted?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 39,
+     "grupo": "13",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a atuação da sua Coordenação de Curso?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 40,
+     "grupo": "13",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a atuação do NDE (Núcleo Docente Estruturante) na melhoria do curso?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 41,
+     "grupo": "13",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a atuação da equipe de TI?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 42,
+     "grupo": "13",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a atuação da equipe da Biblioteca?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 43,
+     "grupo": "13",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a atuação da Coordenação do Curso no desenvolvimento do PPC (Projeto Pedagógico do Curso)?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 44,
+     "grupo": "13",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a atuação da equipe de apoio de serviços gerais (limpeza/organização) da Faculdade Insted?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 45,
+     "grupo": "13",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a atuação da equipe da Secretaria Acadêmica no atendimento aos Professores?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 46,
+     "grupo": "13",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a atuação da equipe da Secretaria Acadêmica no atendimento aos Estudantes?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 47,
+     "grupo": "13",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a atuação da equipe dos setores Administrativo e Financeiro?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 48,
+     "grupo": "13",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a atuação do Setor de Recursos Humanos (RH)?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "12345",
+      "14 - Em relação a adequação dos espaços físicos da Faculdade Insted"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 49,
+     "grupo": null,
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "- Em relação a adequação dos espaços físicos da Faculdade Insted Leia cada item e avalie de acordo com a seguinte escala:",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "1 2 3 4 5",
+      "14.7. O",
+      "espaço",
+      "físico e a",
+      "ambientação",
+      "adequados",
+      "para o",
+      "intervalo das",
+      "aulas no",
+      "ambiente",
+      "dos",
+      "docentes?"
+     ],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Espaços físicos",
+   "grupo": "14",
+   "questoes": [
+    {
+     "n": 50,
+     "grupo": "14",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a quantidade e a qualidade dos equipamentos tecnológicos disponíveis para o desenvolvimento de suas funções?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 51,
+     "grupo": "14",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a qualidade da iluminação no recinto de trabalho?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 52,
+     "grupo": "14",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia o sistema de refrigeração e a ventilação no ambiente de trabalho?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 53,
+     "grupo": "14",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia a qualidade e suficiência do mobiliário para desempenhar suas atividades?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 54,
+     "grupo": "14",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia as condições de acessibilidade para pessoas com deficiência, incluindo banheiros especiais?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 55,
+     "grupo": "14",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia as condições sanitárias e de limpeza dos banheiros?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 56,
+     "grupo": "14",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você avalia o espaço físico e a ambientação adequados para o intervalo das aulas no ambiente dos docentes?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "12345",
+      "15 - INSTITUIÇÃO - Avalie a Faculdade INSTED em relação à gestão, ao",
+      "ambiente e às condições de trabalho:"
+     ],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Afirmações sobre a instituição",
+   "grupo": "15",
+   "questoes": [
+    {
+     "n": 57,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Estou ciente do Plano de Desenvolvimento Institucional (PDI) da Faculdade INSTED",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 58,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você se identifica com a afirmação: A coordenação do meu curso pratica a gestão compartilhada nas decisões acadêmicas",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 59,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você se identifica com a afirmação: As atividades acadêmicas são planejadas de forma eficiente e sistemática",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 60,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você se identifica com a afirmação: A instituição promove ações eficazes de interação social com a comunidade",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 61,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "A instituição implementa políticas efetivas para a inclusão social, incluindo a admissão de pessoas com deficiência",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 62,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "A instituição implementa bem as ações voltadas à promoção da cidadania",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 63,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Estou informado sobre o plano de carreira docente e suas possibilidades de progressão",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 64,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "A Faculdade oferece um ambiente propício para meu desenvolvimento profissional",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 65,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "O corpo diretivo da Faculdade atua de forma eficaz em suas funções",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 66,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "A coordenação do meu curso é eficiente na gestão e suporte acadêmico",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 67,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "O Núcleo Docente Estruturante (NDE) contribui significativamente para a melhoria do curso",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 68,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "O setor de informática (TI) atende adequadamente às demandas tecnológicas do curso",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 69,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "O responsável pela biblioteca desempenha suas funções de forma eficiente",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 70,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "A coordenação está envolvida de maneira efetiva no desenvolvimento do Projeto Pedagógico do Curso (PPC)?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 71,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Os funcionários de apoio desempenham suas funções de forma eficiente?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 72,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você se identifica com a afirmação: Os funcionários da Secretaria Acadêmica são acessíveis e prestativos",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 73,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "O acervo bibliográfico atende satisfatoriamente às necessidades de estudos do curso?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 74,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Como você se identifica com a afirmação: As salas de aula possuem infraestrutura adequada para as atividades acadêmicas",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 75,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "A infraestrutura tecnológica disponibilizada é adequada para as atividades do curso?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 76,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Os serviços de apoio disponibilizados no site são eficientes e de fácil acesso?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 77,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Os laboratórios possuem equipamentos suficientes para atender ao número de discentes?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 78,
+     "grupo": "15",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "A limpeza das instalações físicas é satisfatória?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "12345",
+      "16 - INSTITUIÇÃO - Avalie a Faculdade INSTED em relação à adequação dos 22/27",
+      "espaços físicos:"
+     ],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Espaço de trabalho do docente",
+   "grupo": "16",
+   "questoes": [
+    {
+     "n": 79,
+     "grupo": "16",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Os equipamentos tecnológicos disponíveis são adequados em quantidade e qualidade para o desenvolvimento das minhas funções?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 80,
+     "grupo": "16",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "A iluminação no meu local de trabalho é adequada para a realização das minhas atividades?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 81,
+     "grupo": "16",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "O sistema de refrigeração ou ventilação no recinto de trabalho é eficiente e proporciona um ambiente confortável?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 82,
+     "grupo": "16",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "O mobiliário disponível no local de trabalho é de qualidade e adequado para a execução das minhas atividades?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 83,
+     "grupo": "16",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "As condições de acessibilidade para pessoas com deficiência, incluindo banheiros especiais, são adequadas?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 84,
+     "grupo": "16",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Os banheiros da instituição estão em boas condições sanitárias?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 85,
+     "grupo": "16",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "O espaço físico e a ambientação disponível para os docentes no horário de intervalo das aulas são adequados?",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 86,
+     "grupo": null,
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "- Deseja fazer algum comentário sobre os quesitos acima? (aproveite para nos explicar, caso haja alguma insatisfação) 18 - AVALIAÇÃO DISCENTES - Avalie os Discentes 24/27",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    }
+   ]
+  },
+  {
+   "titulo": "Percepção sobre os discentes",
+   "grupo": "18",
+   "questoes": [
+    {
+     "n": 87,
+     "grupo": "18",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "A maioria dos alunos possui uma base de conhecimento anterior adequada para a compreensão do meu módulo",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 88,
+     "grupo": "18",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "A maioria dos discentes demonstra motivação para os estudos diários relacionados ao meu módulo",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 89,
+     "grupo": "18",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Os discentes compreendem bem os textos e conteúdos teóricos envolvidos no meu módulo",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 90,
+     "grupo": "18",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Os discentes aproveitam bem o tempo disponíveis durante as aulas",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 91,
+     "grupo": "18",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Os discentes dedicam tempo suficiente para o estudo do módulo sob minha responsabilidade",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 92,
+     "grupo": "18",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Os discentes demonstram competência e habilidades adequadas na solução de situações-problema durante as avaliações",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 93,
+     "grupo": "18",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "Os discentes demonstram interesse pelo conteúdo do meu módulo",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 94,
+     "grupo": "18",
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "A participação dos discentes nas atividades do meu módulo é satisfatória",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 95,
+     "grupo": null,
+     "secao": "INSTITUIÇÃO - Avalie a Faculdade INSTED",
+     "enunciado": "- Deseja fazer algum comentário sobre avaliação dos discentes? (aproveite para nos explicar, caso haja alguma insatisfação)",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 96,
+     "grupo": null,
+     "secao": "Encerramento",
+     "enunciado": "CAMPO DISSERTATIVO (Até 500 caracteres) Prezado(a) DOCENTE, estamos muito felizes que você chegou até aqui! No campo abaixo você poderá dissertar caso queira deixar alguma sugestão, consideração ou elogio. Favor não se identificar. (ATENÇÃO: PREENCHIMENTO OPCIONAL).",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    }
+   ]
+  }
+ ],
+ "questionario_egressos": [
+  {
+   "titulo": "Identificação e perfil",
+   "grupo": "perfil",
+   "questoes": [
+    {
+     "n": 1,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Nome completo",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 2,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Qual o seu gênero?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Masculino",
+      "Feminino",
+      "Prefiro não informar",
+      "Outro"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 3,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Idade",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 4,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Curso concluído na Faculdade Insted",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 5,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Ano de conclusão",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 6,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Pretende cursar pós-graduação?",
+     "tipo": "SIM_NAO",
+     "config": null,
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 7,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Se você marcou sim, em qual área?",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 8,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Distribuição das disciplinas ao longo dos termos cursados",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Plenamente satisfatória",
+      "Satisfatória",
+      "Pouco satisfatório"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 9,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Carga horária das disciplinas",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Plenamente satisfatória",
+      "Satisfatória",
+      "Pouco satisfatório"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 10,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Adequação dos conteúdos e programas para a formação profissional",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Plenamente satisfatória",
+      "Satisfatória",
+      "Pouco satisfatório"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 11,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Nível de conhecimento do corpo docente",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Excelente",
+      "Bom",
+      "Regular"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 12,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Didática do corpo docente para desenvolver os conteúdos",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Excelente",
+      "Bom",
+      "Regular"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 13,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Formação obtida para atividade profissional",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Excelente",
+      "Bom",
+      "Regular"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 14,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Grau de satisfação com o curso concluído em relação à formação obtida",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Excelente",
+      "Bom",
+      "Regular"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 15,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Espaço físico da Faculdade disponível para o desenvolvimento do curso",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Excelente",
+      "Bom",
+      "Regular"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 16,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Recursos didático-pedagógicos para o desenvolvimento do curso",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Excelente",
+      "Bom",
+      "Regular"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 17,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Ambiente da biblioteca para os estudos exigidos",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Excelente",
+      "Bom",
+      "Regular"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 18,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Recursos de informática para apoiar as atividades dos estudantes",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Excelente",
+      "Bom",
+      "Regular"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 19,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Espaços de convivência",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Excelente",
+      "Bom",
+      "Regular"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 20,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Área de alimentação",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Excelente",
+      "Bom",
+      "Regular"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 21,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Realizou estágio profissional (não curricular) durante a graduação?",
+     "tipo": "SIM_NAO",
+     "config": null,
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 22,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Atividade laboral durante a graduação",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Não trabalhou",
+      "Trabalhou durante todo o curso",
+      "Trabalhou apenas durante uma parte do curso"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 23,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Exerceu seu trabalho",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "No setor público",
+      "No setor privado",
+      "Como autônomo",
+      "Não trabalhei"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 24,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Exerce seu trabalho atual",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Há menos de 01 ano",
+      "Entre 01 e 03 anos",
+      "Entre 03 e 05 anos",
+      "Mais de 05 anos",
+      "Não trabalho"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 25,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Ingressou em seu trabalho atual por meio de",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Concurso Público",
+      "Indicação",
+      "Envio de currículo",
+      "Iniciativa pessoal (trabalho autônomo)",
+      "Não trabalho"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 26,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Seu vínculo de trabalho é",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Estatutário",
+      "Contratado temporariamente",
+      "Contratado por tempo indeterminado, no regime CLT (Consolidação das Leis",
+      "Trabalhistas)",
+      "Contratado por tempo indeterminado",
+      "Informal",
+      "Empregador",
+      "Não trabalho"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 27,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Qual é a sua função e ou cargo atual?",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 28,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Relação de sua função e ou cargo com sua área de formação no curso de graduação",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Grande",
+      "Média",
+      "Pequena",
+      "Nenhuma"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 29,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "A formação recebida na graduação, para o exercício de sua função e ou cargo atual",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Foi necessária",
+      "Desnecessária"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 30,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Se você está trabalhando atualmente, qual a sua renda ou seu salário mensal",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "menor que um 2 salários mínimos",
+      "entre 2 e 5 salários mínimos",
+      "entre 5 e 10 salários mínimos",
+      "entre 10 e 15 salários mínimos",
+      "acima de 15 salários mínimos"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 31,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Expectativa de permanecer no trabalho atual",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Grande",
+      "Média",
+      "Pequena",
+      "Não pretendo permanecer"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 32,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Atividades de formação continuada/treinamento",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Não realizo",
+      "Realizei apenas no início (das atuais atividades laborais) ou (do trabalho",
+      "atual)",
+      "Realizo frequentemente",
+      "Pretendo realizar no futuro"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 33,
+     "grupo": null,
+     "secao": "GRADUAÇÃO",
+     "enunciado": "Espaço livre",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    }
+   ]
+  }
+ ],
+ "questionario_pos_graduacao": [
+  {
+   "titulo": "Perfil do pós-graduando",
+   "grupo": "perfil",
+   "questoes": [
+    {
+     "n": 1,
+     "grupo": null,
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Qual o seu gênero?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Masculino",
+      "Feminino",
+      "Prefiro não informar",
+      "Outro"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 2,
+     "grupo": null,
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Em que ano você nasceu?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Entre 1946 e 1964",
+      "entre 1965 e 1980",
+      "entre 1981 e 1996",
+      "entre 1997 e 2010",
+      "a partir de 2010"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 3,
+     "grupo": null,
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Área do seu curso de Pós Graduação na Faculdade INSTED:",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Pós Graduação na Área Jurídica",
+      "Pós Graduação na Área da Saúde",
+      "Pós Graduação na Área de Gestão e Negócios",
+      "Pós Graduação na Área da Educação",
+      "Outro:"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 4,
+     "grupo": null,
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Ano de início da Pós:",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 5,
+     "grupo": null,
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "O conteúdo do curso está atualizado e alinhado às demandas do mercado e à área de conhecimento.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Concordo totalmente",
+       "2": "Concordo",
+       "3": "Indiferente",
+       "4": "Discordo",
+       "5": "Discordo totalmente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "concordancia"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "O curso",
+   "grupo": "5",
+   "questoes": [
+    {
+     "n": 6,
+     "grupo": "5",
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "O projeto pedagógico do curso (matriz curricular, objetivos, metodologias) é claro e bem divulgado.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Concordo totalmente",
+       "2": "Concordo",
+       "3": "Indiferente",
+       "4": "Discordo",
+       "5": "Discordo totalmente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "concordancia"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 7,
+     "grupo": "5",
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Há integração entre teoria e prática nas disciplinas do curso.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Concordo totalmente",
+       "2": "Concordo",
+       "3": "Indiferente",
+       "4": "Discordo",
+       "5": "Discordo totalmente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "concordancia"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 8,
+     "grupo": null,
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "As salas de aula/laboratórios utilizados para o curso são adequados às atividades propostas. (Avalie o ambiente virtual se sua pós é EAD)",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Concordo totalmente",
+       "2": "Concordo",
+       "3": "Indiferente",
+       "4": "Discordo",
+       "5": "Discordo totalmente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "concordancia"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Infraestrutura",
+   "grupo": "6",
+   "questoes": [
+    {
+     "n": 9,
+     "grupo": "6",
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "A biblioteca física/virtual é suficiente em relação à quantidade e qualidade do acervo.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Concordo totalmente",
+       "2": "Concordo",
+       "3": "Indiferente",
+       "4": "Discordo",
+       "5": "Discordo totalmente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "concordancia"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 10,
+     "grupo": "6",
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Os recursos tecnológicos (Ambiente Virtual de Aprendizagem, wi-fi, computadores, etc) são acessíveis e funcionam bem.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Concordo totalmente",
+       "2": "Concordo",
+       "3": "Indiferente",
+       "4": "Discordo",
+       "5": "Discordo totalmente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "concordancia"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 11,
+     "grupo": null,
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Os(as) professores(as) demonstram domínio dos conteúdos ministrados.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Concordo totalmente",
+       "2": "Concordo",
+       "3": "Indiferente",
+       "4": "Discordo",
+       "5": "Discordo totalmente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "concordancia"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Corpo docente",
+   "grupo": "7",
+   "questoes": [
+    {
+     "n": 12,
+     "grupo": "7",
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Os(as) professores(as) são acessíveis para esclarecimento de dúvidas e orientações.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Concordo totalmente",
+       "2": "Concordo",
+       "3": "Indiferente",
+       "4": "Discordo",
+       "5": "Discordo totalmente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "concordancia"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 13,
+     "grupo": "7",
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Há incentivo à participação dos alunos em atividades de pesquisa, extensão ou inovação.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Concordo totalmente",
+       "2": "Concordo",
+       "3": "Indiferente",
+       "4": "Discordo",
+       "5": "Discordo totalmente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "concordancia"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 14,
+     "grupo": null,
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "A coordenação do curso é acessível e responde prontamente às demandas dos alunos.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Concordo totalmente",
+       "2": "Concordo",
+       "3": "Indiferente",
+       "4": "Discordo",
+       "5": "Discordo totalmente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "concordancia"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Coordenação do curso",
+   "grupo": "8",
+   "questoes": [
+    {
+     "n": 15,
+     "grupo": "8",
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Os processos acadêmico-administrativos são claros e bem comunicados.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Concordo totalmente",
+       "2": "Concordo",
+       "3": "Indiferente",
+       "4": "Discordo",
+       "5": "Discordo totalmente"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "concordancia"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 16,
+     "grupo": null,
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Qual o seu grau de satisfação geral com o curso.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito satisfeito",
+       "2": "Satisfeito",
+       "3": "Indiferente",
+       "4": "Insatisfeito",
+       "5": "Muito insatisfeito"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 17,
+     "grupo": null,
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "Em uma nota de 0 a 10, quanto você indicaria a nossa faculdade a um amigo ou familiar?",
+     "tipo": "NPS",
+     "config": {
+      "min": 0,
+      "max": 10
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 18,
+     "grupo": null,
+     "secao": "Garantimos o sigilo quanto ao seu nome ou qualquer",
+     "enunciado": "CAMPO DISSERTATIVO (Até 500 caracteres) Prezado(a) pós graduando(a), estamos muito felizes que você chegou até aqui! No campo abaixo você poderá dissertar caso queira deixar alguma sugestão, consideração ou elogio. Favor não se identificar. (ATENÇÃO: PREENCHIMENTO OPCIONAL).",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    }
+   ]
+  }
+ ],
+ "questionario_tecnico_administrativo": [
+  {
+   "titulo": "Perfil do colaborador",
+   "grupo": "perfil",
+   "questoes": [
+    {
+     "n": 1,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Qual é o seu gênero?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Masculino",
+      "Feminino",
+      "Prefiro não informar",
+      "Outro:"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 2,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Em que ano você nasceu?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Entre 1946 e 1964",
+      "entre 1965 e 1980",
+      "entre 1981 e 1996",
+      "entre 1997 e 2010",
+      "a partir de 2010",
+      "Outro:"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 3,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Qual o seu estado civil?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Solteiro(a).",
+      "Casado(a).",
+      "Separado(a) judicialmente/divorciado(a).",
+      "Viúvo(a).",
+      "Outro:"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 4,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Com relação à sua cor ou raça, como você se considera?",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 5,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Até que etapa de escolarização você concluiu?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Nenhuma.",
+      "Ensino Fundamental I: 1º ao 5º ano (1ª a 4ª série).",
+      "Ensino Fundamental II: 6º ao 9º ano (5ª a 8ª série).",
+      "Ensino Médio Incompleto",
+      "Ensino Médio Completo",
+      "Ensino Superior - Graduação Completo",
+      "Pós-graduação Lato Sensu",
+      "Pós-graduação Stricto Sensu",
+      "Doutorado",
+      "Outro:"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 6,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Com qual frequência você atende ou tem contato com os seguintes públicos:",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Nenhuma Pouca Regularmente Muita",
+      "Estudantes",
+      "Professores",
+      "Colaboradores",
+      "Outros",
+      "públicos"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 7,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Caso atenda um ou mais públicos citados anteriormente. Como se sente com relação a esse atendimento?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Não atendo nenhum público citado",
+      "Me sinto completamente preparado para o atendimento que realizo",
+      "Me sinto preparado, mas sinto que preciso melhorar em alguns aspectos que",
+      "dependem de mim mesmo",
+      "Me sinto preparado, mas gostaria de mais treinamento na função específica",
+      "que exerço",
+      "Não me sinto preparado, preciso de treinamento",
+      "Outro:",
+      "8 - AUTO-AVALIAÇÃO - Avalie sua atuação como Colaborador"
+     ],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Autoavaliação do colaborador",
+   "grupo": "8",
+   "questoes": [
+    {
+     "n": 8,
+     "grupo": "8",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Meu nível de motivação para realizar meu trabalho é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 9,
+     "grupo": "8",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Meu nível de compreensão sobre meu papel na instituição é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 10,
+     "grupo": "8",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "O aproveitamento do meu tempo durante o expediente é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 11,
+     "grupo": "8",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Meu esforço para aprender e me adaptar às tarefas do meu setor é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 12,
+     "grupo": "8",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "A qualidade do meu relacionamento com os colegas do meu setor é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 13,
+     "grupo": "8",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "A qualidade do meu relacionamento com colegas de outros setores da instituição é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 14,
+     "grupo": "8",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Minha pontualidade em relação a compromissos e atividades é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 15,
+     "grupo": "8",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Minhas competências e habilidades na solução de problemas no dia a dia são...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 16,
+     "grupo": "8",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Meu conhecimento sobre as atividades de outros setores e sobre as atualizações da faculdade é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 17,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Nos diga qual(is) treinamento(s) gostaria de participar que acredita irá MELHORAR seu desempenho profissional e/ou pessoal.",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 18,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Deseja fazer algum comentário sobre sua atuação/auto avaliação na Instituição?",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 19,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Em uma nota de 0 a 10, quanto você indicaria a nossa faculdade a um amigo ou familiar?",
+     "tipo": "NPS",
+     "config": {
+      "min": 0,
+      "max": 10
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Percepção sobre a instituição",
+   "grupo": "12",
+   "questoes": [
+    {
+     "n": 20,
+     "grupo": "12",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "O nível de reconhecimento da Faculdade Insted pela comunidade acadêmica é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 21,
+     "grupo": "12",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "O nível de reconhecimento da Faculdade Insted pela comunidade externa é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 22,
+     "grupo": "12",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "As condições ambientais da minha sala de trabalho (mobiliário, ventilação, iluminação, etc.) são...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 23,
+     "grupo": "12",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "O nível de segurança das instalações da Instituição é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 24,
+     "grupo": "12",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "O nível de segurança no entorno da Instituição é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 25,
+     "grupo": "12",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "A qualidade dos serviços de apoio ao colaborador oferecidos pela Instituição é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 26,
+     "grupo": "12",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "A qualidade da atuação da diretoria da Instituição é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 27,
+     "grupo": "12",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "O apoio oferecido pela Instituição para meu aperfeiçoamento e estudos é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 28,
+     "grupo": "12",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "A qualidade da limpeza e conservação das instalações físicas da Instituição é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 29,
+     "grupo": "12",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "A sistemática de comunicação e troca de informações da Instituição com os colaboradores é...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 30,
+     "grupo": "12",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "A qualidade e frequência dos eventos e iniciativas de Responsabilidade Social promovidos pela Instituição são...",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 31,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Deseja fazer algum comentário sobre a Instituição? GESTÃO - Avaliação da Gestão da Instituição 14/29",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    }
+   ]
+  },
+  {
+   "titulo": "Clima organizacional e expectativas",
+   "grupo": "14",
+   "questoes": [
+    {
+     "n": 32,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Eu tenho clareza sobre o que a instituição espera do meu trabalho.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 33,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Eu compreendo as expectativas da instituição quanto ao futuro da Faculdade Insted.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 34,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Sei claramente o que meu gestor espera em termos de resultados do meu trabalho.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 35,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Os materiais e recursos que preciso para desempenhar bem minhas funções estão disponíveis.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 36,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Eu me sinto apoiado pela instituição para realizar meu melhor trabalho diariamente.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 37,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Eu tenho clareza sobre as funções que devo desempenhar.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 38,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Minha chefia imediata demonstra preocupação com meu bem-estar pessoal.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 39,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Há alguém na instituição que apoia e incentiva meu desenvolvimento profissional.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 40,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Eu me sinto ouvido e considerado pela minha chefia imediata.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 41,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Eu me sinto ouvido e considerado pelos meus colegas de trabalho.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 42,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "A instituição me faz sentir que meu trabalho é valorizado e importante.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 43,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Eu percebo que meus colegas estão comprometidos com a qualidade do trabalho em equipe.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 44,
+     "grupo": "14",
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "No último ano, tive oportunidades de aprendizado e crescimento dentro da instituição.",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    },
+    {
+     "n": 45,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "Deseja fazer algum comentário sobre a Gestão? Aqui é o lugar para descrever algo bom ou ruim e justificar suas respostas, se desejar.",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 46,
+     "grupo": null,
+     "secao": "CORPO TÉCNICO ADMINISTRATIVO.",
+     "enunciado": "De forma geral, como você avalia sua satisfação no trabalho? (sendo",
+     "tipo": "LIKERT",
+     "config": {
+      "min": 1,
+      "max": 5,
+      "labels": {
+       "1": "Muito insatisfatório",
+       "2": "Insatisfatório",
+       "3": "Adequado",
+       "4": "Satisfatório",
+       "5": "Muito satisfatório"
+      },
+      "permiteNaoSeAplica": false,
+      "escala": "satisfacao_numerica"
+     },
+     "opcoes": [],
+     "obrigatoria": true
+    }
+   ]
+  },
+  {
+   "titulo": "Setores e gestores",
+   "grupo": "17",
+   "questoes": [
+    {
+     "n": 47,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com os diretores: Neca e Fernando",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 48,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com o diretor: Marcelo Salomão",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 49,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com o setor financeiro",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 50,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com o setor comercial.",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 51,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com o setor de TI",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 52,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com o setor da secretaria acadêmica.",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 53,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com o setor pedagógico",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 54,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com o setor de organização estrutural e limpeza",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 55,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com o setor da pós-graduação",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 56,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com o setor de marketing",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 57,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com o setor de RH (Recursos Humanos)",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 58,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com a ouvidoria",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 59,
+     "grupo": "17",
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Como você avalia seu contato e grau de resolução de problemas com a portaria",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "012345"
+     ],
+     "obrigatoria": true
+    },
+    {
+     "n": 60,
+     "grupo": null,
+     "secao": "AVALIAÇÃO SETORES - Avaliação dos Setores e seus respectivos Gestores",
+     "enunciado": "Deseja fazer algum comentário sobre os Setores e seus gestores? (caso queira explicar sua nota... por favor faça isso aqui - pode ser um Elogio ou Reclamação)",
+     "tipo": "TEXTO_LIVRE",
+     "config": {
+      "maxLength": 500
+     },
+     "opcoes": [],
+     "obrigatoria": false
+    },
+    {
+     "n": 61,
+     "grupo": null,
+     "secao": "CPA (Comissão Própria de Avaliação)",
+     "enunciado": "Você sabe qual a importância da CPA (Comissão Própria de Avaliação)?",
+     "tipo": "ESCOLHA_UNICA",
+     "config": null,
+     "opcoes": [
+      "Sim, e sei explicar para meus colegas",
+      "Sei um pouco, e não saberia explicar",
+      "Não sei do que se trata e quero mais informações",
+      "Outro:"
+     ],
+     "obrigatoria": true
+    }
+   ]
+  }
+ ]
+}

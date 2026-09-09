@@ -3,6 +3,7 @@
  *
  *   npm.cmd run homolog -- migrar
  *   npm.cmd run homolog -- formularios
+ *   npm.cmd run homolog -- formularios-2026
  *   npm.cmd run homolog -- admin criar --email=fulano@insted.edu.br --nome="Fulano"
  *   npm.cmd run homolog -- admin listar
  *
@@ -115,6 +116,10 @@ switch (comando) {
     rodar(['tsx', 'prisma/formularios-2025.ts']);
     break;
 
+  case 'formularios-2026':
+    rodar(['tsx', 'prisma/formularios-2026.ts']);
+    break;
+
   case 'admin':
     rodar(['tsx', 'prisma/admin.ts', ...resto]);
     break;
@@ -128,6 +133,7 @@ switch (comando) {
 
   npm.cmd run homolog -- migrar
   npm.cmd run homolog -- formularios
+ *   npm.cmd run homolog -- formularios-2026
   npm.cmd run homolog -- admin listar
   npm.cmd run homolog -- admin criar --email=<e-mail> --nome="<nome>"
   npm.cmd run homolog -- admin senha --email=<e-mail>
