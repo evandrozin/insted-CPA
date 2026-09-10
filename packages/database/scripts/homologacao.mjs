@@ -5,6 +5,7 @@
  *   npm.cmd run homolog -- formularios
  *   npm.cmd run homolog -- formularios-2026
  *   npm.cmd run homolog -- demo
+ *   npm.cmd run homolog -- jacad <subcomando do CLI do JACAD>
  *   npm.cmd run homolog -- admin criar --email=fulano@insted.edu.br --nome="Fulano"
  *   npm.cmd run homolog -- admin listar
  *
@@ -125,6 +126,17 @@ switch (comando) {
     rodar(['tsx', 'prisma/demonstracao.ts']);
     break;
 
+  case 'jacad':
+    // A importação continua saindo DESTA máquina — é o IP daqui que o JACAD
+    // conhece. O que muda é só onde os dados são gravados.
+    execFileSync('npx', ['tsx', 'src/cli.ts', ...resto], {
+      stdio: 'inherit',
+      cwd: resolve(raiz, 'packages/jacad'),
+      env: { ...process.env, DATABASE_URL: url },
+      shell: process.platform === 'win32',
+    });
+    break;
+
   case 'admin':
     rodar(['tsx', 'prisma/admin.ts', ...resto]);
     break;
@@ -140,6 +152,7 @@ switch (comando) {
   npm.cmd run homolog -- formularios
  *   npm.cmd run homolog -- formularios-2026
  *   npm.cmd run homolog -- demo
+ *   npm.cmd run homolog -- jacad <subcomando do CLI do JACAD>
   npm.cmd run homolog -- admin listar
   npm.cmd run homolog -- admin criar --email=<e-mail> --nome="<nome>"
   npm.cmd run homolog -- admin senha --email=<e-mail>

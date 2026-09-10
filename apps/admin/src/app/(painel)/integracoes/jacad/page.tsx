@@ -1,17 +1,38 @@
 /**
  * Área de importação de dados do JACAD.
  *
- * Somente leitura por enquanto: a execução acontece pelo CLI
- * (`npm run jacad -- …`), como no Insted Hub Digital, que também roda a
- * ingestão por comando de console. Quando a API NestJS entrar (Fase 1), esta
- * tela ganha os botões e passa a disparar os jobs.
+ * Cada passo tem botão, exceto disciplinas — que são milhares de chamadas em
+ * sequência e não cabem no tempo de uma requisição. Esse continua no CLI até
+ * existir fila.
+ *
+ * Os botões rodam no processo do servidor, então dependem de duas condições
+ * do ambiente onde o painel está hospedado: `JACAD_TOKEN` definido e IP de
+ * saída liberado na API. A segunda costuma faltar em serverless, onde o IP
+ * muda a cada execução — o erro traduzido em `actions.ts` diz isso em vez de
+ * repetir "falha na chamada".
  *
  * A página lê o banco direto porque ainda não existe API. Se o Postgres não
  * estiver de pé, ela mostra o estado vazio em vez de estourar.
  */
 import { prisma } from '@insted/database';
+import {
+  conciliarDocentes,
+  promover,
+  sincronizarCursos,
+  sincronizarMatriculas,
+  sincronizarPeriodos,
+  sincronizarTurmas,
+  testarConexao,
+} from './actions';
 
 export const dynamic = 'force-dynamic';
+
+const botao =
+  'rounded-lg bg-brand-teal px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-brand-teal-hover disabled:opacity-40';
+const botaoSecundario =
+  'rounded-lg border border-brand-navy/15 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition-colors hover:border-brand-teal/40 hover:text-brand-teal-hover';
+const seletor =
+  'rounded-lg border border-brand-navy/15 bg-white px-2 py-1.5 text-[11px] text-brand-navy outline-none focus:border-brand-teal';
 
 type EstadoRecurso = {
   chave: string;
@@ -121,6 +142,14 @@ const dataHora = (d: Date | null) =>
 export default async function IntegracaoJacad() {
   const { recursos, cpa, erro } = await carregar();
   const tokenConfigurado = Boolean(process.env.JACAD_TOKEN);
+
+  // Períodos já em staging alimentam os seletores. Antes do primeiro sync a
+  // lista é vazia, e os botões que dependem dela ficam desabilitados — é a
+  // ordem correta de execução virando restrição de tela.
+  const periodos = await prisma.jacadPeriodoLetivo
+    .findMany({ orderBy: [{ ano: 'desc' }, { semestre: 'desc' }], take: 30 })
+    .catch(() => []);
+  const anoAtual = new Date().getFullYear();
   const baseUrl = process.env.JACAD_BASE_URL ?? 'https://insted-developer.jacad.com.br';
 
   return (
@@ -162,11 +191,11 @@ export default async function IntegracaoJacad() {
               )}
             </p>
           </div>
-          <div className="ml-auto">
-            <code className="rounded-lg bg-brand-light px-2.5 py-1.5 font-mono text-xs text-brand-navy">
-              npm run jacad -- testar
-            </code>
-          </div>
+          <form className="ml-auto">
+            <button formAction={testarConexao} className={botaoSecundario} disabled={!tokenConfigurado}>
+              Testar conexão
+            </button>
+          </form>
         </div>
       </section>
 
@@ -217,15 +246,81 @@ export default async function IntegracaoJacad() {
               </div>
 
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                <code className="rounded-lg bg-brand-light px-2.5 py-1.5 font-mono text-[11px] text-brand-navy">
-                  {r.comando}
-                </code>
+                <div className="flex flex-wrap items-center gap-2">
+                  {r.chave === 'PERIODOS_LETIVOS' && (
+                    <form>
+                      <button formAction={sincronizarPeriodos} className={botao} disabled={!tokenConfigurado}>
+                        Importar
+                      </button>
+                    </form>
+                  )}
+
+                  {r.chave === 'CURSOS' && (
+                    <form>
+                      <button formAction={sincronizarCursos} className={botao} disabled={!tokenConfigurado}>
+                        Importar
+                      </button>
+                    </form>
+                  )}
+
+                  {r.chave === 'TURMAS' && (
+                    <form className="flex items-center gap-2">
+                      <input
+                        name="ano"
+                        type="number"
+                        defaultValue={anoAtual}
+                        className={`${seletor} w-20`}
+                        aria-label="Ano das turmas"
+                      />
+                      <button formAction={sincronizarTurmas} className={botao} disabled={!tokenConfigurado}>
+                        Importar
+                      </button>
+                    </form>
+                  )}
+
+                  {r.chave === 'MATRICULAS' && (
+                    <form className="flex items-center gap-2">
+                      <select name="periodo" className={seletor} aria-label="Período letivo">
+                        {periodos.map((p) => (
+                          <option key={p.idPeriodoLetivo} value={p.idPeriodoLetivo}>
+                            {p.ano}.{p.semestre} — {p.descricao ?? p.idPeriodoLetivo}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        formAction={sincronizarMatriculas}
+                        className={botao}
+                        disabled={!tokenConfigurado || periodos.length === 0}
+                      >
+                        Importar
+                      </button>
+                    </form>
+                  )}
+
+                  {/* Disciplinas continua só no CLI: são milhares de chamadas
+                      em sequência, horas de execução. Não cabe numa
+                      requisição, e prometer um botão que estoura o tempo é
+                      pior que não ter botão. */}
+                  {r.chave === 'MATRICULA_DISCIPLINA' && (
+                    <code className="rounded-lg bg-brand-light px-2.5 py-1.5 font-mono text-[11px] text-brand-navy">
+                      {r.comando}
+                    </code>
+                  )}
+                </div>
+
                 <span className="text-xs text-slate-400">
                   {r.ultimaSync
                     ? `última: ${dataHora(r.ultimaSync.em)} · ${r.ultimaSync.status.toLowerCase()}`
                     : 'nunca sincronizado'}
                 </span>
               </div>
+
+              {r.chave === 'MATRICULA_DISCIPLINA' && (
+                <p className="mt-2 text-xs text-brand-orange">
+                  Sem botão de propósito: é uma chamada por matrícula, com pausa de rate limit —
+                  horas de execução. Não cabe no tempo de uma requisição.
+                </p>
+              )}
             </li>
           ))}
         </ol>
@@ -246,9 +341,19 @@ export default async function IntegracaoJacad() {
           CPF. Sem este passo o docente entra sem login.
         </p>
         <div className="mt-4 rounded-2xl border border-brand-navy/10 bg-white px-5 py-4">
-          <code className="rounded-lg bg-brand-light px-2.5 py-1.5 font-mono text-[11px] text-brand-navy">
-            npm run jacad -- conciliar-docentes --periodo=&lt;id&gt;
-          </code>
+          <form className="flex flex-wrap items-center gap-2">
+            <select name="periodo" className={seletor} aria-label="Período letivo">
+              <option value="">todos os períodos</option>
+              {periodos.map((p) => (
+                <option key={p.idPeriodoLetivo} value={p.idPeriodoLetivo}>
+                  {p.ano}.{p.semestre} — {p.descricao ?? p.idPeriodoLetivo}
+                </option>
+              ))}
+            </select>
+            <button formAction={conciliarDocentes} className={botao} disabled={!tokenConfigurado}>
+              Conciliar docentes
+            </button>
+          </form>
         </div>
       </section>
 
@@ -267,9 +372,20 @@ export default async function IntegracaoJacad() {
         </p>
 
         <div className="mt-4 rounded-2xl border border-brand-navy/10 bg-white px-5 py-4">
-          <code className="rounded-lg bg-brand-light px-2.5 py-1.5 font-mono text-[11px] text-brand-navy">
-            npm run jacad -- promover --periodo=&lt;id&gt;
-          </code>
+          <form className="flex flex-wrap items-center gap-2">
+            <select name="periodo" className={seletor} aria-label="Período letivo a promover">
+              {periodos.map((p) => (
+                <option key={p.idPeriodoLetivo} value={p.idPeriodoLetivo}>
+                  {p.ano}.{p.semestre} — {p.descricao ?? p.idPeriodoLetivo}
+                </option>
+              ))}
+            </select>
+            {/* Promoção não fala com a API: lê o staging. Por isso não depende
+                do token nem do IP liberado. */}
+            <button formAction={promover} className={botao} disabled={periodos.length === 0}>
+              Promover
+            </button>
+          </form>
 
           <dl className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-slate-100 sm:grid-cols-4">
             {Object.entries(
