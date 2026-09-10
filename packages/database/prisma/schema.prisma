@@ -144,6 +144,13 @@ model User {
   ultimoAcesso    DateTime?
   senhaProvisoria Boolean    @default(true) // força troca no 1º login
 
+  /// A CPA decidiu o status na mão — a importação não mexe mais nele.
+  ///
+  /// Sem isto, ativar um docente que veio errado do JACAD duraria até a
+  /// próxima importação: o passo de promoção reescreve o status de aluno a
+  /// cada rodada, e o de docente sempre que a conciliação resolve o nome.
+  statusManual      Boolean  @default(false)
+
   /// Cadastrado à mão pelo painel, não importado do JACAD.
   ///
   /// A CPA tem membros que não fazem parte dos quadros da Insted — a

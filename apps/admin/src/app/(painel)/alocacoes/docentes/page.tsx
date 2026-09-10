@@ -1,13 +1,18 @@
 import Link from 'next/link';
 import { prisma } from '@insted/database';
 import { Lista, Etiqueta, lerParams, POR_PAGINA } from '@/components/Lista';
+import { SelecionarTodos } from '@/components/SelecionarTodos';
 import {
   alternarAlocacaoAtiva,
   definirModalidadeAlocacao,
+  definirModalidadeEmLote,
   trocarProfessor,
 } from '../actions';
 
 export const dynamic = 'force-dynamic';
+
+/** Id do formulário de lote — as caixas da tabela o alcançam por `form=`. */
+const LOTE = 'lote-modalidade';
 
 const MODALIDADES = [
   { valor: 'NAO_INFORMADA', rotulo: '— sem definir —' },
@@ -109,6 +114,7 @@ export default async function Docentes({
       total={total}
       href="/alocacoes/docentes"
       colunas={[
+        { titulo: <SelecionarTodos formulario={LOTE} />, estreita: true },
         { titulo: 'Professor' },
         { titulo: 'Disciplina / turma' },
         { titulo: 'Sem.', estreita: true },
@@ -121,6 +127,22 @@ export default async function Docentes({
         const semMod = a.modalidade === 'NAO_INFORMADA';
 
         return [
+          // Congelada não entra no lote: a ação a ignoraria de qualquer
+          // forma, e oferecer a caixa seria prometer o que não acontece.
+          congelada ? (
+            <span className="text-xs text-slate-300" title="Já tem resposta">
+              —
+            </span>
+          ) : (
+            <input
+              type="checkbox"
+              name="ids"
+              value={a.id}
+              form={LOTE}
+              aria-label={`Selecionar ${a.teacher.nome} — ${a.subject.nome}`}
+              className="h-3.5 w-3.5 cursor-pointer accent-[color:var(--color-brand-teal)]"
+            />
+          ),
           <div className="min-w-56">
             <p className={a.ativo ? 'font-medium' : 'font-medium text-slate-400 line-through'}>
               {a.teacher.nome}
@@ -205,6 +227,59 @@ export default async function Docentes({
         ];
       })}
     >
+      {/* ------------------------------------------------- edição em lote */}
+      <form
+        id={LOTE}
+        className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-brand-navy/10 bg-white px-5 py-4"
+      >
+        <input type="hidden" name="volta" value={volta} />
+        <input type="hidden" name="q" value={q} />
+        <input type="hidden" name="f" value={filtro} />
+
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-brand-navy">Definir modalidade em lote</p>
+          <p className="mt-0.5 max-w-2xl text-xs text-slate-500">
+            Marque as linhas e escolha a modalidade — ou aplique ao filtro inteiro, inclusive ao
+            que está fora desta página. Alocações que já receberam resposta ficam de fora: mudar a
+            modalidade delas trocaria as perguntas de um questionário respondido.
+          </p>
+        </div>
+
+        <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+          Modalidade
+          <select
+            name="modalidade"
+            defaultValue="PRESENCIAL"
+            className="mt-1 block rounded-lg border border-brand-navy/15 bg-white px-2 py-1.5 text-xs text-brand-navy outline-none focus:border-brand-teal"
+          >
+            <option value="PRESENCIAL">Presencial</option>
+            <option value="EAD">EAD</option>
+            <option value="SEMIPRESENCIAL">Semipresencial</option>
+            <option value="NAO_INFORMADA">Não informada</option>
+          </select>
+        </label>
+
+        <div className="flex flex-col gap-1.5">
+          <button
+            formAction={definirModalidadeEmLote}
+            name="modo"
+            value="marcadas"
+            className="rounded-lg bg-brand-teal px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-brand-teal-hover"
+          >
+            Aplicar às marcadas
+          </button>
+          <button
+            formAction={definirModalidadeEmLote}
+            name="modo"
+            value="filtro"
+            className="rounded-lg border border-brand-orange/40 px-3 py-1.5 text-[11px] font-semibold text-brand-orange transition-colors hover:bg-brand-orange/10"
+            title="Ignora a seleção e aplica a tudo que casa com o filtro atual"
+          >
+            Aplicar às {total.toLocaleString('pt-BR')} do filtro
+          </button>
+        </div>
+      </form>
+
       <div className="mt-6 flex flex-wrap items-center gap-2">
         {abas.map((aba) => {
           const ativa = filtro === aba.chave;

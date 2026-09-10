@@ -10,7 +10,8 @@ import Link from 'next/link';
 export const POR_PAGINA = 25;
 
 export type Coluna = {
-  titulo: string;
+  /** Texto do cabeçalho — ou um controle, como a caixa "selecionar todos". */
+  titulo: React.ReactNode;
   /** Alinhamento à direita para números. */
   numerica?: boolean;
   /** Não quebra linha — códigos, datas, contagens. */
@@ -111,7 +112,7 @@ export function Lista({
               <tr className="border-b border-slate-100">
                 {colunas.map((c) => (
                   <th
-                    key={c.titulo}
+                    key={typeof c.titulo === 'string' ? c.titulo : 'controle'}
                     className={`px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400 ${
                       c.numerica ? 'text-right' : 'text-left'
                     } ${c.estreita ? 'whitespace-nowrap' : ''}`}

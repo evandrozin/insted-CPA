@@ -19,6 +19,10 @@ export default function Erro({
 }) {
   useEffect(() => {
     console.error(error);
+    // Avisa o aviso de processamento que a ação acabou — mal. Sem isto ele
+    // ficaria por cima desta tela, escondendo justamente a mensagem que a
+    // pessoa precisa ler.
+    window.dispatchEvent(new Event('cpa:acao-terminou'));
   }, [error]);
 
   return (

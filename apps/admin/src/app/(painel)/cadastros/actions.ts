@@ -203,3 +203,97 @@ export async function criarUsuarioManual(dados: FormData): Promise<void> {
   revalidatePath('/cadastros/usuarios');
   redirect(`/cadastros/usuarios?papel=${papel}&ok=${encodeURIComponent(criado.matricula)}`);
 }
+
+/**
+ * Ativa ou inativa um usuário, e marca a decisão como manual.
+ *
+ * A marca não é detalhe: a promoção reescreve o status do aluno a cada
+ * importação e o do docente sempre que a conciliação resolve o nome. Sem
+ * `statusManual`, ativar um professor que veio errado do JACAD duraria até a
+ * próxima rodada — e ninguém ligaria uma coisa à outra.
+ *
+ * O que muda ao ativar um docente: ele passa a entrar no sistema e a receber
+ * a própria autoavaliação. Ser avaliado pelos alunos não depende disso — a
+ * geração de alvos usa a alocação, não o status de quem leciona.
+ */
+export async function alternarUsuarioAtivo(userId: string, dados: FormData): Promise<void> {
+  await exigirPainel();
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, nome: true, status: true, role: true, email: true },
+  });
+  if (!user) throw new Error('Usuário não encontrado.');
+
+  const novo = user.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
+
+  // Ativar quem não tem e-mail real cria uma conta que não entra: o login
+  // por primeiro acesso confere o e-mail do cadastro.
+  if (novo === 'ATIVO' && user.email.endsWith('@sem-email.insted.local')) {
+    throw new Error(
+      `${user.nome} está sem e-mail real. Informe o e-mail institucional antes de ativar — ` +
+        'sem ele a pessoa não consegue fazer o primeiro acesso.',
+    );
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { status: novo, statusManual: true },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      acao: 'USUARIO_STATUS_MANUAL',
+      entidade: 'User',
+      entidadeId: userId,
+      dadosAntes: { status: user.status },
+      dadosDepois: { status: novo, nome: user.nome, papel: user.role },
+    },
+  });
+
+  revalidatePath('/cadastros/usuarios');
+}
+
+/**
+ * Define o e-mail institucional de quem veio sem.
+ *
+ * O JACAD devolve o docente só como nome em texto; sem e-mail ele entra
+ * INATIVO e não acessa nada. Este é o conserto que a secretaria faz caso a
+ * caso, enquanto a planilha definitiva não vem.
+ */
+export async function definirEmailUsuario(userId: string, dados: FormData): Promise<void> {
+  await exigirPainel();
+
+  const email = String(dados.get('email') ?? '').trim().toLowerCase();
+  if (!email.includes('@') || email.length < 6) throw new Error('Informe um e-mail válido.');
+  if (email.endsWith('@sem-email.insted.local')) {
+    throw new Error('Este é o endereço provisório do sistema, não um e-mail real.');
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, nome: true, email: true },
+  });
+  if (!user) throw new Error('Usuário não encontrado.');
+
+  const ocupado = await prisma.user.findFirst({
+    where: { email, id: { not: userId }, deletadoEm: null },
+    select: { nome: true, matricula: true },
+  });
+  if (ocupado) {
+    throw new Error(`Este e-mail já é de ${ocupado.nome} (${ocupado.matricula}).`);
+  }
+
+  await prisma.user.update({ where: { id: userId }, data: { email } });
+  await prisma.auditLog.create({
+    data: {
+      acao: 'USUARIO_EMAIL_DEFINIDO',
+      entidade: 'User',
+      entidadeId: userId,
+      dadosAntes: { email: user.email },
+      dadosDepois: { email },
+    },
+  });
+
+  revalidatePath('/cadastros/usuarios');
+}

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@insted/database';
 import { Lista, Etiqueta, lerParams, POR_PAGINA } from '@/components/Lista';
-import { criarUsuarioManual } from '../actions';
+import { criarUsuarioManual, alternarUsuarioAtivo, definirEmailUsuario } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +51,7 @@ export default async function Usuarios({
         status: true,
         senhaProvisoria: true,
         criadoManualmente: true,
+        statusManual: true,
       },
     }),
     prisma.user.groupBy({ by: ['role'], where: { deletadoEm: null }, _count: true }),
@@ -76,6 +77,7 @@ export default async function Usuarios({
         { titulo: 'Perfil', estreita: true },
         { titulo: 'Origem', estreita: true },
         { titulo: 'Situação', estreita: true },
+        { titulo: '', estreita: true },
       ]}
       linhas={usuarios.map((u) => [
         <span className="font-mono text-xs text-slate-400">{u.matricula}</span>,
@@ -91,11 +93,52 @@ export default async function Usuarios({
         ) : (
           <span className="text-xs text-slate-300">JACAD</span>
         ),
-        u.status === 'ATIVO' ? (
-          <Etiqueta tom="ok">ativo</Etiqueta>
-        ) : (
-          <Etiqueta tom="alerta">{u.status.toLowerCase()}</Etiqueta>
-        ),
+        <div className="flex flex-col items-start gap-1">
+          {u.status === 'ATIVO' ? (
+            <Etiqueta tom="ok">ativo</Etiqueta>
+          ) : (
+            <Etiqueta tom="alerta">{u.status.toLowerCase()}</Etiqueta>
+          )}
+          {u.statusManual && (
+            <span className="text-[10px] text-slate-400" title="Decidido no painel — a importação não altera">
+              decisão da CPA
+            </span>
+          )}
+        </div>,
+        <div className="flex flex-col items-end gap-1.5">
+          {semAcesso(u.email) ? (
+            /* Sem e-mail real não adianta ativar: o primeiro acesso confere o
+               e-mail do cadastro. O conserto vem antes do botão. */
+            <form className="flex items-center gap-1.5">
+              <input
+                type="email"
+                name="email"
+                required
+                placeholder="e-mail institucional"
+                className="w-44 rounded-lg border border-brand-navy/15 px-2 py-1 text-[11px] text-brand-navy outline-none focus:border-brand-teal"
+              />
+              <button
+                formAction={definirEmailUsuario.bind(null, u.id)}
+                className="rounded-lg border border-brand-navy/10 px-2 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:border-brand-teal/40 hover:text-brand-teal-hover"
+              >
+                Salvar
+              </button>
+            </form>
+          ) : (
+            <form>
+              <button
+                formAction={alternarUsuarioAtivo.bind(null, u.id)}
+                className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                  u.status === 'ATIVO'
+                    ? 'border-brand-navy/10 text-slate-500 hover:border-brand-orange/40 hover:text-brand-orange'
+                    : 'border-brand-teal/40 bg-brand-teal/10 text-brand-teal-hover hover:bg-brand-teal/20'
+                }`}
+              >
+                {u.status === 'ATIVO' ? 'Inativar' : 'Ativar'}
+              </button>
+            </form>
+          )}
+        </div>,
       ])}
     >
       {criado && (

@@ -288,6 +288,18 @@ export class JacadPromotor {
     // (irmãos, responsável no lugar do aluno, aluno com dois vínculos). Quem
     // chega primeiro fica com o endereço; os demais recebem um placeholder.
     // Ninguém perde acesso: o login de aluno é pelo RA.
+    // Quem teve o status decidido pela CPA no painel. A promoção não mexe
+    // nesses: o docente que veio errado do JACAD e foi ativado à mão
+    // continuaria voltando a INATIVO a cada importação.
+    const statusManual = new Set(
+      (
+        await this.prisma.user.findMany({
+          where: { statusManual: true },
+          select: { matricula: true },
+        })
+      ).map((u) => u.matricula),
+    );
+
     const donoDoEmail = new Map(
       (await this.prisma.user.findMany({ select: { email: true, matricula: true } })).map((u) => [
         u.email,
@@ -326,7 +338,7 @@ export class JacadPromotor {
         },
         update: {
           nome: nomeProprio(m.aluno),
-          status: statusDoAluno(m.ra),
+          ...(statusManual.has(m.ra) ? {} : { status: statusDoAluno(m.ra) }),
         },
       });
       alunoPorMatricula.set(m.idMatricula, aluno.id);
@@ -454,7 +466,13 @@ export class JacadPromotor {
           },
           update: {
             nome: nomeProprio(l.professor),
-            ...(resolvido ? { email, cpf: conc!.cpf ?? null, status: 'ATIVO' as const } : {}),
+            ...(resolvido
+              ? {
+                  email,
+                  cpf: conc!.cpf ?? null,
+                  ...(statusManual.has(matricula) ? {} : { status: 'ATIVO' as const }),
+                }
+              : {}),
           },
         });
 
