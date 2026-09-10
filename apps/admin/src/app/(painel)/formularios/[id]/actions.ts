@@ -15,7 +15,7 @@
  */
 import { revalidatePath } from 'next/cache';
 import { exigirPainel } from '@/lib/sessao';
-import { prisma, type TargetType } from '@insted/database';
+import { prisma, publicarFormulario as publicar, type TargetType } from '@insted/database';
 import { TIPOS_ALVO, ALVOS_REPETIVEIS } from './alvos';
 
 const TEMP = -1;
@@ -340,4 +340,20 @@ export async function alternarRepetivelDocente(dados: FormData): Promise<void> {
   });
 
   revalidatePath(`/formularios/${b.formId}`);
+}
+
+/**
+ * Publica o formulário.
+ *
+ * A regra vive em `@insted/database` porque a tela não é o único lugar que
+ * publica — um script de ambiente também precisa, e o snapshot congelado não
+ * pode depender de qual caminho foi usado.
+ */
+export async function publicarFormulario(formId: string, dados: FormData): Promise<void> {
+  await exigirPainel();
+  await publicar(prisma, formId);
+
+  const volta = String(dados.get('volta') ?? `/formularios/${formId}`);
+  revalidatePath('/formularios');
+  revalidatePath(volta);
 }

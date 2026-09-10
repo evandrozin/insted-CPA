@@ -23,10 +23,14 @@ import {
   alternarRepetivelDocente,
   adicionarBloco,
   excluirBloco,
+  publicarFormulario,
 } from './actions';
 import { TIPOS_ALVO, ROTULO_ALVO } from './alvos';
 
 export const dynamic = 'force-dynamic';
+
+const dataCurta = (d: Date) =>
+  new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(d);
 
 const PUBLICO: Record<string, string> = {
   ALUNO: 'Discentes',
@@ -112,10 +116,30 @@ export default async function Formulario({ params }: { params: Promise<{ id: str
             </>
           ) : (
             <span className="text-brand-orange">
-              Formulário publicado: imutável. Duplique para criar a próxima versão.
+              Formulário publicado{form.publicadoEm ? ` em ${dataCurta(form.publicadoEm)}` : ''}:
+              imutável. Duplique para criar a próxima versão.
             </span>
           )}
         </p>
+
+        {editavel && (
+          <form className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-brand-navy/10 bg-white px-5 py-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-brand-navy">Publicar este formulário</p>
+              <p className="mt-0.5 max-w-xl text-xs text-slate-500">
+                Congela o instrumento e guarda uma cópia integral do que foi perguntado. É o que
+                permite comparar a média de um ano com a do outro sabendo que a pergunta era a
+                mesma. Não tem desfazer — para mudar depois, duplique numa nova versão.
+              </p>
+            </div>
+            <button
+              formAction={publicarFormulario.bind(null, form.id)}
+              className="rounded-lg bg-brand-teal px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-teal-hover"
+            >
+              Publicar
+            </button>
+          </form>
+        )}
       </header>
 
       <div className="mt-8 flex flex-col gap-6">
