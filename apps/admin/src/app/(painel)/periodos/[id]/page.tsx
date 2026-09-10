@@ -114,13 +114,17 @@ export default async function Ciclo({ params }: { params: Promise<{ id: string }
         ))}
       </dl>
 
-      {concluidas > 0 && (
+      {/* Aparece sempre que houver tarefa, e não só depois do primeiro
+          envio: a lista serve principalmente para saber QUEM FALTA — que é
+          exatamente a pergunta de quem vai cobrar. Escondê-la até alguém
+          responder invertia a utilidade. */}
+      {ciclo._count.tarefas > 0 && (
         <p className="mt-3 text-right">
           <Link
             href={`/periodos/${ciclo.id}/respondentes`}
             className="text-xs font-semibold text-brand-teal hover:text-brand-teal-hover"
           >
-            Ver quem respondeu — e liberar novo envio →
+            Lista nominal — quem respondeu e quem falta →
           </Link>
         </p>
       )}

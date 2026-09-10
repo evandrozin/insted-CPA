@@ -69,12 +69,16 @@ export default async function Respondentes({
         status: true,
         concluidaEm: true,
         loteId: true,
-        respondent: { select: { nome: true, matricula: true } },
+        respondent: { select: { nome: true, matricula: true, email: true } },
         _count: { select: { alvos: true } },
       },
     }),
     prisma.evaluationTask.count({ where: { periodId: id, status: 'CONCLUIDA' } }),
   ]);
+
+  const pendentes = await prisma.evaluationTask.count({
+    where: { periodId: id, status: 'PENDENTE' },
+  });
 
   const aberto = ciclo.status === 'ABERTO';
   const aba = (valor: string, rotulo: string) => {
@@ -98,7 +102,7 @@ export default async function Respondentes({
     <Lista
       eyebrow={`Ciclo ${ciclo.ano}`}
       titulo="Respondentes"
-      descricao={`${concluidas.toLocaleString('pt-BR')} enviaram. Liberar um novo envio apaga as respostas anteriores da pessoa — é o que evita que ela conte duas vezes nas médias.`}
+      descricao={`${concluidas.toLocaleString('pt-BR')} responderam e ${pendentes.toLocaleString('pt-BR')} faltam. A lista mostra QUEM respondeu, nunca o que — são tabelas separadas, e é essa separação que sustenta o anonimato.`}
       buscaPlaceholder="Buscar por nome ou matrícula…"
       q={q}
       pagina={pagina}
@@ -107,6 +111,7 @@ export default async function Respondentes({
       colunas={[
         { titulo: 'Matrícula', estreita: true },
         { titulo: 'Respondente' },
+        { titulo: 'E-mail para aviso' },
         { titulo: 'Cards', numerica: true, estreita: true },
         { titulo: 'Situação', estreita: true },
         { titulo: 'Enviado em', estreita: true },
@@ -115,6 +120,11 @@ export default async function Respondentes({
       linhas={tarefas.map((t) => [
         <span className="font-mono text-xs text-slate-400">{t.respondent.matricula}</span>,
         <span className="font-medium">{t.respondent.nome}</span>,
+        t.respondent.email.endsWith('@sem-email.insted.local') ? (
+          <Etiqueta tom="alerta">sem e-mail</Etiqueta>
+        ) : (
+          <span className="text-xs text-slate-500">{t.respondent.email}</span>
+        ),
         t._count.alvos,
         t.status === 'CONCLUIDA' ? (
           <Etiqueta tom="ok">enviado</Etiqueta>
@@ -153,9 +163,19 @@ export default async function Respondentes({
       }
     >
       <div className="flex flex-wrap items-center gap-1">
-        {aba('CONCLUIDA', 'Enviaram')}
-        {aba('PENDENTE', 'Pendentes')}
+        {aba('CONCLUIDA', 'Responderam')}
+        {aba('PENDENTE', 'Faltam responder')}
         {aba('TODOS', 'Todos')}
+
+        <a
+          href={`/periodos/${id}/respondentes/csv?${new URLSearchParams({
+            status: filtro,
+            ...(q ? { q } : {}),
+          })}`}
+          className="ml-auto rounded-lg border border-brand-navy/10 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 transition-colors hover:border-brand-teal/40 hover:text-brand-teal-hover"
+        >
+          Baixar planilha desta lista
+        </a>
       </div>
 
       {!aberto && (
