@@ -6,77 +6,83 @@
  * As regras vivem em `@insted/database` (comissao.ts), compartilhadas com o
  * CLI: o CLI existe para a primeira conta, quando ainda não há ninguém para
  * autenticar; daqui em diante a comissão se administra sozinha, sem terminal.
+ *
+ * As ações que geram senha devolvem a senha no próprio estado da resposta,
+ * para a tela mostrar e esquecer — ver `lib/estado-senha.ts` para o porquê de
+ * não haver cofre nem redirecionamento.
  */
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { randomUUID } from 'node:crypto';
 import { prisma, criarConta, redefinirSenha, revogarAcesso } from '@insted/database';
 import type { Role } from '@insted/database';
 import { exigirAdmin } from '@/lib/sessao';
+import type { EstadoSenha } from '@/lib/estado-senha';
 
-/**
- * Cofre de uso único para a senha recém-gerada.
- *
- * A senha precisa atravessar um redirecionamento para ser mostrada, e nenhum
- * dos caminhos óbvios serve: na query string ela fica no histórico do navegador
- * e no log de qualquer proxy; numa tabela vira senha em claro no banco; num
- * cookie, ela sobrevive a cada recarga — `cookies().delete()` não tem efeito
- * durante a renderização de um Server Component, então "mostrar uma vez" seria
- * mentira (e foi, na primeira versão desta tela).
- *
- * Aqui a URL carrega só um id opaco. A primeira leitura remove a entrada, e
- * recarregar a página não mostra mais nada.
- *
- * Vive no processo: um segundo servidor atrás de balanceador não enxerga o
- * cofre do primeiro, e a senha simplesmente não aparece. Quando o CPA for para
- * mais de uma instância, isto vira Redis — que já está no docker-compose.
- */
-type Guardado = { nome: string; email: string; senha: string; em: number };
-const cofre = new Map<string, Guardado>();
-const VALIDADE_MS = 5 * 60_000;
-
-function guardar(nome: string, email: string, senha: string): string {
-  // Varredura preguiçosa: sem isto, uma senha que nunca foi lida ficaria em
-  // memória até o processo reiniciar.
-  const agora = Date.now();
-  for (const [k, v] of cofre) if (agora - v.em > VALIDADE_MS) cofre.delete(k);
-
-  const id = randomUUID();
-  cofre.set(id, { nome, email, senha, em: agora });
-  return id;
+/** Erro de regra vira mensagem na janela; o resto sobe para a fronteira de erro. */
+function comoErro(anterior: EstadoSenha, e: unknown): EstadoSenha {
+  return { n: anterior.n + 1, erro: e instanceof Error ? e.message : 'Erro inesperado.' };
 }
 
-/** Lê e destrói. Chamado pela página; depois disso a senha não existe mais. */
-export async function consumirSenha(
-  id: string | null,
-): Promise<{ nome: string; email: string; senha: string } | null> {
-  if (!id) return null;
-  const item = cofre.get(id);
-  cofre.delete(id);
-  if (!item || Date.now() - item.em > VALIDADE_MS) return null;
-  return { nome: item.nome, email: item.email, senha: item.senha };
-}
-
-export async function adicionarMembro(dados: FormData): Promise<void> {
+export async function adicionarMembro(
+  anterior: EstadoSenha,
+  dados: FormData,
+): Promise<EstadoSenha> {
+  // Fora do try: sem permissão, `exigirAdmin` redireciona — e o
+  // redirecionamento é uma exceção que não pode ser engolida aqui.
   await exigirAdmin();
 
-  const { usuario, senha, promovido } = await criarConta(prisma, {
-    nome: String(dados.get('nome') ?? ''),
-    email: String(dados.get('email') ?? ''),
-    papel: (String(dados.get('papel') ?? 'ADMIN') as Role) || 'ADMIN',
-  });
+  try {
+    const { usuario, senha, promovido } = await criarConta(prisma, {
+      nome: String(dados.get('nome') ?? ''),
+      email: String(dados.get('email') ?? ''),
+      papel: (String(dados.get('papel') ?? 'ADMIN') as Role) || 'ADMIN',
+    });
 
-  const id = guardar(usuario.nome, usuario.email, senha);
-  revalidatePath('/cadastros/comissao');
-  redirect(`/cadastros/comissao?ok=${promovido ? 'promovido' : 'criado'}&s=${id}`);
+    revalidatePath('/cadastros/comissao');
+    return {
+      n: anterior.n + 1,
+      senha,
+      nome: usuario.nome,
+      email: usuario.email,
+      aviso: promovido
+        ? 'O cadastro já existia e foi promovido — a pessoa mantém o histórico dela.'
+        : undefined,
+    };
+  } catch (e) {
+    return comoErro(anterior, e);
+  }
 }
 
-export async function gerarNovaSenha(userId: string): Promise<void> {
-  await exigirAdmin();
-  const { nome, email, senha } = await redefinirSenha(prisma, userId);
-  const id = guardar(nome, email, senha);
-  revalidatePath('/cadastros/comissao');
-  redirect(`/cadastros/comissao?ok=senha&s=${id}`);
+export async function gerarNovaSenha(
+  anterior: EstadoSenha,
+  dados: FormData,
+): Promise<EstadoSenha> {
+  const eu = await exigirAdmin();
+  const userId = String(dados.get('userId') ?? '');
+
+  // Redefinir a própria senha pelo painel tranca quem clicou do lado de fora:
+  // a conta volta a ser provisória, o painel exige a troca na hora — pedindo a
+  // senha atual — e a janela que mostraria a nova some com o redirecionamento.
+  if (eu.id === userId) {
+    return {
+      n: anterior.n + 1,
+      erro: 'Esta é a sua própria conta. Peça a outro administrador para gerar a senha nova.',
+    };
+  }
+
+  try {
+    const { nome, email, senha } = await redefinirSenha(prisma, userId);
+    revalidatePath('/cadastros/comissao');
+    return {
+      n: anterior.n + 1,
+      senha,
+      nome,
+      email,
+      aviso: 'A senha anterior deixou de valer.',
+    };
+  } catch (e) {
+    return comoErro(anterior, e);
+  }
 }
 
 export async function removerMembro(userId: string): Promise<void> {

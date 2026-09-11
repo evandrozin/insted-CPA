@@ -9,12 +9,8 @@
 import { prisma, PAPEIS_PAINEL } from '@insted/database';
 import { Lista, Etiqueta, lerParams, POR_PAGINA } from '@/components/Lista';
 import { exigirAdmin } from '@/lib/sessao';
-import {
-  adicionarMembro,
-  gerarNovaSenha,
-  removerMembro,
-  consumirSenha,
-} from './actions';
+import { adicionarMembro, gerarNovaSenha, removerMembro } from './actions';
+import { FormComSenha } from '@/components/FormComSenha';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,8 +35,6 @@ export default async function Comissao({
   const sp = await searchParams;
   const { q, pagina, pular } = lerParams(sp);
 
-  // Lido e destruído aqui: recarregar a página não mostra mais nada.
-  const recemGerada = await consumirSenha(typeof sp.s === 'string' ? sp.s : null);
   const aviso = typeof sp.ok === 'string' ? AVISOS[sp.ok] : null;
 
   const where = {
@@ -113,15 +107,16 @@ export default async function Comissao({
           {m.ultimoAcesso ? m.ultimoAcesso.toLocaleDateString('pt-BR') : 'nunca entrou'}
         </span>,
         <div className="flex gap-1.5">
-          <form>
+          <FormComSenha acao={gerarNovaSenha}>
+            <input type="hidden" name="userId" value={m.id} />
             <button
-              formAction={gerarNovaSenha.bind(null, m.id)}
+              type="submit"
               className="rounded-lg border border-brand-navy/10 px-2.5 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:border-brand-teal/40 hover:text-brand-teal-hover"
-              title="Gera uma nova senha provisória e obriga a troca no próximo acesso"
+              title="Gera uma nova senha provisória e mostra na tela — a anterior deixa de valer"
             >
               Nova senha
             </button>
-          </form>
+          </FormComSenha>
           {m.id !== eu.id && (
             <form>
               <button
@@ -141,35 +136,17 @@ export default async function Comissao({
         </p>
       }
     >
-      {/* ---------------------------------------- senha recém-gerada */}
-      {recemGerada && (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-brand-teal/40 bg-white">
-          <div className="border-b border-brand-teal/20 bg-brand-teal/5 px-5 py-3">
-            <p className="font-brand text-sm font-bold text-brand-teal-hover">
-              Senha provisória de {recemGerada.nome}
-            </p>
-          </div>
-          <div className="px-5 py-5">
-            <p className="font-mono text-2xl font-semibold tracking-wide text-brand-navy">
-              {recemGerada.senha}
-            </p>
-            <p className="mt-3 max-w-xl text-xs text-slate-500">
-              Anote agora — ela não será mostrada de novo, e o banco guarda apenas o hash. Entregue
-              por um canal diferente do e-mail da conta. No primeiro acesso, {recemGerada.email}{' '}
-              será obrigado a definir a própria senha.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {aviso && !recemGerada && (
+      {aviso && (
         <p className="mt-6 rounded-xl border border-brand-navy/10 bg-white px-4 py-3 text-sm text-slate-600">
           {aviso}
         </p>
       )}
 
       {/* ---------------------------------------- novo membro */}
-      <form className="mt-6 rounded-2xl border border-brand-navy/10 bg-white px-5 py-5">
+      <FormComSenha
+        acao={adicionarMembro}
+        className="mt-6 rounded-2xl border border-brand-navy/10 bg-white px-5 py-5"
+      >
         <p className="font-brand text-sm font-bold text-brand-navy">Adicionar membro</p>
         <p className="mt-1 max-w-2xl text-xs text-slate-500">
           Se a pessoa já existir no sistema — um docente importado do JACAD, por exemplo — o
@@ -193,7 +170,7 @@ export default async function Comissao({
             </select>
           </label>
           <button
-            formAction={adicionarMembro}
+            type="submit"
             className="self-end rounded-lg bg-brand-teal px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-teal-hover"
           >
             Criar conta
@@ -204,7 +181,7 @@ export default async function Comissao({
           Administrador faz tudo, inclusive gerenciar estas contas. Gestor usa o painel mas não
           mexe aqui — e passa a ver só o próprio escopo quando os relatórios entrarem.
         </p>
-      </form>
+      </FormComSenha>
     </Lista>
   );
 }

@@ -96,9 +96,12 @@ O Supabase é só o banco. O Next.js precisa de um host próprio — Vercel é o
 caminho de menor atrito, com `DATABASE_URL` (pooler) e `SESSION_SECRET` nas
 variáveis de ambiente do projeto.
 
-Um detalhe que vai aparecer lá: o cofre de senha provisória da tela da comissão
-vive na memória do processo. Em serverless, cada requisição pode cair numa
-instância diferente, e a senha simplesmente não aparece — o contorno é clicar
-em "Nova senha" até cair na mesma, o que é ruim. Antes de ir para produção
-serverless, esse cofre precisa virar Redis (já está no `docker-compose`) ou uma
-tabela com expiração.
+A senha provisória das telas de Comissão e Técnico-administrativo **não é
+guardada em lugar nenhum**: a ação a devolve na própria resposta e a tela a
+mostra numa janela que só fecha quando alguém confirma que anotou.
+
+A primeira versão guardava a senha na memória do processo para exibi-la
+depois de um redirecionamento. Em serverless, a página seguinte podia cair em
+outra instância — a senha antiga deixava de valer e a nova não aparecia. Uma
+conta de homologação chegou a ter quatro senhas geradas sem ninguém ver
+nenhuma. Não é mais o caso.

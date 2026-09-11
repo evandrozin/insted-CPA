@@ -8,12 +8,8 @@
 import { prisma } from '@insted/database';
 import { Lista, Etiqueta, lerParams, POR_PAGINA } from '@/components/Lista';
 import { exigirPainel } from '@/lib/sessao';
-import {
-  adicionarTecnico,
-  novaSenhaTecnico,
-  removerTecnico,
-  consumirSenha,
-} from './actions';
+import { adicionarTecnico, novaSenhaTecnico, removerTecnico } from './actions';
+import { FormComSenha } from '@/components/FormComSenha';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,8 +34,6 @@ export default async function Tecnicos({
   const sp = await searchParams;
   const { q, pagina, pular } = lerParams(sp);
 
-  // Lido e destruído aqui: recarregar a página não mostra mais nada.
-  const recemGerada = await consumirSenha(typeof sp.s === 'string' ? sp.s : null);
   const aviso = typeof sp.ok === 'string' ? AVISOS[sp.ok] : null;
 
   const where = {
@@ -112,15 +106,16 @@ export default async function Tecnicos({
           {p.ultimoAcesso ? p.ultimoAcesso.toLocaleDateString('pt-BR') : 'nunca entrou'}
         </span>,
         <div className="flex gap-1.5">
-          <form>
+          <FormComSenha acao={novaSenhaTecnico}>
+            <input type="hidden" name="userId" value={p.id} />
             <button
-              formAction={novaSenhaTecnico.bind(null, p.id)}
+              type="submit"
               className="rounded-lg border border-brand-navy/10 px-2.5 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:border-brand-teal/40 hover:text-brand-teal-hover"
-              title="Gera uma nova senha provisória e obriga a troca no próximo acesso"
+              title="Gera uma nova senha provisória e mostra na tela — a anterior deixa de valer"
             >
               Nova senha
             </button>
-          </form>
+          </FormComSenha>
           <form>
             <button
               formAction={removerTecnico.bind(null, p.id)}
@@ -138,32 +133,16 @@ export default async function Tecnicos({
         </p>
       }
     >
-      {recemGerada && (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-brand-teal/40 bg-white">
-          <div className="border-b border-brand-teal/20 bg-brand-teal/5 px-5 py-3">
-            <p className="font-brand text-sm font-bold text-brand-teal-hover">
-              Senha provisória de {recemGerada.nome}
-            </p>
-          </div>
-          <div className="px-5 py-5">
-            <p className="font-mono text-2xl font-semibold tracking-wide text-brand-navy">
-              {recemGerada.senha}
-            </p>
-            <p className="mt-3 max-w-xl text-xs text-slate-500">
-              Anote agora — ela não será mostrada de novo, e o banco guarda apenas o hash. No
-              primeiro acesso, {recemGerada.email} será obrigado a definir a própria senha.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {aviso && !recemGerada && (
+      {aviso && (
         <p className="mt-6 rounded-xl border border-brand-navy/10 bg-white px-4 py-3 text-sm text-slate-600">
           {aviso}
         </p>
       )}
 
-      <form className="mt-6 rounded-2xl border border-brand-navy/10 bg-white px-5 py-5">
+      <FormComSenha
+        acao={adicionarTecnico}
+        className="mt-6 rounded-2xl border border-brand-navy/10 bg-white px-5 py-5"
+      >
         <p className="font-brand text-sm font-bold text-brand-navy">Adicionar colaborador</p>
         <p className="mt-1 max-w-2xl text-xs text-slate-500">
           A senha provisória aparece na tela depois de criar; entregue à pessoa por um canal
@@ -185,13 +164,13 @@ export default async function Tecnicos({
             <input name="matricula" placeholder="automática" className={`${campo} mt-1 w-36`} />
           </label>
           <button
-            formAction={adicionarTecnico}
+            type="submit"
             className="self-end rounded-lg bg-brand-teal px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-teal-hover"
           >
             Cadastrar
           </button>
         </div>
-      </form>
+      </FormComSenha>
 
       {formulario ? (
         <p className="mt-4 text-xs text-slate-400">

@@ -48,7 +48,10 @@ export default async function TrocarSenha() {
                 : `Você está autenticado como ${eu.nome}.`}
             </p>
 
-            <form className="mt-6 flex flex-col gap-3">
+            {/* `method="post"` na tag, não só no botão: quem envia o formulário sem
+                passar pelo botão — antes de o React assumir a página — cairia no padrão
+                do HTML, que é GET, e as senhas iriam na URL (log, histórico). */}
+            <form method="post" className="mt-6 flex flex-col gap-3">
               <label className={rotulo}>
                 Senha atual
                 <input

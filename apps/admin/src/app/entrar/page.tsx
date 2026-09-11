@@ -55,7 +55,7 @@ export default async function Entrar({
               </p>
             )}
 
-            <form className="mt-6 flex flex-col gap-3">
+            <form method="post" className="mt-6 flex flex-col gap-3">
               <label className={rotulo}>
                 Matrícula ou RA
                 <input name="matricula" autoComplete="username" required className={`${campo} mt-1`} />
@@ -84,7 +84,7 @@ export default async function Entrar({
               Primeiro acesso — criar minha senha
             </summary>
 
-            <form className="mt-4 flex flex-col gap-3">
+            <form method="post" className="mt-4 flex flex-col gap-3">
               <p className="text-xs text-slate-500">
                 Confirmamos seu e-mail cadastrado antes de criar a senha.
               </p>
