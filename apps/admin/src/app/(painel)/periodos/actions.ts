@@ -424,3 +424,67 @@ export async function liberarReenvio(periodId: string, taskId: string): Promise<
   revalidatePath(`/periodos/${periodId}/respondentes`);
   revalidatePath(`/periodos/${periodId}`);
 }
+
+/**
+ * Inclui no ciclo quem ficou de fora — inclusive com ele já aberto.
+ *
+ * O caso real: a matrícula que a secretaria regulariza na segunda semana da
+ * coleta, o aluno que o JACAD devolveu depois da geração. O botão de gerar
+ * fica travado com o ciclo aberto, de propósito — recalcular os cards de quem
+ * já começou a responder descartaria o rascunho dele. Esta ação é a porta
+ * estreita: só cria tarefa para quem ainda não tem, e não toca em mais nada.
+ *
+ * Aceita matrículas (uma por linha, ou separadas por vírgula) ou, sem nenhuma,
+ * todos os elegíveis que ainda não têm tarefa.
+ *
+ * O resultado — quem entrou e por que os outros não — vai para a auditoria, e
+ * a tela o lê de lá pelo id. Nome de aluno não viaja na URL: ela fica no
+ * histórico do navegador e no log de qualquer proxy.
+ */
+export async function incluirRespondentes(periodId: string, dados: FormData): Promise<void> {
+  await exigirPainel();
+
+  const { status } = await estado(periodId);
+  if (status === 'ENCERRADO' || status === 'PUBLICADO') {
+    throw new Error(
+      'O ciclo já foi encerrado: incluir alguém agora criaria uma tarefa que ninguém pode responder.',
+    );
+  }
+
+  const bruto = String(dados.get('matriculas') ?? '');
+  const modo = String(dados.get('modo') ?? 'lista');
+  const matriculas = [...new Set(bruto.split(/[\s,;]+/).map((m) => m.trim()).filter(Boolean))];
+
+  if (modo === 'lista' && matriculas.length === 0) {
+    throw new Error('Informe ao menos uma matrícula, ou use "incluir todos os que faltam".');
+  }
+  if (matriculas.length > 200) {
+    throw new Error('Até 200 matrículas por vez. Para volume maior, use "incluir todos os que faltam".');
+  }
+
+  const r = await new GeradorDeAlvos(prisma).incluir(
+    periodId,
+    modo === 'lista' ? matriculas : undefined,
+  );
+
+  const registro = await prisma.auditLog.create({
+    data: {
+      acao: 'PERIOD_INCLUDE_RESPONDENTS',
+      entidade: 'EvaluationPeriod',
+      entidadeId: periodId,
+      dadosDepois: {
+        modo,
+        incluidos: r.incluidos.slice(0, 200),
+        recusados: r.recusados.slice(0, 200),
+        totalIncluidos: r.incluidos.length,
+        totalRecusados: r.recusados.length,
+        alvos: r.alvos,
+      },
+    },
+    select: { id: true },
+  });
+
+  revalidatePath(`/periodos/${periodId}`);
+  revalidatePath(`/periodos/${periodId}/respondentes`);
+  redirect(`/periodos/${periodId}/respondentes?status=TODOS&inclusao=${registro.id}`);
+}

@@ -2,6 +2,8 @@
  * CLI do ciclo de avaliação.
  *
  *   npm run alvos -- gerar --periodo=<id>       gera tarefas e alvos
+ *   npm run alvos -- incluir --periodo=<id> [--ra=A,B]
+ *                                               acrescenta quem ficou de fora
  *   npm run alvos -- previa --ra=<RA>           o que ESTE aluno vai ver
  *   npm run alvos -- periodos                   ciclos cadastrados
  */
@@ -59,6 +61,29 @@ async function main() {
       log(`  média por aluno ...... ${r.tarefas ? (r.alvos / r.tarefas).toFixed(1) : '—'}`);
       log('─────────────────────────────────────');
       for (const a of r.avisos) log(`\n⚠  ${a}`);
+      return;
+    }
+
+    /**
+     * Inclusão com o ciclo aberto — mesma regra do botão da tela de
+     * respondentes, para quando o volume passa do que cabe numa requisição.
+     */
+    case 'incluir': {
+      const periodId = o.periodo;
+      if (!periodId) throw new Error('Informe --periodo=<id>. Veja com: npm run alvos -- periodos');
+      const ras = o.ra ? o.ra.split(',').map((x) => x.trim()).filter(Boolean) : undefined;
+
+      const r = await new GeradorDeAlvos(prisma, log).incluir(periodId, ras);
+
+      log('\n─────────────────────────────────────');
+      log(`  incluídos ............ ${r.incluidos.length}`);
+      log(`  cards criados ........ ${r.alvos}`);
+      log(`  não incluídos ........ ${r.recusados.length}`);
+      log('─────────────────────────────────────');
+      for (const p of r.incluidos.slice(0, 50)) log(`  + ${p.matricula}  ${p.nome}  (${p.cards} cards)`);
+      for (const p of r.recusados.slice(0, 50)) {
+        log(`  − ${p.matricula}  ${p.nome ?? ''} — ${p.motivo}`);
+      }
       return;
     }
 

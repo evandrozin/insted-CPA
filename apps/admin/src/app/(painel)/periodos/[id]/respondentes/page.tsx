@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@insted/database';
 import { Lista, Etiqueta, lerParams, POR_PAGINA } from '@/components/Lista';
-import { liberarReenvio } from '../../actions';
+import { liberarReenvio, incluirRespondentes } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +36,27 @@ export default async function Respondentes({
   const sp = await searchParams;
   const { q, pagina, pular } = lerParams(sp);
   const filtro = typeof sp.status === 'string' ? sp.status : 'CONCLUIDA';
+
+  // Resultado de uma inclusão recente, lido da auditoria pelo id — nomes de
+  // aluno não viajam na URL.
+  const idInclusao = typeof sp.inclusao === 'string' ? sp.inclusao : null;
+  const inclusao = idInclusao
+    ? await prisma.auditLog
+        .findFirst({
+          where: { id: idInclusao, acao: 'PERIOD_INCLUDE_RESPONDENTS', entidadeId: id },
+          select: { dadosDepois: true },
+        })
+        .then(
+          (l) =>
+            (l?.dadosDepois ?? null) as {
+              incluidos: { matricula: string; nome: string; cards: number }[];
+              recusados: { matricula: string; nome: string | null; motivo: string }[];
+              totalIncluidos: number;
+              totalRecusados: number;
+            } | null,
+        )
+        .catch(() => null)
+    : null;
 
   const ciclo = await prisma.evaluationPeriod
     .findUnique({ where: { id }, select: { id: true, nome: true, ano: true, status: true } })
@@ -177,6 +198,80 @@ export default async function Respondentes({
           Baixar planilha desta lista
         </a>
       </div>
+
+      {/* --------------------------------- incluir quem ficou de fora */}
+      {(ciclo.status === 'RASCUNHO' || ciclo.status === 'AGENDADO' || aberto) && (
+        <details
+          className="mt-4 rounded-2xl border border-brand-navy/10 bg-white px-5 py-4"
+          open={Boolean(inclusao)}
+        >
+          <summary className="cursor-pointer text-sm font-semibold text-brand-teal hover:text-brand-teal-hover">
+            Incluir quem ficou de fora
+          </summary>
+          <p className="mt-2 max-w-2xl text-xs text-slate-500">
+            Para a matrícula regularizada depois da geração, ou o aluno que chegou atrasado do
+            JACAD. Só cria tarefa para quem ainda não tem — quem já começou a responder não é tocado,
+            porque recalcular os cards descartaria o rascunho dele. Quem não puder entrar aparece com
+            o motivo.
+          </p>
+
+          <form className="mt-3 flex flex-col gap-2">
+            <textarea
+              name="matriculas"
+              rows={3}
+              placeholder="Matrículas, uma por linha ou separadas por vírgula"
+              className="w-full max-w-xl rounded-lg border border-brand-navy/15 px-3 py-2 font-mono text-xs text-brand-navy outline-none focus:border-brand-teal"
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                formAction={incluirRespondentes.bind(null, id)}
+                name="modo"
+                value="lista"
+                className="rounded-lg bg-brand-teal px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-teal-hover"
+              >
+                Incluir estas matrículas
+              </button>
+              <button
+                formAction={incluirRespondentes.bind(null, id)}
+                name="modo"
+                value="todos"
+                className="rounded-lg border border-brand-navy/15 px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-brand-teal/40 hover:text-brand-teal-hover"
+                title="Ignora a caixa de texto e procura todos os elegíveis sem tarefa"
+              >
+                Incluir todos os elegíveis que ainda não têm tarefa
+              </button>
+            </div>
+          </form>
+
+          {inclusao && (
+            <div className="mt-4 rounded-xl border border-brand-navy/10 bg-brand-light px-4 py-3 text-xs">
+              <p className="font-semibold text-brand-navy">
+                {inclusao.totalIncluidos} incluído(s) · {inclusao.totalRecusados} não incluído(s)
+              </p>
+              {inclusao.incluidos.length > 0 && (
+                <ul className="mt-2 space-y-0.5 text-slate-600">
+                  {inclusao.incluidos.slice(0, 30).map((p) => (
+                    <li key={p.matricula}>
+                      <span className="font-mono text-slate-400">{p.matricula}</span> {p.nome} —{' '}
+                      {p.cards} cards
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {inclusao.recusados.length > 0 && (
+                <ul className="mt-2 space-y-0.5 text-brand-orange">
+                  {inclusao.recusados.slice(0, 30).map((p) => (
+                    <li key={p.matricula}>
+                      <span className="font-mono">{p.matricula}</span>
+                      {p.nome ? ` ${p.nome}` : ''} — {p.motivo}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </details>
+      )}
 
       {!aberto && (
         <p className="mt-4 rounded-xl border border-brand-navy/10 bg-brand-light px-4 py-3 text-xs text-slate-500">

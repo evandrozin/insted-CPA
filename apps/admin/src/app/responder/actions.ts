@@ -18,6 +18,7 @@ import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { prisma } from '@insted/database';
+import type { Prisma } from '@insted/database';
 import { respondenteAtual } from '@/lib/sessao';
 
 /** A tarefa é do usuário da sessão e o ciclo está aberto? */
@@ -218,64 +219,85 @@ export async function enviar(taskId: string, dados: FormData): Promise<void> {
   });
   const ofertaPorId = new Map(ofertas.map((o) => [o.id, o]));
 
-  await prisma.$transaction(async (tx) => {
-    for (const [targetRefId, itens] of grupos) {
-      const alvo = alvoPorRef.get(targetRefId);
-      if (!alvo) continue;
+  // Tudo montado em memória, gravado em lote.
+  //
+  // A versão anterior fazia uma consulta por resposta DENTRO da transação:
+  // 9 conjuntos e 79 respostas eram ~90 idas ao banco em sequência. Com a
+  // função na Vercel e o banco em São Paulo, cada ida custava ~120 ms, a
+  // transação passava dos 5 s que o Prisma tolera e o envio falhava inteiro —
+  // o aluno via erro depois de preencher tudo. Os ids são gerados aqui para
+  // que conjuntos e respostas saiam em dois inserts, não em noventa.
+  const conjuntos: Prisma.ResponseSetCreateManyInput[] = [];
+  const respostas: Prisma.AnswerCreateManyInput[] = [];
 
-      const oferta = targetRefId !== '__global__' ? ofertaPorId.get(targetRefId) : undefined;
+  for (const [targetRefId, itens] of grupos) {
+    const alvo = alvoPorRef.get(targetRefId);
+    if (!alvo) continue;
 
-      const conjunto = await tx.responseSet.create({
-        data: {
-          periodId: task.periodId,
-          periodFormId: task.periodFormId,
-          blockId: alvo.blockId,
-          targetType: alvo.targetType,
-          targetRefId: alvo.targetRefId,
-          teacherId: oferta?.teacherId ?? null,
-          subjectId: oferta?.subjectId ?? null,
-          departmentId: alvo.targetType === 'DEPARTAMENTO' ? alvo.targetRefId : null,
-          courseId: alvo.targetType === 'CURSO' ? alvo.targetRefId : null,
-          // ---- recorte do respondente: agregado, nunca identificável ----
-          respondentRole: 'ALUNO',
-          respondentCourseId: matricula?.class.courseId ?? null,
-          respondentClassId: matricula?.class.id ?? null,
-          respondentTurno: matricula?.class.turno ?? null,
-          respondentPeriodo: matricula?.class.periodo ?? null,
-          anonimo: task.periodForm.anonimo,
-          submetidoEm: diaDoEnvio,
-          loteId,
-        },
-      });
+    const oferta = targetRefId !== '__global__' ? ofertaPorId.get(targetRefId) : undefined;
+    const id = randomUUID();
 
-      for (const item of itens) {
-        const v = item.valor as {
-          numerico?: number;
-          texto?: string;
-          booleano?: boolean;
-          naoSeAplica?: boolean;
-        };
-        await tx.answer.create({
-          data: {
-            responseSetId: conjunto.id,
-            questionId: item.questionId,
-            valorNumerico: v.numerico ?? null,
-            valorTexto: v.texto ?? null,
-            valorBooleano: v.booleano ?? null,
-            naoSeAplica: Boolean(v.naoSeAplica),
-          },
-        });
-      }
-    }
-
-    // O rascunho é a única estrutura que liga resposta e pessoa. Some aqui.
-    await tx.draftAnswer.deleteMany({ where: { taskId } });
-
-    await tx.evaluationTask.update({
-      where: { id: taskId },
-      data: { status: 'CONCLUIDA', progresso: 100, concluidaEm: new Date(), loteId },
+    conjuntos.push({
+      id,
+      periodId: task.periodId,
+      periodFormId: task.periodFormId,
+      blockId: alvo.blockId,
+      targetType: alvo.targetType,
+      targetRefId: alvo.targetRefId,
+      teacherId: oferta?.teacherId ?? null,
+      subjectId: oferta?.subjectId ?? null,
+      departmentId: alvo.targetType === 'DEPARTAMENTO' ? alvo.targetRefId : null,
+      courseId: alvo.targetType === 'CURSO' ? alvo.targetRefId : null,
+      // ---- recorte do respondente: agregado, nunca identificável ----
+      respondentRole: 'ALUNO',
+      respondentCourseId: matricula?.class.courseId ?? null,
+      respondentClassId: matricula?.class.id ?? null,
+      respondentTurno: matricula?.class.turno ?? null,
+      respondentPeriodo: matricula?.class.periodo ?? null,
+      anonimo: task.periodForm.anonimo,
+      submetidoEm: diaDoEnvio,
+      loteId,
     });
-  });
+
+    for (const item of itens) {
+      const v = item.valor as {
+        numerico?: number;
+        texto?: string;
+        booleano?: boolean;
+        naoSeAplica?: boolean;
+      };
+      respostas.push({
+        responseSetId: id,
+        questionId: item.questionId,
+        valorNumerico: v.numerico ?? null,
+        valorTexto: v.texto ?? null,
+        valorBooleano: v.booleano ?? null,
+        naoSeAplica: Boolean(v.naoSeAplica),
+      });
+    }
+  }
+
+  // Quatro consultas, na mesma transação de antes: ou a resposta vira anônima
+  // e o rascunho some, ou nada acontece. O `createMany` insere na ordem do
+  // array, então o embaralhamento de `grupos` continua valendo — e os ids
+  // são UUID aleatório, sem sequência que denuncie quem gravou junto.
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.responseSet.createMany({ data: conjuntos });
+      await tx.answer.createMany({ data: respostas });
+
+      // O rascunho é a única estrutura que liga resposta e pessoa. Some aqui.
+      await tx.draftAnswer.deleteMany({ where: { taskId } });
+
+      await tx.evaluationTask.update({
+        where: { id: taskId },
+        data: { status: 'CONCLUIDA', progresso: 100, concluidaEm: new Date(), loteId },
+      });
+    },
+    // Margem, não muleta: são quatro consultas. O limite existe para que uma
+    // falha de rede não segure a conexão do pooler indefinidamente.
+    { timeout: 20_000, maxWait: 10_000 },
+  );
 
   revalidatePath('/minhas-avaliacoes');
   redirect(`/responder/${taskId}/concluido`);
