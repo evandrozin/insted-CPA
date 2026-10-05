@@ -107,6 +107,37 @@ const frequencia = (enunciado: string): Q => ({
   config: { ...FREQUENCIA },
 });
 
+/**
+ * A mesma afirmação, mas como lista de alternativas em vez de escala.
+ *
+ * DECISÃO DA CPA, tomada no editor e trazida para cá para não se perder na
+ * próxima importação. Vale para os cinco primeiros itens — infraestrutura,
+ * laboratórios, biblioteca, AVA e materiais EAD.
+ *
+ * O que muda, e não aparece na tela: alternativa não tem valor numérico.
+ * "Concordo totalmente" como escala vale 4 e entra na média do bloco; como
+ * alternativa é um rótulo que se conta. Estes cinco itens saem dos indicadores
+ * e não se comparam com 2025 nem com os demais formulários de 2026 — por isso
+ * peso 0, que é o que o sistema já usa para "está no formulário, fora da
+ * média".
+ *
+ * O "não utilizei" entra como mais uma alternativa. Como escala ele era
+ * categoria separada, fora da pontuação; aqui a distinção deixa de existir,
+ * porque nenhuma das opções pontua.
+ */
+const acordoComoAlternativas = (enunciado: string, naoSeAplica?: string): Q => ({
+  enunciado,
+  tipo: 'ESCOLHA_UNICA',
+  peso: 0,
+  opcoes: [
+    'Discordo totalmente',
+    'Discordo',
+    'Concordo',
+    'Concordo totalmente',
+    ...(naoSeAplica ? [naoSeAplica] : []),
+  ],
+});
+
 /** Escala 0–10. Peso 1: entra na média, é indicador de resultado. */
 const linear = (enunciado: string, ajuda: string): Q => ({
   enunciado,
@@ -178,7 +209,7 @@ const BLOCOS: Bloco[] = [
     descricao: 'Instalações, laboratórios e biblioteca, na experiência deste semestre.',
     targetType: 'INFRAESTRUTURA',
     questoes: [
-      acordo(
+      acordoComoAlternativas(
         'A infraestrutura do Insted oferece condições adequadas para minhas atividades acadêmicas.',
       ),
       {
@@ -203,11 +234,11 @@ const BLOCOS: Bloco[] = [
           'Outro',
         ],
       },
-      acordo(
+      acordoComoAlternativas(
         'Os laboratórios utilizados no meu curso oferecem condições, materiais e equipamentos adequados às atividades previstas.',
         'Não utilizei laboratório neste semestre.',
       ),
-      acordo(
+      acordoComoAlternativas(
         'Os recursos da biblioteca que utilizo atendem às minhas necessidades acadêmicas.',
         'Não utilizei a biblioteca física nem digital neste semestre.',
       ),
@@ -219,11 +250,11 @@ const BLOCOS: Bloco[] = [
       'AVA, materiais e tutoria. Quem não cursou disciplina EAD responde pela categoria própria, sem pontuar.',
     targetType: 'INSTITUICAO',
     questoes: [
-      acordo(
+      acordoComoAlternativas(
         'O Ambiente Virtual de Aprendizagem (AVA) facilita o acesso aos materiais, orientações e atividades das disciplinas.',
         'Não utilizei o AVA suficientemente para avaliar.',
       ),
-      acordo(
+      acordoComoAlternativas(
         'Os materiais didáticos utilizados nas disciplinas EAD do meu curso (videoaulas, apostilas, atividades) são claros e de boa qualidade.',
         'Não tive disciplina EAD neste semestre.',
       ),
@@ -406,7 +437,7 @@ const BLOCOS: Bloco[] = [
 const NOME = '2026 Avaliação Institucional — Graduação Presencial';
 
 const DESCRICAO =
-  'Instrumento detalhado da CPA para a graduação presencial: escala de concordância de quatro pontos, sem ponto médio. Inclui permanência e recomendação (0 a 10), avaliação individual por professor da turma e um módulo anual de perfil. As duas perguntas condicionais do PDF (melhorias na infraestrutura e fator de risco de evasão) entram como opcionais, porque o sistema ainda não esconde pergunta conforme resposta.';
+  'Instrumento detalhado da CPA para a graduação presencial: escala de concordância de quatro pontos, sem ponto médio. Inclui permanência e recomendação (0 a 10), avaliação individual por professor da turma e um módulo anual de perfil. As duas perguntas condicionais do PDF (melhorias na infraestrutura e fator de risco de evasão) entram como opcionais, porque o sistema ainda não esconde pergunta conforme resposta. ATENÇÃO AO LER O RELATÓRIO: por decisão da CPA, os cinco primeiros itens avaliativos (infraestrutura, laboratórios, biblioteca, AVA e materiais EAD) são lista de alternativas, não escala — contam por alternativa, ficam fora da média e não se comparam com os demais itens, que continuam em escala de 1 a 4.';
 
 const ABERTURA =
   'Sua participação ajuda o Insted a identificar o que está funcionando e o que precisa ser melhorado na experiência acadêmica. O questionário é anônimo e leva de 3 a 4 minutos. Ao final, você poderá avaliar individualmente os professores com quem teve contato neste semestre. Responda considerando sua experiência neste semestre.';
@@ -501,6 +532,9 @@ async function main(): Promise<void> {
   log('    · A turma é digitada pelo aluno; não há lista automática por curso.');
   log('    · O módulo anual de perfil é o último bloco: remova-o nos ciclos');
   log('      em que não for aplicá-lo.');
+  log('    · Infraestrutura, laboratórios, biblioteca, AVA e materiais EAD são');
+  log('      LISTA DE ALTERNATIVAS, não escala: contam por opção e ficam fora');
+  log('      da média. Os demais itens seguem em escala de 1 a 4.');
   log('    · Curso e turma ficam gravados junto das respostas. Em turma');
   log('      pequena, isso estreita o cerco sobre quem respondeu.');
   log('');
