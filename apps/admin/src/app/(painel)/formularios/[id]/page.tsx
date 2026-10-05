@@ -18,6 +18,9 @@ import {
   adicionarQuestao,
   alternarObrigatoria,
   alternarPeso,
+  salvarAlternativas,
+  definirTipo,
+  alternarNaoSeAplica,
   salvarBloco,
   moverBloco,
   alternarRepetivelDocente,
@@ -47,9 +50,16 @@ const TIPO: Record<string, string> = {
   ESCOLHA_MULTIPLA: 'múltipla escolha',
 };
 
+/** Tipos que têm alternativas para editar. */
+const ESCOLHA = new Set(['ESCOLHA_UNICA', 'ESCOLHA_MULTIPLA']);
+
+/** Tipos em que cabe a categoria fora da pontuação. */
+const ESCALA = new Set(['LIKERT', 'NPS']);
+
 type Config = {
   labels?: Record<string, string>;
   permiteNaoSeAplica?: boolean;
+  rotuloNaoSeAplica?: string;
   legendaPendenteConfirmacao?: boolean;
 };
 
@@ -78,7 +88,12 @@ export default async function Formulario({ params }: { params: Promise<{ id: str
       include: {
         blocos: {
           orderBy: { ordem: 'asc' },
-          include: { questoes: { orderBy: { ordem: 'asc' } } },
+          include: {
+            questoes: {
+              orderBy: { ordem: 'asc' },
+              include: { opcoes: { orderBy: { ordem: 'asc' } } },
+            },
+          },
         },
       },
     })
@@ -395,9 +410,82 @@ export default async function Formulario({ params }: { params: Promise<{ id: str
                                 aria-label="Texto de apoio"
                               />
 
+                              {/* Alternativas: uma por linha. Caixa de texto em
+                                  vez de uma linha por opção porque a edição
+                                  real é colar a lista inteira revisada — foram
+                                  treze cursos de uma vez na importação. */}
+                              {ESCOLHA.has(q.tipo) && (
+                                <div className="mt-1">
+                                  <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                                    Alternativas — uma por linha
+                                  </label>
+                                  <textarea
+                                    name="alternativas"
+                                    defaultValue={q.opcoes.map((o) => o.rotulo).join('\n')}
+                                    rows={Math.min(14, Math.max(3, q.opcoes.length + 1))}
+                                    className={`${campo} mt-1 font-mono text-xs`}
+                                    placeholder="Climatização&#10;Iluminação&#10;Internet/Wi-Fi"
+                                  />
+                                  <button
+                                    formAction={salvarAlternativas}
+                                    className={`${btn} mt-1.5`}
+                                    title="Alternativa com o texto inalterado mantém o id e a contagem"
+                                  >
+                                    Salvar alternativas
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Categoria fora da escala: "Não utilizei a
+                                  biblioteca neste semestre" não é nota baixa,
+                                  e por isso não entra na média. */}
+                              {ESCALA.has(q.tipo) &&
+                                (() => {
+                                  const cfg = (q.config ?? null) as Config | null;
+                                  const ligado = Boolean(cfg?.permiteNaoSeAplica);
+                                  return (
+                                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                      <input
+                                        name="rotuloNaoSeAplica"
+                                        defaultValue={cfg?.rotuloNaoSeAplica ?? ''}
+                                        placeholder="Não utilizei a biblioteca neste semestre."
+                                        className={`${campo} max-w-sm flex-1 text-xs`}
+                                        aria-label="Texto da categoria fora da escala"
+                                        disabled={ligado}
+                                      />
+                                      <button
+                                        formAction={alternarNaoSeAplica}
+                                        className={btn}
+                                        title="Categoria separada, sem pontuação de 1 a 4"
+                                      >
+                                        {ligado ? 'Tirar "não se aplica"' : 'Permitir "não se aplica"'}
+                                      </button>
+                                    </div>
+                                  );
+                                })()}
+
                               <div className="flex flex-wrap items-center gap-1.5">
                                 <button formAction={salvarQuestao} className={btnPrimario}>
                                   Salvar
+                                </button>
+                                <select
+                                  name="tipo"
+                                  defaultValue={q.tipo}
+                                  className="rounded-lg border border-brand-navy/15 bg-white px-2 py-1 text-xs text-slate-600"
+                                  aria-label="Tipo da questão"
+                                >
+                                  {Object.entries(TIPO).map(([valor, rotulo]) => (
+                                    <option key={valor} value={valor}>
+                                      {rotulo}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  formAction={definirTipo}
+                                  className={btn}
+                                  title="Troca o tipo. As alternativas ficam guardadas caso você volte atrás."
+                                >
+                                  Trocar tipo
                                 </button>
                                 <button formAction={alternarObrigatoria} className={btn}>
                                   {q.obrigatoria ? 'Tornar opcional' : 'Tornar obrigatória'}

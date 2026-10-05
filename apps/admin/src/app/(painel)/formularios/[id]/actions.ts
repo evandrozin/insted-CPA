@@ -198,6 +198,198 @@ export async function adicionarQuestao(dados: FormData): Promise<void> {
   revalidatePath(`/formularios/${bloco.formId}`);
 }
 
+// --------------------------------------------------------------- alternativas
+
+/** Tipos que a tela de resposta sabe desenhar — ver responder/[taskId]. */
+const TIPOS = [
+  'LIKERT',
+  'NPS',
+  'TEXTO_LIVRE',
+  'SIM_NAO',
+  'ESCOLHA_UNICA',
+  'ESCOLHA_MULTIPLA',
+] as const;
+
+type Tipo = (typeof TIPOS)[number];
+
+const ESCOLHAS: Tipo[] = ['ESCOLHA_UNICA', 'ESCOLHA_MULTIPLA'];
+
+/** Régua padrão de quem vira escala sem ter uma: a do instrumento de 2026. */
+const ESCALA_PADRAO = {
+  min: 1,
+  max: 4,
+  labels: { 1: 'Discordo totalmente', 2: 'Discordo', 3: 'Concordo', 4: 'Concordo totalmente' },
+};
+
+/**
+ * Reescreve as alternativas de uma questão, uma por linha.
+ *
+ * Alternativa cujo rótulo não mudou MANTÉM o id. Isso não é detalhe: a resposta
+ * aponta para o id da alternativa, então recriar tudo a cada salvamento
+ * transformaria "corrigi um acento na terceira opção" em "perdi a contagem das
+ * outras doze". Em rascunho ainda não há resposta, mas a mesma função serve à
+ * versão seguinte de um formulário já usado.
+ */
+export async function salvarAlternativas(dados: FormData): Promise<void> {
+  await exigirPainel();
+
+  const questionId = String(dados.get('questionId') ?? '');
+  const bloco = await formIdDaQuestao(questionId);
+  if (!bloco) throw new Error('Questão não encontrada.');
+  const impedimento = await exigirRascunho(bloco.formId);
+  if (impedimento) throw new Error(impedimento);
+
+  const rotulos = String(dados.get('alternativas') ?? '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  // Duas alternativas com o mesmo texto são indistinguíveis no resultado:
+  // quem lesse o relatório veria a mesma linha duas vezes, com contagens
+  // diferentes, sem ter como saber qual é qual.
+  const repetido = rotulos.find((r, i) => rotulos.indexOf(r) !== i);
+  if (repetido) throw new Error(`Alternativa repetida: "${repetido}".`);
+
+  const atuais = await prisma.questionOption.findMany({
+    where: { questionId },
+    select: { id: true, rotulo: true },
+  });
+  const idDoRotulo = new Map(atuais.map((o) => [o.rotulo, o.id]));
+  const preservados = new Set(
+    rotulos.map((r) => idDoRotulo.get(r)).filter((id): id is string => Boolean(id)),
+  );
+  const aRemover = atuais.filter((o) => !preservados.has(o.id));
+
+  // Alternativa já marcada por alguém não pode sumir: o banco recusaria a
+  // exclusão (a resposta aponta para ela) e o erro chegaria como violação de
+  // chave estrangeira, que não diz a ninguém o que fazer. Rascunho normalmente
+  // não tem resposta — mas um ciclo pode apontar para formulário em rascunho,
+  // e aí tem.
+  if (aRemover.length > 0) {
+    const respondidas = await prisma.answerOption.groupBy({
+      by: ['optionId'],
+      where: { optionId: { in: aRemover.map((o) => o.id) } },
+      _count: true,
+    });
+    if (respondidas.length > 0) {
+      const nomes = respondidas
+        .map((r) => {
+          const o = aRemover.find((x) => x.id === r.optionId);
+          return `"${o?.rotulo}" (${r._count} resposta(s))`;
+        })
+        .join(', ');
+      throw new Error(
+        `Não dá para remover ou renomear alternativa já respondida: ${nomes}. ` +
+          'Reescrever mudaria o que essas pessoas marcaram. Crie uma nova versão do formulário.',
+      );
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.questionOption.deleteMany({
+      where: { questionId, id: { notIn: [...preservados] } },
+    });
+
+    // A ordem é única por questão: as sobreviventes vão para posições
+    // negativas antes de assumirem a ordem nova, senão a primeira renumeração
+    // já colidiria com uma posição ainda ocupada.
+    let temp = TEMP;
+    for (const id of preservados) {
+      await tx.questionOption.update({ where: { id }, data: { ordem: temp-- } });
+    }
+
+    for (const [i, rotulo] of rotulos.entries()) {
+      const id = idDoRotulo.get(rotulo);
+      if (id && preservados.has(id)) {
+        await tx.questionOption.update({ where: { id }, data: { ordem: i } });
+      } else {
+        await tx.questionOption.create({ data: { questionId, rotulo, ordem: i } });
+      }
+    }
+  });
+
+  revalidatePath(`/formularios/${bloco.formId}`);
+}
+
+/**
+ * Troca o tipo da questão.
+ *
+ * As alternativas de uma questão que deixou de ser de escolha ficam guardadas:
+ * trocar o tipo por engano e voltar atrás não deve custar a redigitação das
+ * treze opções. Elas não aparecem para o aluno enquanto o tipo não voltar.
+ */
+export async function definirTipo(dados: FormData): Promise<void> {
+  await exigirPainel();
+
+  const questionId = String(dados.get('questionId') ?? '');
+  const tipo = String(dados.get('tipo') ?? '') as Tipo;
+  if (!TIPOS.includes(tipo)) throw new Error('Tipo de questão desconhecido.');
+
+  const bloco = await formIdDaQuestao(questionId);
+  if (!bloco) throw new Error('Questão não encontrada.');
+  const impedimento = await exigirRascunho(bloco.formId);
+  if (impedimento) throw new Error(impedimento);
+
+  const atual = await prisma.question.findUnique({
+    where: { id: questionId },
+    select: { config: true },
+  });
+  const cfg = (atual?.config ?? null) as Record<string, unknown> | null;
+
+  // Escala sem régua não desenha botão nenhum; NPS sem faixa cai no 0–10 do
+  // próprio componente, mas deixar explícito evita depender desse padrão.
+  let config = cfg ?? undefined;
+  if (tipo === 'LIKERT' && !cfg?.labels) config = ESCALA_PADRAO;
+  if (tipo === 'NPS' && cfg?.min === undefined) config = { min: 0, max: 10 };
+  if (tipo === 'TEXTO_LIVRE' && cfg?.maxLength === undefined) config = { maxLength: 500 };
+
+  await prisma.question.update({
+    where: { id: questionId },
+    data: { tipo, config: config as object | undefined },
+  });
+
+  revalidatePath(`/formularios/${bloco.formId}`);
+}
+
+/** Vale só para escala: libera (ou tira) a categoria fora da pontuação. */
+export async function alternarNaoSeAplica(dados: FormData): Promise<void> {
+  await exigirPainel();
+
+  const questionId = String(dados.get('questionId') ?? '');
+  const rotulo = String(dados.get('rotuloNaoSeAplica') ?? '').trim();
+
+  const bloco = await formIdDaQuestao(questionId);
+  if (!bloco) throw new Error('Questão não encontrada.');
+  const impedimento = await exigirRascunho(bloco.formId);
+  if (impedimento) throw new Error(impedimento);
+
+  const atual = await prisma.question.findUnique({
+    where: { id: questionId },
+    select: { config: true, tipo: true },
+  });
+  if (atual?.tipo !== 'LIKERT' && atual?.tipo !== 'NPS') {
+    throw new Error('A categoria "não se aplica" existe só em escala.');
+  }
+
+  const cfg = ((atual?.config ?? {}) as Record<string, unknown>) ?? {};
+  const ligado = Boolean(cfg.permiteNaoSeAplica);
+
+  await prisma.question.update({
+    where: { id: questionId },
+    data: {
+      config: {
+        ...cfg,
+        permiteNaoSeAplica: !ligado,
+        // O texto específico ("Não utilizei a biblioteca...") diz ao aluno que
+        // não usar o serviço é resposta válida, e não nota baixa disfarçada.
+        rotuloNaoSeAplica: !ligado && rotulo ? rotulo : undefined,
+      } as object,
+    },
+  });
+
+  revalidatePath(`/formularios/${bloco.formId}`);
+}
+
 // -------------------------------------------------------------------- blocos
 
 export async function salvarBloco(dados: FormData): Promise<void> {
