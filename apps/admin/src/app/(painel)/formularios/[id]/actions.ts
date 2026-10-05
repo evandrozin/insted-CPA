@@ -13,9 +13,12 @@
  * uma troca direta violaria o índice no meio da transação. Por isso o swap
  * passa por uma ordem temporária negativa.
  */
+import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { exigirPainel } from '@/lib/sessao';
 import { prisma, publicarFormulario as publicar, type TargetType } from '@insted/database';
+import type { Prisma } from '@insted/database';
 import { TIPOS_ALVO, ALVOS_REPETIVEIS } from './alvos';
 
 const TEMP = -1;
@@ -541,6 +544,118 @@ export async function alternarRepetivelDocente(dados: FormData): Promise<void> {
  * publica — um script de ambiente também precisa, e o snapshot congelado não
  * pode depender de qual caminho foi usado.
  */
+/**
+ * Cria a próxima versão de um formulário, como rascunho editável.
+ *
+ * É a única saída para mudar um instrumento já publicado: publicado é imutável
+ * porque a série histórica depende de saber que a pergunta era a mesma. A
+ * versão nova nasce idêntica — blocos, questões, alternativas, escalas e pesos
+ * — e dali em diante segue a própria vida.
+ *
+ * Os ciclos que usam a versão antiga continuam intocados, inclusive os abertos:
+ * trocar o instrumento debaixo de quem já respondeu misturaria duas perguntas
+ * diferentes na mesma coluna. Para o ciclo seguinte, é a CPA quem escolhe a
+ * versão nova ao montá-lo.
+ *
+ * Grava em quatro inserts, com ids gerados aqui. Criar linha a linha seriam
+ * ~200 idas ao banco para o formulário docente: na Vercel, com o banco em São
+ * Paulo, isso estoura o tempo da transação e a cópia falha pela metade.
+ */
+export async function duplicarFormulario(formId: string, dados: FormData): Promise<void> {
+  await exigirPainel();
+
+  const origem = await prisma.formTemplate.findUnique({
+    where: { id: formId },
+    include: {
+      blocos: {
+        orderBy: { ordem: 'asc' },
+        include: {
+          questoes: {
+            orderBy: { ordem: 'asc' },
+            include: { opcoes: { orderBy: { ordem: 'asc' } } },
+          },
+        },
+      },
+    },
+  });
+  if (!origem) throw new Error('Formulário não encontrado.');
+
+  // A versão nova vem depois da MAIOR que existe, não da que está aberta na
+  // tela: duplicar duas vezes a v1 tem que dar v2 e v3, não v2 e v2.
+  const ultima = await prisma.formTemplate.findFirst({
+    where: { nome: origem.nome },
+    orderBy: { versao: 'desc' },
+    select: { versao: true },
+  });
+  const versao = (ultima?.versao ?? origem.versao) + 1;
+
+  const novoId = randomUUID();
+  const blocos: Prisma.QuestionBlockCreateManyInput[] = [];
+  const questoes: Prisma.QuestionCreateManyInput[] = [];
+  const opcoes: Prisma.QuestionOptionCreateManyInput[] = [];
+
+  for (const b of origem.blocos) {
+    const blocoId = randomUUID();
+    blocos.push({
+      id: blocoId,
+      formId: novoId,
+      titulo: b.titulo,
+      descricao: b.descricao,
+      ordem: b.ordem,
+      targetType: b.targetType,
+      repetivel: b.repetivel,
+      targetFiltro: b.targetFiltro ?? undefined,
+      obrigatorio: b.obrigatorio,
+    });
+
+    for (const q of b.questoes) {
+      const questaoId = randomUUID();
+      questoes.push({
+        id: questaoId,
+        blockId: blocoId,
+        enunciado: q.enunciado,
+        ajuda: q.ajuda,
+        tipo: q.tipo,
+        ordem: q.ordem,
+        obrigatoria: q.obrigatoria,
+        config: q.config ?? undefined,
+        peso: q.peso,
+        condicao: q.condicao ?? undefined,
+        ativa: q.ativa,
+      });
+
+      for (const o of q.opcoes) {
+        opcoes.push({
+          id: randomUUID(),
+          questionId: questaoId,
+          rotulo: o.rotulo,
+          valor: o.valor,
+          ordem: o.ordem,
+        });
+      }
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.formTemplate.create({
+      data: {
+        id: novoId,
+        nome: origem.nome,
+        descricao: origem.descricao,
+        publico: origem.publico,
+        versao,
+        status: 'RASCUNHO',
+      },
+    });
+    await tx.questionBlock.createMany({ data: blocos });
+    await tx.question.createMany({ data: questoes });
+    if (opcoes.length > 0) await tx.questionOption.createMany({ data: opcoes });
+  });
+
+  revalidatePath('/formularios');
+  redirect(`/formularios/${novoId}?novo=${versao}`);
+}
+
 export async function publicarFormulario(formId: string, dados: FormData): Promise<void> {
   await exigirPainel();
   await publicar(prisma, formId);

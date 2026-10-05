@@ -27,6 +27,7 @@ import {
   adicionarBloco,
   excluirBloco,
   publicarFormulario,
+  duplicarFormulario,
 } from './actions';
 import { TIPOS_ALVO, ROTULO_ALVO } from './alvos';
 
@@ -136,6 +137,28 @@ export default async function Formulario({ params }: { params: Promise<{ id: str
             </span>
           )}
         </p>
+
+        {!editavel && (
+          <form className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-brand-navy/10 bg-white px-5 py-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-brand-navy">
+                Duplicar como versão {form.versao + 1}
+              </p>
+              <p className="mt-0.5 max-w-xl text-xs text-slate-500">
+                Cria uma cópia idêntica e editável — blocos, questões, alternativas e escalas. Os
+                ciclos que usam a versão {form.versao} continuam como estão, inclusive os abertos:
+                trocar o instrumento debaixo de quem já respondeu misturaria perguntas diferentes
+                na mesma coluna. A versão nova entra no próximo ciclo que você montar.
+              </p>
+            </div>
+            <button
+              formAction={duplicarFormulario.bind(null, form.id)}
+              className="rounded-lg bg-brand-teal px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-teal-hover"
+            >
+              Duplicar
+            </button>
+          </form>
+        )}
 
         {editavel && (
           <form className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-brand-navy/10 bg-white px-5 py-4">
