@@ -51,7 +51,7 @@ const grupos: { titulo: string; itens: Item[] }[] = [
     itens: [
       { href: '/relatorios', label: 'Relatórios', fase: 4 },
       { href: '/relatorios/comentarios', label: 'Moderação', fase: 4 },
-      { href: '/relatorios/exportar', label: 'Exportação', fase: 4 },
+      { href: '/relatorios/exportar', label: 'Exportação', fase: null },
     ],
   },
 ];

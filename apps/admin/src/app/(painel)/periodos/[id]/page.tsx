@@ -119,12 +119,21 @@ export default async function Ciclo({ params }: { params: Promise<{ id: string }
           exatamente a pergunta de quem vai cobrar. Escondê-la até alguém
           responder invertia a utilidade. */}
       {ciclo._count.tarefas > 0 && (
-        <p className="mt-3 text-right">
+        <p className="mt-3 flex flex-wrap justify-end gap-4">
           <Link
             href={`/periodos/${ciclo.id}/respondentes`}
             className="text-xs font-semibold text-brand-teal hover:text-brand-teal-hover"
           >
             Lista nominal — quem respondeu e quem falta →
+          </Link>
+          {/* Duas telas separadas de propósito: uma diz QUEM respondeu e serve
+              à cobrança; a outra, O QUE foi respondido. Não há chave ligando
+              as duas, e juntá-las numa tela só convidaria a tentar. */}
+          <Link
+            href={`/periodos/${ciclo.id}/resultados`}
+            className="text-xs font-semibold text-brand-teal hover:text-brand-teal-hover"
+          >
+            Resultados — exportar as respostas →
           </Link>
         </p>
       )}
