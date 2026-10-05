@@ -338,23 +338,26 @@ function Opcoes({
   return (
     <div className="flex flex-col gap-2">
       {opcoes.map((o) => (
-        <label key={o.id} className="cursor-pointer">
+        // O controle é o do navegador, visível, e não um círculo desenhado por
+        // nós. A primeira versão escondia o input e desenhava a bolinha: o card
+        // mudava de cor ao marcar, mas a bolinha continuava vazia, porque
+        // `peer-checked:` só alcança IRMÃOS do input — nunca um neto. O aluno
+        // via o card aceso e a bolinha apagada, e ficava sem saber se marcou.
+        //
+        // O nativo também traz de graça o que o desenho custava: foco de
+        // teclado, leitor de tela e o comportamento esperado no celular.
+        <label
+          key={o.id}
+          className="flex cursor-pointer items-center gap-3 rounded-xl border border-brand-navy/15 bg-white px-4 py-2.5 text-sm text-slate-600 transition-colors has-[:checked]:border-brand-teal has-[:checked]:bg-brand-teal/10 has-[:checked]:font-semibold has-[:checked]:text-brand-teal-hover has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-teal/40"
+        >
           <input
             type={multipla ? 'checkbox' : 'radio'}
             name={campo}
             value={`o:${o.id}`}
             defaultChecked={marcadas?.includes(o.id)}
-            className="peer sr-only"
+            className="h-4 w-4 shrink-0 accent-brand-teal"
           />
-          <span className="flex items-center gap-3 rounded-xl border border-brand-navy/15 bg-white px-4 py-2.5 text-sm text-slate-600 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 peer-checked:font-semibold peer-checked:text-brand-teal-hover">
-            <span
-              aria-hidden
-              className={`h-4 w-4 shrink-0 border border-brand-navy/25 bg-white ${
-                multipla ? 'rounded' : 'rounded-full'
-              }`}
-            />
-            {o.rotulo}
-          </span>
+          {o.rotulo}
         </label>
       ))}
       {multipla && <p className="text-[11px] text-slate-400">Pode marcar mais de uma.</p>}
