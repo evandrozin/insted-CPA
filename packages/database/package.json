@@ -16,6 +16,7 @@
     "admin": "tsx prisma/admin.ts",
     "homolog": "node ./scripts/homologacao.mjs",
     "db:formularios-2026": "tsx prisma/formularios-2026.ts",
+    "db:formulario-presencial": "tsx prisma/formulario-graduacao-presencial.ts",
     "db:demo": "tsx prisma/demonstracao.ts",
     "db:publicar-2026": "tsx prisma/publicar-2026.ts"
   },

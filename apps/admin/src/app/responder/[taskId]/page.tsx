@@ -23,6 +23,8 @@ type Config = {
   max?: number;
   labels?: Record<string, string>;
   permiteNaoSeAplica?: boolean;
+  /** Texto da categoria fora da escala ("Não utilizei a biblioteca..."). */
+  rotuloNaoSeAplica?: string;
   maxLength?: number;
 };
 
@@ -64,13 +66,27 @@ export default async function Responder({
   const bloco = alvo
     ? await prisma.questionBlock.findUnique({
         where: { id: alvo.blockId },
-        include: { questoes: { where: { ativa: true }, orderBy: { ordem: 'asc' } } },
+        include: {
+          questoes: {
+            where: { ativa: true },
+            orderBy: { ordem: 'asc' },
+            include: { opcoes: { orderBy: { ordem: 'asc' } } },
+          },
+        },
       })
     : null;
 
   const rascunhoDe = (questionId: string, targetRefId: string) =>
     task.rascunhos.find((r) => r.questionId === questionId && r.targetRefId === targetRefId)
-      ?.valor as { numerico?: number; texto?: string; booleano?: boolean; naoSeAplica?: boolean } | undefined;
+      ?.valor as
+      | {
+          numerico?: number;
+          texto?: string;
+          booleano?: boolean;
+          naoSeAplica?: boolean;
+          opcoes?: string[];
+        }
+      | undefined;
 
   const refAtual = alvo?.targetRefId ?? '__global__';
   const progresso = Math.round(((etapa - 1) / total) * 100);
@@ -181,6 +197,13 @@ export default async function Responder({
                             </label>
                           ))}
                         </div>
+                      ) : q.tipo === 'ESCOLHA_UNICA' || q.tipo === 'ESCOLHA_MULTIPLA' ? (
+                        <Opcoes
+                          campo={campo}
+                          opcoes={q.opcoes}
+                          multipla={q.tipo === 'ESCOLHA_MULTIPLA'}
+                          marcadas={atual?.opcoes}
+                        />
                       ) : (
                         <textarea
                           name={campo}
@@ -275,11 +298,66 @@ function Escala({
             defaultChecked={Boolean(atual?.naoSeAplica)}
             className="peer sr-only"
           />
-          <span className="flex min-w-20 items-center justify-center rounded-xl border border-dashed border-brand-navy/20 bg-white px-3 py-2 text-xs text-slate-400 peer-checked:border-slate-400 peer-checked:bg-slate-100 peer-checked:font-semibold peer-checked:text-slate-600">
-            Não se aplica
+          <span className="flex min-w-20 max-w-xs items-center justify-center rounded-xl border border-dashed border-brand-navy/20 bg-white px-3 py-2 text-center text-xs leading-tight text-slate-400 peer-checked:border-slate-400 peer-checked:bg-slate-100 peer-checked:font-semibold peer-checked:text-slate-600">
+            {cfg.rotuloNaoSeAplica ?? 'Não se aplica'}
           </span>
         </label>
       )}
+    </div>
+  );
+}
+
+/**
+ * Alternativas de escolha única ou múltipla.
+ *
+ * O valor enviado é `o:<id>`, nunca o rótulo: é o id que fica no banco, então
+ * corrigir a redação de uma alternativa não desmente quem já respondeu.
+ *
+ * Escolha múltipla manda uma entrada por caixa marcada — e nada quando ninguém
+ * marca, que é o esperado numa pergunta opcional.
+ */
+function Opcoes({
+  campo,
+  opcoes,
+  multipla,
+  marcadas,
+}: {
+  campo: string;
+  opcoes: { id: string; rotulo: string }[];
+  multipla: boolean;
+  marcadas?: string[];
+}) {
+  if (opcoes.length === 0) {
+    return (
+      <p className="text-xs text-brand-orange">
+        Esta pergunta está sem alternativas cadastradas. Avise a CPA.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {opcoes.map((o) => (
+        <label key={o.id} className="cursor-pointer">
+          <input
+            type={multipla ? 'checkbox' : 'radio'}
+            name={campo}
+            value={`o:${o.id}`}
+            defaultChecked={marcadas?.includes(o.id)}
+            className="peer sr-only"
+          />
+          <span className="flex items-center gap-3 rounded-xl border border-brand-navy/15 bg-white px-4 py-2.5 text-sm text-slate-600 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 peer-checked:font-semibold peer-checked:text-brand-teal-hover">
+            <span
+              aria-hidden
+              className={`h-4 w-4 shrink-0 border border-brand-navy/25 bg-white ${
+                multipla ? 'rounded' : 'rounded-full'
+              }`}
+            />
+            {o.rotulo}
+          </span>
+        </label>
+      ))}
+      {multipla && <p className="text-[11px] text-slate-400">Pode marcar mais de uma.</p>}
     </div>
   );
 }

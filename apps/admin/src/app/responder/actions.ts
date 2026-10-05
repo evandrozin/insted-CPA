@@ -51,30 +51,44 @@ async function tarefaDoRespondente(taskId: string) {
  *
  * Campos vêm como `r:<questionId>:<targetRefId>`; `targetRefId` é
  * `__global__` para blocos de alvo único.
+ *
+ * Um campo pode chegar repetido: caixas de seleção mandam uma entrada por caixa
+ * marcada. Por isso os valores são agrupados por campo antes de virar resposta —
+ * percorrer entrada por entrada guardaria só a última marcada.
  */
 function lerRespostas(dados: FormData) {
-  const out: { questionId: string; targetRefId: string; valor: unknown }[] = [];
+  const porCampo = new Map<string, string[]>();
 
   for (const [chave, bruto] of dados.entries()) {
     if (!chave.startsWith('r:')) continue;
-    const [, questionId, targetRefId] = chave.split(':');
     const v = String(bruto);
     if (v === '') continue;
-
-    out.push({
-      questionId,
-      targetRefId: targetRefId || '__global__',
-      valor:
-        v === '__na__'
-          ? { naoSeAplica: true }
-          : /^-?\d+$/.test(v)
-            ? { numerico: Number(v) }
-            : v === 'sim' || v === 'nao'
-              ? { booleano: v === 'sim' }
-              : { texto: v },
-    });
+    porCampo.set(chave, [...(porCampo.get(chave) ?? []), v]);
   }
-  return out;
+
+  return [...porCampo].map(([chave, valores]) => {
+    const [, questionId, targetRefId] = chave.split(':');
+    return { questionId, targetRefId: targetRefId || '__global__', valor: interpretar(valores) };
+  });
+}
+
+/**
+ * Traduz o que veio da tela para o formato guardado no rascunho.
+ *
+ * Opção escolhida chega como `o:<id>` e é guardada como id, não como rótulo: a
+ * CPA pode corrigir a redação de uma alternativa sem desmentir quem já
+ * respondeu, e contar quantos marcaram cada uma vira uma consulta simples.
+ */
+function interpretar(valores: string[]): unknown {
+  if (valores.includes('__na__')) return { naoSeAplica: true };
+
+  const opcoes = valores.filter((v) => v.startsWith('o:')).map((v) => v.slice(2));
+  if (opcoes.length > 0) return { opcoes };
+
+  const v = valores[valores.length - 1];
+  if (/^-?\d+$/.test(v)) return { numerico: Number(v) };
+  if (v === 'sim' || v === 'nao') return { booleano: v === 'sim' };
+  return { texto: v };
 }
 
 /** Salva o passo atual e vai para o próximo (ou para a revisão). */
@@ -181,6 +195,15 @@ export async function enviar(taskId: string, dados: FormData): Promise<void> {
 
   if (rascunhos.length === 0) throw new Error('Nenhuma resposta preenchida.');
 
+  // Só entra opção que pertence à questão respondida. Sem esta conferência, um
+  // campo adulterado no navegador gravaria marcação em alternativa de outra
+  // pergunta — e o relatório contaria como se o aluno a tivesse escolhido.
+  const opcoesDaQuestao = await prisma.questionOption.findMany({
+    where: { questionId: { in: [...new Set(rascunhos.map((r) => r.questionId))] } },
+    select: { id: true, questionId: true },
+  });
+  const opcaoValida = new Set(opcoesDaQuestao.map((o) => `${o.questionId}:${o.id}`));
+
   const porAlvo = new Map<string, typeof rascunhos>();
   for (const r of rascunhos) {
     const lista = porAlvo.get(r.targetRefId) ?? [];
@@ -229,6 +252,7 @@ export async function enviar(taskId: string, dados: FormData): Promise<void> {
   // que conjuntos e respostas saiam em dois inserts, não em noventa.
   const conjuntos: Prisma.ResponseSetCreateManyInput[] = [];
   const respostas: Prisma.AnswerCreateManyInput[] = [];
+  const marcacoes: Prisma.AnswerOptionCreateManyInput[] = [];
 
   for (const [targetRefId, itens] of grupos) {
     const alvo = alvoPorRef.get(targetRefId);
@@ -265,8 +289,14 @@ export async function enviar(taskId: string, dados: FormData): Promise<void> {
         texto?: string;
         booleano?: boolean;
         naoSeAplica?: boolean;
+        opcoes?: string[];
       };
+      // Id gerado aqui pelo mesmo motivo dos conjuntos: as marcações precisam
+      // apontar para a resposta antes de ela existir no banco.
+      const respostaId = randomUUID();
+
       respostas.push({
+        id: respostaId,
         responseSetId: id,
         questionId: item.questionId,
         valorNumerico: v.numerico ?? null,
@@ -274,17 +304,23 @@ export async function enviar(taskId: string, dados: FormData): Promise<void> {
         valorBooleano: v.booleano ?? null,
         naoSeAplica: Boolean(v.naoSeAplica),
       });
+
+      for (const optionId of v.opcoes ?? []) {
+        if (!opcaoValida.has(`${item.questionId}:${optionId}`)) continue;
+        marcacoes.push({ answerId: respostaId, optionId });
+      }
     }
   }
 
-  // Quatro consultas, na mesma transação de antes: ou a resposta vira anônima
-  // e o rascunho some, ou nada acontece. O `createMany` insere na ordem do
-  // array, então o embaralhamento de `grupos` continua valendo — e os ids
-  // são UUID aleatório, sem sequência que denuncie quem gravou junto.
+  // Cinco consultas, na mesma transação de antes: ou a resposta vira anônima e
+  // o rascunho some, ou nada acontece. O `createMany` insere na ordem do array,
+  // então o embaralhamento de `grupos` continua valendo — e os ids são UUID
+  // aleatório, sem sequência que denuncie quem gravou junto.
   await prisma.$transaction(
     async (tx) => {
       await tx.responseSet.createMany({ data: conjuntos });
       await tx.answer.createMany({ data: respostas });
+      if (marcacoes.length > 0) await tx.answerOption.createMany({ data: marcacoes });
 
       // O rascunho é a única estrutura que liga resposta e pessoa. Some aqui.
       await tx.draftAnswer.deleteMany({ where: { taskId } });
@@ -294,7 +330,7 @@ export async function enviar(taskId: string, dados: FormData): Promise<void> {
         data: { status: 'CONCLUIDA', progresso: 100, concluidaEm: new Date(), loteId },
       });
     },
-    // Margem, não muleta: são quatro consultas. O limite existe para que uma
+    // Margem, não muleta: são cinco consultas. O limite existe para que uma
     // falha de rede não segure a conexão do pooler indefinidamente.
     { timeout: 20_000, maxWait: 10_000 },
   );

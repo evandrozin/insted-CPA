@@ -123,6 +123,10 @@ switch (comando) {
     rodar(['tsx', 'prisma/formularios-2026.ts']);
     break;
 
+  case 'formulario-presencial':
+    rodar(['tsx', 'prisma/formulario-graduacao-presencial.ts']);
+    break;
+
   case 'publicar-2026':
     rodar(['tsx', 'prisma/publicar-2026.ts']);
     break;
