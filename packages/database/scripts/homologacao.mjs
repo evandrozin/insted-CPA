@@ -166,18 +166,27 @@ switch (comando) {
     rodar(['prisma', 'db', 'execute', '--stdin', '--schema', 'prisma/schema.prisma']);
     break;
 
+  case 'consultar':
+    rodar(['tsx', 'prisma/consultar.ts', ...resto]);
+    break;
+
   default:
     console.log(`Comandos contra o banco de homologação:
 
   npm.cmd run homolog -- migrar
   npm.cmd run homolog -- formularios
- *   npm.cmd run homolog -- formularios-2026
- *   npm.cmd run homolog -- demo
- *   npm.cmd run homolog -- jacad <subcomando do CLI do JACAD>
- *   npm.cmd run homolog -- alvos gerar --periodo=<id>
+  npm.cmd run homolog -- formularios-2026
+  npm.cmd run homolog -- formulario-presencial
+  npm.cmd run homolog -- publicar-2026
+  npm.cmd run homolog -- demo
+  npm.cmd run homolog -- jacad <subcomando do CLI do JACAD>
+  npm.cmd run homolog -- alvos gerar --periodo=<id>
+  npm.cmd run homolog -- alvos incluir --periodo=<id> --ra=<matrículas>
   npm.cmd run homolog -- admin listar
   npm.cmd run homolog -- admin criar --email=<e-mail> --nome="<nome>"
   npm.cmd run homolog -- admin senha --email=<e-mail>
+  npm.cmd run homolog -- consultar "select ..."    (leitura, mostra as linhas)
+  npm.cmd run homolog -- sql                       (escrita, lê o SQL da entrada)
 
 A conexão vale só para o comando — não fica valendo no terminal depois.`);
     process.exitCode = 1;
