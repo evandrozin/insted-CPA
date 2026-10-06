@@ -4,6 +4,7 @@
  */
 import Link from 'next/link';
 import { prisma } from '@insted/database';
+import { alternarArquivo, excluirFormulario } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,8 +40,9 @@ export default async function Formularios() {
           Formulários
         </h1>
         <p className="mt-2 max-w-2xl text-slate-500">
-          Os três instrumentos aplicados em 2025, transcritos do Drive da CPA na redação original.
-          Entram como rascunho: revise, ajuste e publique — publicar congela a versão para o ciclo.
+          Rascunho se edita; publicado congela a versão e vira a prova do que foi perguntado. Para
+          mudar um instrumento publicado, duplique: a cópia nasce como rascunho na versão seguinte.
+          Arquivar tira das escolhas do ciclo sem apagar nada.
         </p>
       </header>
 
@@ -119,6 +121,29 @@ export default async function Formularios() {
                   </p>
                 )}
               </Link>
+
+              {/* Fora do cartão: botão dentro de link não é clicável sem
+                  brigar com a navegação. */}
+              <form className="mt-1 flex flex-wrap items-center gap-1.5 px-5">
+                <input type="hidden" name="formId" value={f.id} />
+                {f.status === 'RASCUNHO' ? (
+                  <button
+                    formAction={excluirFormulario.bind(null, f.id)}
+                    className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:border-brand-orange/50 hover:text-brand-orange"
+                    title="Só funciona em rascunho sem ciclo e sem resposta"
+                  >
+                    Excluir
+                  </button>
+                ) : (
+                  <button
+                    formAction={alternarArquivo.bind(null, f.id)}
+                    className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:border-brand-teal/40 hover:text-brand-teal-hover"
+                    title="Arquivar tira das escolhas do ciclo; nada é apagado"
+                  >
+                    {f.status === 'ARQUIVADO' ? 'Desarquivar' : 'Arquivar'}
+                  </button>
+                )}
+              </form>
             </li>
           );
         })}
@@ -129,7 +154,9 @@ export default async function Formularios() {
 
 async function carregar() {
   return prisma.formTemplate.findMany({
-    orderBy: { publico: 'asc' },
+    // Mesmo nome junto e versão nova primeiro: com três versões do mesmo
+    // instrumento na tela, a ordem é o que diz qual é a atual.
+    orderBy: [{ publico: 'asc' }, { nome: 'asc' }, { versao: 'desc' }],
     include: {
       blocos: {
         orderBy: { ordem: 'asc' },

@@ -63,7 +63,13 @@ export default async function Ciclo({ params }: { params: Promise<{ id: string }
 
   const [semestresDoAno, formularios, concluidas, alvos] = await Promise.all([
     prisma.academicTerm.findMany({ where: { ano: ciclo.ano }, orderBy: { semestre: 'asc' } }),
-    prisma.formTemplate.findMany({ orderBy: { publico: 'asc' } }),
+    // Arquivado some da escolha; versão nova primeiro, para a lista não
+    // depender de o leitor adivinhar qual das três é a atual.
+    prisma.formTemplate.findMany({
+      where: { OR: [{ status: { not: 'ARQUIVADO' } }, { periodForms: { some: { periodId: id } } }] },
+      orderBy: [{ publico: 'asc' }, { nome: 'asc' }, { versao: 'desc' }],
+      include: { _count: { select: { blocos: true } } },
+    }),
     prisma.evaluationTask.count({ where: { periodId: id, status: 'CONCLUIDA' } }),
     prisma.evaluationTaskTarget.count({ where: { task: { periodId: id } } }),
   ]);
@@ -197,11 +203,21 @@ export default async function Ciclo({ params }: { params: Promise<{ id: string }
                       <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
                         {PUBLICO[f.publico] ?? f.publico}
                       </span>
-                      {f.status !== 'PUBLICADO' && (
-                        <span className="rounded bg-brand-orange/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-brand-orange">
-                          {f.status.toLowerCase()}
-                        </span>
-                      )}
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                          f.status === 'PUBLICADO'
+                            ? 'bg-brand-teal/10 text-brand-teal-hover'
+                            : f.status === 'ARQUIVADO'
+                              ? 'bg-slate-100 text-slate-400'
+                              : 'bg-brand-orange/10 text-brand-orange'
+                        }`}
+                      >
+                        {f.status.toLowerCase()}
+                      </span>
+                      <span className="font-mono text-[10px] font-semibold text-slate-400">
+                        v{f.versao}
+                      </span>
+                      <span className="text-[10px] text-slate-400">{f._count.blocos} blocos</span>
                     </div>
                     <p className="mt-0.5 text-sm font-semibold text-brand-navy">{f.nome}</p>
                   </div>
