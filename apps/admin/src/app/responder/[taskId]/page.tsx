@@ -15,6 +15,8 @@ import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@insted/database';
 import { respondenteAtual } from '@/lib/sessao';
 import { salvarEtapa, enviar } from '../actions';
+import { PerguntaCondicional } from '@/components/PerguntaCondicional';
+import { lerCondicao } from '@/lib/condicao';
 
 export const dynamic = 'force-dynamic';
 
@@ -161,8 +163,18 @@ export default async function Responder({
                 const atual = rascunhoDe(q.id, refAtual);
                 const campo = `r:${q.id}:${refAtual}`;
 
-                return (
-                  <li key={q.id} className="border-b border-slate-50 px-6 py-5 last:border-0">
+                // Condição só vale se a pergunta que controla estiver nesta
+                // mesma etapa: o aluno precisa ver as duas juntas para a
+                // aparição fazer sentido, e o campo precisa existir na tela
+                // para ser observado.
+                const condicao = lerCondicao(q.condicao);
+                const controle =
+                  condicao && bloco?.questoes.some((o) => o.id === condicao.questionId)
+                    ? condicao
+                    : null;
+
+                const conteudo = (
+                  <>
                     <p className="text-sm font-medium text-brand-navy">
                       <span className="mr-2 font-mono text-xs text-slate-300">{i + 1}</span>
                       {q.enunciado}
@@ -215,6 +227,23 @@ export default async function Responder({
                         />
                       )}
                     </div>
+                  </>
+                );
+
+                const estilo = 'border-b border-slate-50 px-6 py-5 last:border-0';
+
+                return controle ? (
+                  <PerguntaCondicional
+                    key={q.id}
+                    campoControle={`r:${controle.questionId}:${refAtual}`}
+                    condicao={controle}
+                    className={estilo}
+                  >
+                    {conteudo}
+                  </PerguntaCondicional>
+                ) : (
+                  <li key={q.id} className={estilo}>
+                    {conteudo}
                   </li>
                 );
               })}

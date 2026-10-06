@@ -28,7 +28,9 @@ import {
   excluirBloco,
   publicarFormulario,
   duplicarFormulario,
+  definirCondicao,
 } from './actions';
+import { lerCondicao, descreverCondicao } from '@/lib/condicao';
 import { TIPOS_ALVO, ROTULO_ALVO } from './alvos';
 
 export const dynamic = 'force-dynamic';
@@ -63,6 +65,99 @@ type Config = {
   rotuloNaoSeAplica?: string;
   legendaPendenteConfirmacao?: boolean;
 };
+
+/** Linha de condição de uma questão, dentro da área de edição. */
+function Condicao({
+  questao,
+  anteriores,
+}: {
+  questao: { id: string; ordem: number; condicao: unknown };
+  anteriores: { id: string; enunciado: string; ordem: number }[];
+}) {
+  const atual = lerCondicao(questao.condicao);
+  const controle = atual && anteriores.find((a) => a.id === atual.questionId);
+  const faixa = atual && Array.isArray(atual.valor) ? (atual.valor as number[]) : null;
+
+  if (anteriores.length === 0) {
+    return (
+      <p className="mt-3 text-[11px] text-slate-400">
+        Para condicionar esta pergunta, é preciso haver antes dela, no mesmo bloco, uma de escala
+        ou de 0 a 10.
+      </p>
+    );
+  }
+
+  return (
+    <form className="mt-3 border-t border-slate-200 pt-3">
+      <input type="hidden" name="questionId" value={questao.id} />
+
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+        Quando esta pergunta aparece
+      </p>
+
+      {atual && controle && (
+        <p className="mt-1 text-xs text-brand-teal-hover">
+          {descreverCondicao(atual, controle.enunciado)}
+        </p>
+      )}
+
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <select
+          name="controleId"
+          defaultValue={atual?.questionId ?? ''}
+          className="max-w-xs rounded-lg border border-brand-navy/15 bg-white px-2 py-1 text-xs text-slate-600"
+          aria-label="Pergunta que controla"
+        >
+          <option value="">Sempre aparece</option>
+          {anteriores.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.ordem + 1}. {a.enunciado.slice(0, 50)}
+              {a.enunciado.length > 50 ? '…' : ''}
+            </option>
+          ))}
+        </select>
+
+        <select
+          name="operador"
+          defaultValue={atual?.operador ?? 'entre'}
+          className="rounded-lg border border-brand-navy/15 bg-white px-2 py-1 text-xs text-slate-600"
+          aria-label="Comparação"
+        >
+          <option value="entre">estiver entre</option>
+          <option value="lte">for no máximo</option>
+          <option value="gte">for no mínimo</option>
+          <option value="eq">for igual a</option>
+          <option value="ne">for diferente de</option>
+        </select>
+
+        <input
+          type="number"
+          name="valor"
+          defaultValue={faixa ? faixa[0] : (atual?.valor as number | undefined) ?? 0}
+          className="w-16 rounded-lg border border-brand-navy/15 bg-white px-2 py-1 text-xs text-slate-600"
+          aria-label="Valor"
+        />
+        <span className="text-[11px] text-slate-400">e</span>
+        <input
+          type="number"
+          name="valor2"
+          defaultValue={faixa ? faixa[1] : 6}
+          className="w-16 rounded-lg border border-brand-navy/15 bg-white px-2 py-1 text-xs text-slate-600"
+          aria-label="Valor final da faixa"
+        />
+
+        <button formAction={definirCondicao} className={btn}>
+          Salvar condição
+        </button>
+      </div>
+
+      <p className="mt-1.5 text-[11px] text-slate-400">
+        O segundo número só vale na faixa. Sem JavaScript no navegador do aluno a pergunta aparece
+        sempre — mas a resposta dela é descartada no servidor se a condição não bater.
+      </p>
+    </form>
+  );
+}
 
 function resumoEscala(cfg: Config | null): string | null {
   if (!cfg?.labels) return null;
@@ -408,6 +503,14 @@ export default async function Formulario({ params }: { params: Promise<{ id: str
                                 peso 0
                               </span>
                             )}
+                            {lerCondicao(q.condicao) && (
+                              <span
+                                className="rounded bg-brand-teal/10 px-1.5 py-0.5 text-[10px] font-semibold text-brand-teal-hover"
+                                title="Só aparece conforme a resposta de outra pergunta"
+                              >
+                                condicional
+                              </span>
+                            )}
                             <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
                               {TIPO[q.tipo] ?? q.tipo.toLowerCase()}
                             </span>
@@ -528,6 +631,18 @@ export default async function Formulario({ params }: { params: Promise<{ id: str
                                 </button>
                               </div>
                             </form>
+
+                            {/* Condição: a pergunta aparece só quando outra,
+                                anterior e do mesmo bloco, for respondida numa
+                                faixa. É o "se 0 a 6, pergunte o que atrapalha"
+                                do instrumento da CPA. */}
+                            <Condicao
+                              questao={q}
+                              anteriores={bloco.questoes.filter(
+                                (o) =>
+                                  o.ordem < q.ordem && (o.tipo === 'LIKERT' || o.tipo === 'NPS'),
+                              )}
+                            />
                           </div>
                         )}
                       </details>

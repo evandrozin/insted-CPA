@@ -17,8 +17,9 @@ import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { exigirPainel } from '@/lib/sessao';
-import { prisma, publicarFormulario as publicar, type TargetType } from '@insted/database';
-import type { Prisma } from '@insted/database';
+// `Prisma` entra como valor, não só como tipo: `Prisma.DbNull` é o que apaga
+// um campo JSON no banco — `null` cru gravaria o JSON nulo, que é outra coisa.
+import { prisma, publicarFormulario as publicar, Prisma, type TargetType } from '@insted/database';
 import { TIPOS_ALVO, ALVOS_REPETIVEIS } from './alvos';
 
 const TEMP = -1;
@@ -195,6 +196,92 @@ export async function adicionarQuestao(dados: FormData): Promise<void> {
       tipo: ultima?.tipo ?? 'LIKERT',
       ordem: (ultima?.ordem ?? 0) + 1,
       config: (ultima?.config ?? undefined) as object | undefined,
+    },
+  });
+
+  revalidatePath(`/formularios/${bloco.formId}`);
+}
+
+// ----------------------------------------------------------------- condição
+
+/**
+ * Define quando uma pergunta aparece.
+ *
+ * O instrumento pede isto: "se a probabilidade de permanecer for de 0 a 6,
+ * pergunte o que atrapalha". Sem a condição, a pergunta aparece para todo
+ * mundo — inclusive para quem respondeu 10, que não tem o que responder e
+ * acaba preenchendo qualquer coisa.
+ *
+ * A pergunta que controla precisa vir ANTES, no mesmo bloco. Antes porque o
+ * aluno responde de cima para baixo e uma condição que olha para a frente
+ * nunca se cumpre; no mesmo bloco porque cada bloco é uma etapa do formulário,
+ * e as duas perguntas precisam estar na mesma tela para a aparição fazer
+ * sentido.
+ *
+ * Só condição numérica aqui: escala e 0 a 10. O motor também entende "marcou
+ * uma destas alternativas", mas escolher alternativas exigiria a tela saber,
+ * antes de salvar, qual pergunta foi escolhida como controle.
+ */
+export async function definirCondicao(dados: FormData): Promise<void> {
+  await exigirPainel();
+
+  const questionId = String(dados.get('questionId') ?? '');
+  const controleId = String(dados.get('controleId') ?? '');
+  const operador = String(dados.get('operador') ?? '');
+  const valor = Number(dados.get('valor'));
+  const valor2 = Number(dados.get('valor2'));
+
+  const bloco = await formIdDaQuestao(questionId);
+  if (!bloco) throw new Error('Questão não encontrada.');
+  const impedimento = await exigirRascunho(bloco.formId);
+  if (impedimento) throw new Error(impedimento);
+
+  if (!controleId) {
+    // Sem controle escolhido, some a condição: é como a tela desfaz.
+    await prisma.question.update({
+      where: { id: questionId },
+      data: { condicao: Prisma.DbNull },
+    });
+    revalidatePath(`/formularios/${bloco.formId}`);
+    return;
+  }
+
+  const [questao, controle] = await Promise.all([
+    prisma.question.findUnique({ where: { id: questionId }, select: { ordem: true } }),
+    prisma.question.findUnique({
+      where: { id: controleId },
+      select: { ordem: true, blockId: true, tipo: true },
+    }),
+  ]);
+  if (!questao || !controle) throw new Error('Questão não encontrada.');
+
+  if (controle.blockId !== bloco.id) {
+    throw new Error('A pergunta que controla precisa estar no mesmo bloco.');
+  }
+  if (controle.ordem >= questao.ordem) {
+    throw new Error('A pergunta que controla precisa vir antes desta.');
+  }
+  if (controle.tipo !== 'LIKERT' && controle.tipo !== 'NPS') {
+    throw new Error('Só escala ou 0 a 10 podem controlar a aparição de outra pergunta.');
+  }
+  if (!['entre', 'eq', 'ne', 'lte', 'gte'].includes(operador)) {
+    throw new Error('Condição desconhecida.');
+  }
+  if (Number.isNaN(valor) || (operador === 'entre' && Number.isNaN(valor2))) {
+    throw new Error('Informe o valor da condição.');
+  }
+  if (operador === 'entre' && valor2 < valor) {
+    throw new Error('Na faixa, o primeiro número precisa ser o menor.');
+  }
+
+  await prisma.question.update({
+    where: { id: questionId },
+    data: {
+      condicao: {
+        questionId: controleId,
+        operador,
+        valor: operador === 'entre' ? [valor, valor2] : valor,
+      },
     },
   });
 

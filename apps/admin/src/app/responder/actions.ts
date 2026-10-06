@@ -17,9 +17,10 @@
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { prisma } from '@insted/database';
+import { prisma, Prisma as PrismaRuntime } from '@insted/database';
 import type { Prisma } from '@insted/database';
 import { respondenteAtual } from '@/lib/sessao';
+import { condicaoSatisfeita, lerCondicao, type ValorRespondido } from '@/lib/condicao';
 
 /** A tarefa é do usuário da sessão e o ciclo está aberto? */
 async function tarefaDoRespondente(taskId: string) {
@@ -91,10 +92,92 @@ function interpretar(valores: string[]): unknown {
   return { texto: v };
 }
 
+type RespostaLida = { questionId: string; targetRefId: string; valor: unknown };
+
+/**
+ * Tira do caminho a resposta de pergunta que não deveria ter aparecido.
+ *
+ * A tela esconde a pergunta condicional, mas esconder é conforto: o navegador
+ * é do respondente, e um formulário montado à mão enviaria o campo assim
+ * mesmo. Quem decide o que entra no banco é esta função.
+ *
+ * Ela também APAGA o rascunho do que foi descartado: o aluno pode ter
+ * respondido "o que atrapalha" e depois mudado a nota de permanência para 9 —
+ * a resposta antiga ficaria no banco contando como se ele ainda achasse aquilo.
+ */
+async function aplicarCondicoes(
+  taskId: string,
+  respostas: RespostaLida[],
+): Promise<RespostaLida[]> {
+  if (respostas.length === 0) return respostas;
+
+  const condicionais = await prisma.question.findMany({
+    where: {
+      id: { in: respostas.map((r) => r.questionId) },
+      condicao: { not: PrismaRuntime.DbNull },
+    },
+    select: { id: true, condicao: true },
+  });
+  if (condicionais.length === 0) return respostas;
+
+  const chave = (questionId: string, ref: string) => `${questionId}:${ref}`;
+  const valores = new Map<string, ValorRespondido>(
+    respostas.map((r) => [chave(r.questionId, r.targetRefId), r.valor as ValorRespondido]),
+  );
+
+  // A pergunta que controla pode não estar neste envio — o aluno respondeu
+  // numa visita anterior e voltou para completar. Nesse caso vale o rascunho.
+  const faltantes = condicionais
+    .map((q) => lerCondicao(q.condicao)?.questionId)
+    .filter((id): id is string => Boolean(id));
+
+  if (faltantes.length > 0) {
+    const rascunhos = await prisma.draftAnswer.findMany({
+      where: { taskId, questionId: { in: faltantes } },
+      select: { questionId: true, targetRefId: true, valor: true },
+    });
+    for (const r of rascunhos) {
+      const k = chave(r.questionId, r.targetRefId);
+      if (!valores.has(k)) valores.set(k, r.valor as ValorRespondido);
+    }
+  }
+
+  const condicaoPorQuestao = new Map(
+    condicionais.map((q) => [q.id, lerCondicao(q.condicao)]),
+  );
+
+  const manter: RespostaLida[] = [];
+  const descartar: RespostaLida[] = [];
+
+  for (const r of respostas) {
+    const condicao = condicaoPorQuestao.get(r.questionId);
+    if (!condicao) {
+      manter.push(r);
+      continue;
+    }
+    const controle = valores.get(chave(condicao.questionId, r.targetRefId));
+    (condicaoSatisfeita(condicao, controle) ? manter : descartar).push(r);
+  }
+
+  if (descartar.length > 0) {
+    await prisma.draftAnswer.deleteMany({
+      where: {
+        taskId,
+        OR: descartar.map((r) => ({
+          questionId: r.questionId,
+          targetRefId: r.targetRefId,
+        })),
+      },
+    });
+  }
+
+  return manter;
+}
+
 /** Salva o passo atual e vai para o próximo (ou para a revisão). */
 export async function salvarEtapa(taskId: string, dados: FormData): Promise<void> {
   const { task } = await tarefaDoRespondente(taskId);
-  const respostas = lerRespostas(dados);
+  const respostas = await aplicarCondicoes(taskId, lerRespostas(dados));
 
   if (respostas.length > 0) {
     await prisma.$transaction(
@@ -163,7 +246,7 @@ export async function enviar(taskId: string, dados: FormData): Promise<void> {
   const { eu, task } = await tarefaDoRespondente(taskId);
 
   // Salva o que estiver na tela antes de fechar.
-  const ultimas = lerRespostas(dados);
+  const ultimas = await aplicarCondicoes(taskId, lerRespostas(dados));
   if (ultimas.length > 0) {
     await prisma.$transaction(
       ultimas.map((r) =>

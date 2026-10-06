@@ -19,6 +19,7 @@
     "db:formulario-presencial": "tsx prisma/formulario-graduacao-presencial.ts",
     "db:demo": "tsx prisma/demonstracao.ts",
     "db:respostas-teste": "tsx prisma/respostas-teste.ts",
+    "db:aluno-teste": "tsx prisma/aluno-teste.ts",
     "db:publicar-2026": "tsx prisma/publicar-2026.ts"
   },
   "prisma": {
