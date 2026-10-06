@@ -43,14 +43,14 @@ const grupos: { titulo: string; itens: Item[] }[] = [
     itens: [
       { href: '/formularios', label: 'Formulários', fase: null },
       { href: '/periodos', label: 'Ciclos anuais', fase: null },
-      { href: '/periodos/adesao', label: 'Adesão ao vivo', fase: 3 },
+      { href: '/periodos/adesao', label: 'Adesão ao vivo', fase: null },
     ],
   },
   {
     titulo: 'Resultados',
     itens: [
-      { href: '/relatorios', label: 'Relatórios', fase: 4 },
-      { href: '/relatorios/comentarios', label: 'Moderação', fase: 4 },
+      { href: '/relatorios', label: 'Relatórios', fase: null },
+      { href: '/relatorios/comentarios', label: 'Moderação', fase: null },
       { href: '/relatorios/exportar', label: 'Exportação', fase: null },
     ],
   },

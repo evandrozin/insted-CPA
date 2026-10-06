@@ -89,6 +89,19 @@ enum QuestionType {
   NPS // 0..10
 }
 
+/// Situação de um comentário aberto diante da moderação.
+///
+/// Texto livre é o único campo em que o respondente pode, sem querer ou de
+/// propósito, se identificar ou identificar outra pessoa. Por isso ele não
+/// chega ao relatório antes de alguém da comissão ler.
+enum StatusModeracao {
+  PENDENTE
+  APROVADO
+  /// Lido e retirado do relatório. O texto continua no banco: apagar
+  /// resposta de avaliação é adulterar o resultado.
+  OCULTO
+}
+
 enum TaskStatus {
   PENDENTE
   EM_ANDAMENTO
@@ -177,6 +190,7 @@ model User {
 
   // Quando este usuário é o PROFESSOR AVALIADO (nunca o respondente)
   respostasRecebidas ResponseSet[] @relation("ProfessorAvaliado")
+  comentariosModerados Answer[]    @relation("ComentarioModerado")
 
   @@index([role, status])
   @@index([campusId])
@@ -693,12 +707,23 @@ model Answer {
   valorBooleano Boolean? // SIM_NAO
   naoSeAplica   Boolean  @default(false)
 
+  /// Só faz sentido em TEXTO_LIVRE; nas demais é ruído ignorado pelas
+  /// consultas. Um campo por resposta evita uma tabela só para isto, que
+  /// teria uma linha para cada comentário e nada mais.
+  moderacao     StatusModeracao @default(PENDENTE)
+  moderadoEm    DateTime?
+  /// Quem moderou — da comissão, nunca o respondente. Guardar isto não fere o
+  /// anonimato: diz quem leu, não quem escreveu.
+  moderadoPorId String?
+
   responseSet ResponseSet    @relation(fields: [responseSetId], references: [id], onDelete: Cascade)
   question    Question       @relation(fields: [questionId], references: [id])
+  moderadoPor User?          @relation("ComentarioModerado", fields: [moderadoPorId], references: [id])
   opcoes      AnswerOption[]
 
   @@unique([responseSetId, questionId])
   @@index([questionId])
+  @@index([moderacao])
   @@map("answers")
 }
 
