@@ -39,7 +39,9 @@ export default async function Concluido({ params }: { params: Promise<{ taskId: 
         Avaliação enviada
       </h1>
 
-      <p className="mt-3 text-sm text-slate-600">
+      {/* Mesma regra da abertura: o que a CPA escreve em blocos chega em
+          blocos. */}
+      <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
         {task.period.mensagemConclusao ??
           'Obrigado por participar. Sua opinião ajuda a Insted a melhorar.'}
       </p>

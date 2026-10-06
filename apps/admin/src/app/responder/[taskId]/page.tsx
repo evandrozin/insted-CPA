@@ -127,8 +127,11 @@ export default async function Responder({
         </div>
       </div>
 
+      {/* `whitespace-pre-line` preserva as quebras de linha digitadas pela CPA.
+          Sem isso o HTML junta tudo num parágrafo só, e um texto escrito em
+          blocos — escala, instrução, aviso — chega ao aluno como um muro. */}
       {etapa === 1 && task.period.mensagemBoasVindas && (
-        <p className="mt-6 rounded-2xl bg-white px-5 py-4 text-sm text-slate-600">
+        <p className="mt-6 whitespace-pre-line rounded-2xl bg-white px-5 py-4 text-sm leading-relaxed text-slate-600">
           {task.period.mensagemBoasVindas}
         </p>
       )}

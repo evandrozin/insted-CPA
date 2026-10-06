@@ -263,8 +263,8 @@ export default async function Ciclo({ params }: { params: Promise<{ id: string }
             </label>
           </div>
 
-          <textarea name="mensagemBoasVindas" defaultValue={ciclo.mensagemBoasVindas ?? ''} rows={2} placeholder="Mensagem de abertura mostrada ao respondente" className={campo} disabled={!ajustavel} />
-          <textarea name="mensagemConclusao" defaultValue={ciclo.mensagemConclusao ?? ''} rows={2} placeholder="Mensagem de agradecimento ao concluir" className={campo} disabled={!ajustavel} />
+          <textarea name="mensagemBoasVindas" defaultValue={ciclo.mensagemBoasVindas ?? ''} rows={8} placeholder="Mensagem de abertura mostrada ao respondente. As quebras de linha são preservadas." className={`${campo} leading-relaxed`} disabled={!ajustavel} />
+          <textarea name="mensagemConclusao" defaultValue={ciclo.mensagemConclusao ?? ''} rows={4} placeholder="Mensagem de agradecimento ao concluir" className={`${campo} leading-relaxed`} disabled={!ajustavel} />
 
           {ajustavel && (
             <div>
