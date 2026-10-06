@@ -16,7 +16,7 @@ import { prisma } from '@insted/database';
 import { respondenteAtual } from '@/lib/sessao';
 import { salvarEtapa, enviar } from '../actions';
 import { PerguntaCondicional } from '@/components/PerguntaCondicional';
-import { lerCondicao } from '@/lib/condicao';
+import { lerCondicao, condicaoSatisfeita } from '@/lib/condicao';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,6 +91,23 @@ export default async function Responder({
       | undefined;
 
   const refAtual = alvo?.targetRefId ?? '__global__';
+
+  // Quais obrigatórias desta etapa ainda estão sem resposta. Calculado aqui, no
+  // servidor, pelos mesmos critérios do envio: bloco não obrigatório não exige
+  // nada, e condicional escondida não é cobrada.
+  const faltam = Number(typeof sp.faltam === 'string' ? sp.faltam : 0) || 0;
+  const pendentes = new Set<string>(
+    bloco?.obrigatorio
+      ? bloco.questoes
+          .filter((q) => {
+            if (!q.obrigatoria) return false;
+            const c = lerCondicao(q.condicao);
+            if (c && !condicaoSatisfeita(c, rascunhoDe(c.questionId, refAtual))) return false;
+            return !rascunhoDe(q.id, refAtual);
+          })
+          .map((q) => q.id)
+      : [],
+  );
   const progresso = Math.round(((etapa - 1) / total) * 100);
 
   return (
@@ -146,6 +163,21 @@ export default async function Responder({
             name="destino"
             value={`/responder/${taskId}?e=${etapa + 1}`}
           />
+          {/* A etapa viaja junto: é por ela que o servidor sabe o que conferir
+              antes de deixar avançar. */}
+          <input type="hidden" name="etapa" value={etapa} />
+
+          {faltam > 0 && (
+            <p className="mb-4 rounded-2xl border border-brand-orange/40 bg-brand-orange/5 px-5 py-3 text-sm text-brand-navy">
+              <strong className="font-semibold text-brand-orange">
+                {faltam === 1 ? 'Falta 1 resposta' : `Faltam ${faltam} respostas`} nesta etapa.
+              </strong>{' '}
+              As perguntas que faltam estão marcadas abaixo.
+              {typeof sp.total === 'string' && Number(sp.total) > faltam && (
+                <> No questionário inteiro faltam {sp.total}.</>
+              )}
+            </p>
+          )}
 
           <section className="relative overflow-hidden rounded-2xl border border-brand-navy/10 bg-white">
             <div aria-hidden className="brand-rule absolute left-0 top-0 h-1 w-full" />
@@ -176,6 +208,12 @@ export default async function Responder({
                     ? condicao
                     : null;
 
+                // Exigir no próprio campo evita a viagem até o servidor para
+                // descobrir o que ficou em branco. Vale só onde o bloco é
+                // obrigatório: no card por professor, pular é legítimo.
+                const exigir = Boolean(bloco?.obrigatorio && q.obrigatoria);
+                const pendente = pendentes.has(q.id);
+
                 const conteudo = (
                   <>
                     <p className="text-sm font-medium text-brand-navy">
@@ -186,12 +224,23 @@ export default async function Responder({
                           opcional
                         </span>
                       )}
+                      {pendente && faltam > 0 && (
+                        <span className="ml-2 rounded bg-brand-orange/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-brand-orange">
+                          falta responder
+                        </span>
+                      )}
                     </p>
                     {q.ajuda && <p className="mt-1 text-xs text-slate-400">{q.ajuda}</p>}
 
                     <div className="mt-3">
                       {q.tipo === 'LIKERT' || q.tipo === 'NPS' ? (
-                        <Escala campo={campo} cfg={cfg} atual={atual} nps={q.tipo === 'NPS'} />
+                        <Escala
+                          campo={campo}
+                          cfg={cfg}
+                          atual={atual}
+                          nps={q.tipo === 'NPS'}
+                          exigir={exigir}
+                        />
                       ) : q.tipo === 'SIM_NAO' ? (
                         <div className="flex gap-2">
                           {[
@@ -218,11 +267,13 @@ export default async function Responder({
                           opcoes={q.opcoes}
                           multipla={q.tipo === 'ESCOLHA_MULTIPLA'}
                           marcadas={atual?.opcoes}
+                          exigir={exigir}
                         />
                       ) : (
                         <textarea
                           name={campo}
                           defaultValue={atual?.texto ?? ''}
+                          required={exigir}
                           rows={3}
                           maxLength={cfg.maxLength ?? 500}
                           placeholder="Escreva aqui (opcional)"
@@ -287,11 +338,13 @@ function Escala({
   cfg,
   atual,
   nps,
+  exigir,
 }: {
   campo: string;
   cfg: Config;
   atual?: { numerico?: number; naoSeAplica?: boolean };
   nps: boolean;
+  exigir?: boolean;
 }) {
   const min = cfg.min ?? (nps ? 0 : 1);
   const max = cfg.max ?? (nps ? 10 : 5);
@@ -305,6 +358,7 @@ function Escala({
             type="radio"
             name={campo}
             value={v}
+            required={exigir}
             defaultChecked={atual?.numerico === v}
             className="peer sr-only"
           />
@@ -353,11 +407,13 @@ function Opcoes({
   opcoes,
   multipla,
   marcadas,
+  exigir,
 }: {
   campo: string;
   opcoes: { id: string; rotulo: string }[];
   multipla: boolean;
   marcadas?: string[];
+  exigir?: boolean;
 }) {
   if (opcoes.length === 0) {
     return (
@@ -386,6 +442,9 @@ function Opcoes({
             type={multipla ? 'checkbox' : 'radio'}
             name={campo}
             value={`o:${o.id}`}
+            // Em multipla escolha o atributo exigiria ESTA caixa, e nao
+            // "alguma": ali quem cobra e o servidor.
+            required={exigir && !multipla}
             defaultChecked={marcadas?.includes(o.id)}
             className="h-4 w-4 shrink-0 accent-brand-teal"
           />

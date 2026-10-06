@@ -174,6 +174,89 @@ async function aplicarCondicoes(
   return manter;
 }
 
+/**
+ * Etapas em que falta responder pergunta obrigatória.
+ *
+ * `obrigatoria` existia no banco desde o início e ninguém a lia: dava para
+ * percorrer o questionário inteiro sem responder nada e enviar assim. O
+ * resultado parecia completo e não era.
+ *
+ * Duas regras, para a exigência não virar armadilha:
+ *
+ * - BLOCO NÃO OBRIGATÓRIO não exige nada. É o caso do card por professor: o
+ *   instrumento manda avaliar só quem o aluno conheceu o suficiente, e forçar
+ *   produziria nota inventada.
+ * - PERGUNTA CONDICIONAL só é exigida quando a condição se cumpre. Exigir o
+ *   que a tela escondeu prenderia o aluno numa etapa sem saída.
+ */
+async function etapasIncompletas(
+  taskId: string,
+): Promise<{ etapa: number; bloco: string; faltam: number; questoes: string[] }[]> {
+  const [alvos, rascunhos] = await Promise.all([
+    prisma.evaluationTaskTarget.findMany({
+      where: { taskId },
+      orderBy: { ordem: 'asc' },
+      select: { blockId: true, targetRefId: true },
+    }),
+    prisma.draftAnswer.findMany({
+      where: { taskId },
+      select: { questionId: true, targetRefId: true, valor: true },
+    }),
+  ]);
+  if (alvos.length === 0) return [];
+
+  const blocos = await prisma.questionBlock.findMany({
+    where: { id: { in: [...new Set(alvos.map((a) => a.blockId))] } },
+    select: {
+      id: true,
+      titulo: true,
+      obrigatorio: true,
+      questoes: {
+        where: { ativa: true },
+        orderBy: { ordem: 'asc' },
+        select: { id: true, enunciado: true, obrigatoria: true, condicao: true },
+      },
+    },
+  });
+  const porBloco = new Map(blocos.map((b) => [b.id, b]));
+
+  const respondido = new Map(
+    rascunhos.map((r) => [`${r.questionId}:${r.targetRefId}`, r.valor as ValorRespondido]),
+  );
+
+  const pendentes: { etapa: number; bloco: string; faltam: number; questoes: string[] }[] = [];
+
+  alvos.forEach((alvo, i) => {
+    const bloco = porBloco.get(alvo.blockId);
+    if (!bloco || !bloco.obrigatorio) return;
+
+    const ref = alvo.targetRefId ?? '__global__';
+    const faltando: string[] = [];
+
+    for (const q of bloco.questoes) {
+      if (!q.obrigatoria) continue;
+
+      const condicao = lerCondicao(q.condicao);
+      if (condicao && !condicaoSatisfeita(condicao, respondido.get(`${condicao.questionId}:${ref}`))) {
+        continue;
+      }
+      if (!respondido.has(`${q.id}:${ref}`)) faltando.push(q.id);
+    }
+
+    if (faltando.length > 0) {
+      // A etapa é a posição do alvo na fila, que é como a URL a identifica.
+      pendentes.push({
+        etapa: i + 1,
+        bloco: bloco.titulo,
+        faltam: faltando.length,
+        questoes: faltando,
+      });
+    }
+  });
+
+  return pendentes;
+}
+
 /** Salva o passo atual e vai para o próximo (ou para a revisão). */
 export async function salvarEtapa(taskId: string, dados: FormData): Promise<void> {
   const { task } = await tarefaDoRespondente(taskId);
@@ -212,8 +295,18 @@ export async function salvarEtapa(taskId: string, dados: FormData): Promise<void
     },
   });
 
-  const destino = String(dados.get('destino') ?? '');
+  // Avançar só depois de completar a etapa. A gravação acontece antes: quem
+  // respondeu metade não perde a metade por causa do bloqueio.
+  const etapaAtual = Number(dados.get('etapa') ?? 0);
+  const pendencia = (await etapasIncompletas(taskId)).find((p) => p.etapa === etapaAtual);
+
   revalidatePath(`/responder/${taskId}`);
+
+  if (pendencia) {
+    redirect(`/responder/${taskId}?e=${etapaAtual}&faltam=${pendencia.faltam}`);
+  }
+
+  const destino = String(dados.get('destino') ?? '');
   redirect(destino || `/responder/${taskId}`);
 }
 
@@ -276,6 +369,22 @@ export async function enviar(taskId: string, dados: FormData): Promise<void> {
     }),
   ]);
 
+  // A trava que vale: a etapa pode ser pulada pela URL (`?e=7`), e o botão de
+  // enviar está na revisão, que não passa por etapa nenhuma. Aqui o
+  // questionário inteiro é conferido antes de virar resposta definitiva — e o
+  // aluno volta para a PRIMEIRA etapa incompleta, não para uma mensagem genérica
+  // que não diz onde faltou.
+  const pendentes = await etapasIncompletas(taskId);
+  if (pendentes.length > 0) {
+    const primeira = pendentes[0];
+    const total = pendentes.reduce((t, p) => t + p.faltam, 0);
+    redirect(
+      `/responder/${taskId}?e=${primeira.etapa}&faltam=${primeira.faltam}&total=${total}`,
+    );
+  }
+
+  // Depois da conferência: um formulário sem nenhuma obrigatória poderia chegar
+  // aqui vazio, e vazio não vira resposta.
   if (rascunhos.length === 0) throw new Error('Nenhuma resposta preenchida.');
 
   // Só entra opção que pertence à questão respondida. Sem esta conferência, um
