@@ -16,6 +16,7 @@ import {
   abrirCiclo,
   encerrarCiclo,
   publicarResultados,
+  excluirCiclo,
   duplicarCiclo,
 } from '../actions';
 
@@ -342,6 +343,46 @@ export default async function Ciclo({ params }: { params: Promise<{ id: string }
           </button>
         </form>
       </section>
+
+      {/* ------------------------------------------------------- excluir */}
+      {/* Fechado por padrão e com o nome digitado: um clique errado aqui
+          levaria junto as tarefas e os cards de todo mundo. Ciclo com
+          resposta a ação recusa, qualquer que seja o que foi digitado. */}
+      <details className="mt-6 rounded-2xl border border-brand-orange/30 bg-white px-5 py-4">
+        <summary className="cursor-pointer text-xs font-semibold text-brand-orange">
+          Excluir este ciclo
+        </summary>
+
+        <p className="mt-3 text-sm text-slate-500">
+          Apaga o ciclo e tudo que depende dele: {ciclo._count.tarefas.toLocaleString('pt-BR')}{' '}
+          tarefas, os cards gerados e o vínculo com os formulários. Os formulários em si não são
+          tocados.
+        </p>
+        <p className="mt-2 text-sm text-slate-500">
+          Serve para ciclo criado por engano. Se já houver resposta enviada, a exclusão é recusada:
+          resposta anônima apagada não tem como ser pedida de novo. Para fechar um ciclo que já
+          rodou, use <strong>Encerrar</strong>.
+        </p>
+
+        <form className="mt-4 flex flex-wrap items-end gap-3">
+          <input type="hidden" name="periodId" value={ciclo.id} />
+          <label className="text-xs text-slate-500">
+            Digite o nome do ciclo para confirmar
+            <input
+              name="confirmacao"
+              placeholder={ciclo.nome}
+              autoComplete="off"
+              className={`${campo} mt-1 w-80`}
+            />
+          </label>
+          <button
+            formAction={excluirCiclo}
+            className="rounded-lg border border-brand-orange/40 bg-white px-3 py-2 text-xs font-semibold text-brand-orange transition-colors hover:bg-brand-orange/5"
+          >
+            Excluir ciclo
+          </button>
+        </form>
+      </details>
     </div>
   );
 }

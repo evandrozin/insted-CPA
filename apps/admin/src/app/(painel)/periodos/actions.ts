@@ -336,6 +336,76 @@ export async function encerrarCiclo(dados: FormData): Promise<void> {
   revalidatePath('/periodos');
 }
 
+/**
+ * Apaga um ciclo criado por engano.
+ *
+ * Ciclo é barato de criar e caro de desfazer: ele arrasta tarefas, cards e o
+ * vínculo com os formulários. Até agora não havia como remover nenhum, e a
+ * lista ia acumulando tentativa — o que atrapalha na hora de escolher onde
+ * gerar alvos ou ler relatório.
+ *
+ * Duas travas, por motivos diferentes:
+ *
+ * 1. CICLO COM RESPOSTA NÃO SE APAGA, em nenhuma situação. A resposta é
+ *    anônima: apagada, não há como pedir de novo nem reconstruir — e a
+ *    série histórica da CPA perde o ano inteiro. Para encerrar um ciclo que
+ *    já rodou existe "encerrar", que preserva tudo.
+ *
+ * 2. O NOME PRECISA SER DIGITADO. Sem isso, um clique errado leva junto as
+ *    1.780 tarefas de um ciclo aberto. Digitar o nome é o tipo de atrito que
+ *    só incomoda quem clicou sem querer.
+ */
+export async function excluirCiclo(dados: FormData): Promise<void> {
+  const eu = await exigirPainel();
+
+  const periodId = String(dados.get('periodId') ?? '');
+  const confirmacao = String(dados.get('confirmacao') ?? '').trim();
+
+  const ciclo = await prisma.evaluationPeriod.findUnique({
+    where: { id: periodId },
+    select: {
+      nome: true,
+      status: true,
+      _count: { select: { tarefas: true, respostas: true } },
+    },
+  });
+  if (!ciclo) throw new Error('Ciclo não encontrado.');
+
+  if (ciclo._count.respostas > 0) {
+    throw new Error(
+      `Este ciclo já tem ${ciclo._count.respostas} conjunto(s) de resposta. Resposta de ` +
+        'avaliação é anônima: apagada, não há como pedir de novo. Use "encerrar" para ' +
+        'fechá-lo sem perder o que foi respondido.',
+    );
+  }
+
+  if (confirmacao !== ciclo.nome) {
+    throw new Error(
+      `Para confirmar, digite o nome do ciclo exatamente: "${ciclo.nome}".`,
+    );
+  }
+
+  // Tarefas, alvos, rascunhos e vínculos de formulário caem em cascata.
+  await prisma.evaluationPeriod.delete({ where: { id: periodId } });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: eu.id,
+      acao: 'PERIOD_DELETE',
+      entidade: 'EvaluationPeriod',
+      entidadeId: periodId,
+      dadosAntes: {
+        nome: ciclo.nome,
+        status: ciclo.status,
+        tarefas: ciclo._count.tarefas,
+      },
+    },
+  });
+
+  revalidatePath('/periodos');
+  redirect('/periodos?ok=excluido');
+}
+
 export async function publicarResultados(dados: FormData): Promise<void> {
   await exigirPainel();
 
