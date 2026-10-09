@@ -128,7 +128,9 @@ switch (comando) {
     break;
 
   case 'formulario-docentes':
-    rodar(['tsx', 'prisma/formulario-docentes-2026.ts']);
+    // `...resto` repassa `--simplificado`, que escolhe a variante do
+    // instrumento — sem isso a bandeira morre no wrapper.
+    rodar(['tsx', 'prisma/formulario-docentes-2026.ts', ...resto]);
     break;
 
   case 'publicar-2026':
