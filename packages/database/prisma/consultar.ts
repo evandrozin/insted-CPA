@@ -24,6 +24,15 @@ const prisma = new PrismaClient();
 
 const LEITURA = /^\s*(select|with)\b/i;
 
+/**
+ * Tira os comentários de linha do começo antes de conferir se é leitura.
+ *
+ * Uma consulta documentada — que explica o que mede — começa por `--`, e isso
+ * não faz dela uma escrita. Só o INÍCIO é limpo: o que vem depois do primeiro
+ * comando continua sendo avaliado como está.
+ */
+const semComentarioInicial = (sql: string) => sql.replace(/^(\s*--[^\n]*\n)+/, '');
+
 /** Lê a consulta da entrada padrão, quando ela não vem por argumento. */
 async function daEntrada(): Promise<string> {
   if (process.stdin.isTTY) return '';
@@ -43,7 +52,7 @@ async function main(): Promise<void> {
       ].join('\n'),
     );
   }
-  if (!LEITURA.test(sql)) {
+  if (!LEITURA.test(semComentarioInicial(sql))) {
     throw new Error('Só consulta de leitura (SELECT ou WITH). Para escrever, use o comando sql.');
   }
 
