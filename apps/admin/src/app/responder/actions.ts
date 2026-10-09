@@ -464,6 +464,8 @@ export async function enviar(taskId: string, dados: FormData): Promise<void> {
       subjectId: oferta?.subjectId ?? null,
       departmentId: alvo.targetType === 'DEPARTAMENTO' ? alvo.targetRefId : null,
       courseId: alvo.targetType === 'CURSO' ? alvo.targetRefId : null,
+      // Turma AVALIADA (docente opinando sobre a turma), não a do respondente.
+      classId: alvo.targetType === 'TURMA' ? alvo.targetRefId : null,
       // ---- recorte do respondente: agregado, nunca identificável ----
       respondentRole: 'ALUNO',
       respondentCourseId: matricula?.class.courseId ?? null,

@@ -127,6 +127,10 @@ switch (comando) {
     rodar(['tsx', 'prisma/formulario-graduacao-presencial.ts']);
     break;
 
+  case 'formulario-docentes':
+    rodar(['tsx', 'prisma/formulario-docentes-2026.ts']);
+    break;
+
   case 'publicar-2026':
     rodar(['tsx', 'prisma/publicar-2026.ts']);
     break;
@@ -177,6 +181,7 @@ switch (comando) {
   npm.cmd run homolog -- formularios
   npm.cmd run homolog -- formularios-2026
   npm.cmd run homolog -- formulario-presencial
+  npm.cmd run homolog -- formulario-docentes
   npm.cmd run homolog -- publicar-2026
   npm.cmd run homolog -- demo
   npm.cmd run homolog -- jacad <subcomando do CLI do JACAD>

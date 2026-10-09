@@ -76,6 +76,7 @@ enum TargetType {
   COORDENACAO
   CURSO
   DISCIPLINA
+  TURMA // repetível no questionário docente: 1 alvo por turma que ele leciona
   PROFESSOR_DISCIPLINA // repetível: 1 alvo por professor alocado
   AUTOAVALIACAO // o próprio respondente (professor)
 }
@@ -335,6 +336,7 @@ model SchoolClass {
   alocacoes  TeachingAssignment[]
 
   respostasRespondente ResponseSet[] @relation("TurmaRespondente")
+  respostasRecebidas   ResponseSet[] @relation("TurmaAvaliada")
 
   @@unique([codigo, termId])
   @@index([courseId, termId])
@@ -656,6 +658,9 @@ model ResponseSet {
   subjectId    String?
   teacherId    String?
   departmentId String?
+  /// Turma AVALIADA — o docente opinando sobre a turma dele. Não confundir
+  /// com `respondentClassId`, que é a turma de quem responde.
+  classId      String?
 
   // ---- Recorte do respondente (SEM identificação individual) ----
   respondentRole     Role
@@ -684,6 +689,7 @@ model ResponseSet {
   subject          Subject?         @relation("DisciplinaAvaliada", fields: [subjectId], references: [id])
   teacher          User?            @relation("ProfessorAvaliado", fields: [teacherId], references: [id])
   department       Department?      @relation("DepartamentoAvaliado", fields: [departmentId], references: [id])
+  class            SchoolClass?     @relation("TurmaAvaliada", fields: [classId], references: [id])
   respondentCourse Course?          @relation("CursoRespondente", fields: [respondentCourseId], references: [id])
   respondentClass  SchoolClass?     @relation("TurmaRespondente", fields: [respondentClassId], references: [id])
 

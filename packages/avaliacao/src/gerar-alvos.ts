@@ -65,6 +65,19 @@ type Alvo = {
   ordem: number;
 };
 
+/**
+ * O que um docente leciona no ciclo — a base dos blocos que se repetem.
+ *
+ * O questionário docente de 2026 pede um bloco por CURSO em que ele atua
+ * (coordenação e NDE daquele curso) e um por TURMA dele. Sem isto, quem dá
+ * aula em três cursos avaliaria "a coordenação" uma vez só, sem dizer qual —
+ * e a nota não serviria para nenhuma das três.
+ */
+type EscopoDocente = {
+  cursos: { id: string; nome: string }[];
+  turmas: { id: string; nome: string; curso: string | null }[];
+};
+
 type BlocoDoForm = {
   id: string;
   titulo: string;
@@ -170,6 +183,61 @@ export class GeradorDeAlvos {
     };
   }
 
+  /**
+   * Cursos e turmas de cada docente, numa consulta só.
+   *
+   * Em lote, e não por pessoa: com duzentos docentes, uma consulta por
+   * respondente seriam duzentas idas ao banco dentro do laço de geração — o
+   * mesmo tipo de lentidão que já derrubou o envio de respostas uma vez.
+   */
+  private async escoposDocentes(
+    ctx: Contexto,
+    ids: string[],
+  ): Promise<Map<string, EscopoDocente>> {
+    const escopos = new Map<string, EscopoDocente>();
+    if (ids.length === 0) return escopos;
+
+    const alocacoes = await this.prisma.teachingAssignment.findMany({
+      where: { teacherId: { in: ids }, termId: { in: ctx.termIds }, ativo: true },
+      select: {
+        teacherId: true,
+        class: {
+          select: {
+            id: true,
+            nome: true,
+            course: { select: { id: true, nome: true, ativo: true } },
+          },
+        },
+      },
+    });
+
+    for (const a of alocacoes) {
+      const escopo = escopos.get(a.teacherId) ?? { cursos: [], turmas: [] };
+
+      // Curso inativado no painel sai do ciclo, como em todo o resto: é o que
+      // dá efeito ao botão "inativar" sem depender de mexer no JACAD.
+      if (a.class.course?.ativo && !escopo.cursos.some((c) => c.id === a.class.course!.id)) {
+        escopo.cursos.push({ id: a.class.course.id, nome: a.class.course.nome });
+      }
+      if (!escopo.turmas.some((t) => t.id === a.class.id)) {
+        escopo.turmas.push({
+          id: a.class.id,
+          nome: a.class.nome,
+          curso: a.class.course?.nome ?? null,
+        });
+      }
+
+      escopos.set(a.teacherId, escopo);
+    }
+
+    for (const escopo of escopos.values()) {
+      escopo.cursos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      escopo.turmas.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    }
+
+    return escopos;
+  }
+
   // ─────────────────────────────────────────────────────── cálculo de alvos
 
   /**
@@ -184,7 +252,12 @@ export class GeradorDeAlvos {
    * equivocada: ele geraria um card por oferta que o respondente não tem.
    * Em vez de gerar nada em silêncio, entra como aviso.
    */
-  private alvosDeEquipe(ctx: Contexto, periodForm: FormDoCiclo, avisos: string[]): Alvo[] {
+  private alvosDeEquipe(
+    ctx: Contexto,
+    periodForm: FormDoCiclo,
+    escopo: EscopoDocente | undefined,
+    avisos: string[],
+  ): Alvo[] {
     const alvos: Alvo[] = [];
     let ordem = 0;
 
@@ -198,6 +271,39 @@ export class GeradorDeAlvos {
           `Bloco "${bloco.titulo}" de "${periodForm.form.nome}" é repetível por disciplina, ` +
             `mas o público é ${periodForm.publico} — ficou de fora.`,
         );
+        continue;
+      }
+
+      // Um card por curso em que o docente atua: coordenação e NDE são de um
+      // curso, não da instituição.
+      if (bloco.repetivel && bloco.targetType === 'CURSO') {
+        for (const curso of escopo?.cursos ?? []) {
+          alvos.push({
+            blockId: bloco.id,
+            targetType: 'CURSO',
+            targetRefId: curso.id,
+            rotulo: curso.nome,
+            subtitulo: null,
+            ordem: ordem++,
+          });
+        }
+        continue;
+      }
+
+      // Um card por turma do docente. A turma é a unidade que ele reconhece ao
+      // opinar sobre "a turma": mesmo dando duas disciplinas para a mesma
+      // turma, a percepção é uma só.
+      if (bloco.repetivel && bloco.targetType === 'TURMA') {
+        for (const turma of escopo?.turmas ?? []) {
+          alvos.push({
+            blockId: bloco.id,
+            targetType: 'TURMA',
+            targetRefId: turma.id,
+            rotulo: turma.nome,
+            subtitulo: turma.curso,
+            ordem: ordem++,
+          });
+        }
         continue;
       }
 
@@ -461,12 +567,32 @@ export class GeradorDeAlvos {
           continue;
         }
 
-        const alvos = this.alvosDeEquipe(ctx, periodForm, r.avisos);
+        // Os cards deixaram de ser iguais para todos: quem leciona em três
+        // cursos recebe três blocos de coordenação. Por isso o escopo é
+        // buscado em lote antes do laço, e os alvos montados por pessoa.
+        const escopos =
+          papel === 'PROFESSOR'
+            ? await this.escoposDocentes(ctx, pessoas.map((p) => p.id))
+            : new Map<string, EscopoDocente>();
+
+        let semTurma = 0;
+
         for (const pessoa of pessoas) {
+          const escopo = escopos.get(pessoa.id);
+          if (papel === 'PROFESSOR' && !escopo) semTurma++;
+
+          const alvos = this.alvosDeEquipe(ctx, periodForm, escopo, r.avisos);
           if ((await this.gravar(periodId, periodForm.id, pessoa.id, alvos, false)) === 'gravada') {
             r.tarefas++;
             r.alvos += alvos.length;
           }
+        }
+
+        if (semTurma > 0) {
+          r.avisos.push(
+            `${semTurma} docentes não têm turma nos semestres do ciclo: receberam o ` +
+              'questionário sem os blocos por curso e por turma.',
+          );
         }
         continue;
       }
@@ -538,7 +664,12 @@ export class GeradorDeAlvos {
       const alvos =
         periodForm.publico === 'ALUNO'
           ? (await this.alvosDoAluno(ctx, periodForm, pessoa.id)).alvos
-          : this.alvosDeEquipe(ctx, periodForm, avisosIgnorados);
+          : this.alvosDeEquipe(
+              ctx,
+              periodForm,
+              (await this.escoposDocentes(ctx, [pessoa.id])).get(pessoa.id),
+              avisosIgnorados,
+            );
 
       if (alvos.length === 0) {
         r.recusados.push({

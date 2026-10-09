@@ -33,6 +33,7 @@ const ALVO: Record<string, string> = {
   COORDENACAO: 'Coordenação',
   CURSO: 'Curso',
   DISCIPLINA: 'Disciplina',
+  TURMA: 'Turma',
   PROFESSOR_DISCIPLINA: 'Professor',
   AUTOAVALIACAO: 'Autoavaliação',
 };

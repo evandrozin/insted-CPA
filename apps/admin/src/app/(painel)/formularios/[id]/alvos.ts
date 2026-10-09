@@ -14,6 +14,7 @@ export const TIPOS_ALVO: TargetType[] = [
   'COORDENACAO',
   'CURSO',
   'DISCIPLINA',
+  'TURMA',
   'PROFESSOR_DISCIPLINA',
   'AUTOAVALIACAO',
 ];
@@ -26,6 +27,10 @@ export const ALVOS_REPETIVEIS: TargetType[] = [
   'DEPARTAMENTO',
   'PROFESSOR_DISCIPLINA',
   'DISCIPLINA',
+  // Para o docente: um card por curso em que ele atua e um por turma dele.
+  // Para o aluno, estes dois não repetem — ele tem um curso e uma turma.
+  'CURSO',
+  'TURMA',
 ];
 
 /** Rótulos para a interface — o enum é técnico demais para a tela. */
@@ -34,8 +39,9 @@ export const ROTULO_ALVO: Record<TargetType, string> = {
   INFRAESTRUTURA: 'Infraestrutura',
   DEPARTAMENTO: 'Setores (biblioteca, secretaria…)',
   COORDENACAO: 'Coordenação de curso',
-  CURSO: 'O curso do respondente',
+  CURSO: 'Curso (do aluno; ou cada curso em que o docente atua)',
   DISCIPLINA: 'Disciplinas cursadas',
+  TURMA: 'Turmas do docente',
   PROFESSOR_DISCIPLINA: 'Professores do respondente',
   AUTOAVALIACAO: 'O próprio respondente',
 };

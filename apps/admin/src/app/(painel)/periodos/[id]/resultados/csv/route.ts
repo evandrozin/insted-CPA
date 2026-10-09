@@ -61,6 +61,7 @@ const SELECAO = {
   subject: { select: { nome: true } },
   department: { select: { nome: true } },
   course: { select: { nome: true } },
+  class: { select: { nome: true } },
   respondentCourse: { select: { nome: true } },
   respondentClass: { select: { nome: true } },
   answers: {
@@ -101,6 +102,7 @@ const ALVO: Record<string, string> = {
   COORDENACAO: 'Coordenação',
   CURSO: 'Curso',
   DISCIPLINA: 'Disciplina',
+  TURMA: 'Turma',
   PROFESSOR_DISCIPLINA: 'Professor',
   AUTOAVALIACAO: 'Autoavaliação',
 };
@@ -287,6 +289,7 @@ export async function GET(
           const alvo =
             c.teacher?.nome ??
             c.department?.nome ??
+            c.class?.nome ??
             c.course?.nome ??
             c.subject?.nome ??
             ALVO[c.targetType] ??
