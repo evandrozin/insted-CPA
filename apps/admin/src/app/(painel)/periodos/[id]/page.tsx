@@ -55,7 +55,8 @@ export default async function Ciclo({ params }: { params: Promise<{ id: string }
         term: true,
         semestres: { include: { term: true } },
         formularios: { include: { form: true } },
-        _count: { select: { tarefas: true } },
+        // Sem os retirados: "respondentes" é quem foi de fato convidado.
+        _count: { select: { tarefas: { where: { status: { not: 'DISPENSADA' } } } } },
       },
     })
     .catch(() => null);

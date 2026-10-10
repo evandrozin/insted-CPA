@@ -194,7 +194,7 @@ async function carregar() {
       term: true,
       semestres: { include: { term: true }, orderBy: { term: { semestre: 'asc' } } },
       formularios: true,
-      _count: { select: { tarefas: true } },
+      _count: { select: { tarefas: { where: { status: { not: 'DISPENSADA' } } } } },
     },
   });
 

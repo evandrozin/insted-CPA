@@ -6,6 +6,9 @@
  * que esta tela pode nomear curso e turma sem ferir o anonimato: ela fala de
  * quem recebeu a avaliação, nunca do que foi respondido.
  *
+ * Quem foi retirado do ciclo (DISPENSADA) não conta em nenhuma das consultas
+ * daqui: ele saiu do denominador, e a adesão é a de quem de fato foi convidado.
+ *
  * Cada aluno entra uma vez só. Quem tem dois vínculos ativos — troca de curso,
  * segunda graduação — apareceria duas vezes num JOIN direto, e a soma dos
  * cursos não bateria com o total do ciclo. O recorte usa a matrícula ativa
@@ -38,7 +41,7 @@ export async function resumoDeAdesao(periodId: string): Promise<ResumoDeAdesao> 
            COUNT(*) FILTER (WHERE t.status = 'CONCLUIDA')::int        AS concluidas,
            COUNT(*) FILTER (WHERE t.status = 'EM_ANDAMENTO')::int     AS "emAndamento"
       FROM evaluation_tasks t
-     WHERE t."periodId" = ${periodId}
+     WHERE t."periodId" = ${periodId} AND t.status <> 'DISPENSADA'
   `;
 
   const tarefas = linha?.tarefas ?? 0;
@@ -72,7 +75,7 @@ export async function adesaoPorCurso(periodId: string): Promise<FatiaDeAdesao[]>
          LIMIT 1
       ) m ON true
       JOIN courses c ON c.id = m."courseId"
-     WHERE t."periodId" = ${periodId}
+     WHERE t."periodId" = ${periodId} AND t.status <> 'DISPENSADA'
      GROUP BY c.nome, c.codigo
      ORDER BY (COUNT(*) FILTER (WHERE t.status = 'CONCLUIDA'))::float8 / COUNT(*) ASC, c.nome
   `;
@@ -101,7 +104,7 @@ export async function adesaoPorTurma(periodId: string, limite = 30): Promise<Fat
       ) m ON true
       JOIN school_classes sc ON sc.id = m."classId"
       JOIN courses c         ON c.id = sc."courseId"
-     WHERE t."periodId" = ${periodId}
+     WHERE t."periodId" = ${periodId} AND t.status <> 'DISPENSADA'
      GROUP BY sc.nome, c.nome
      ORDER BY (COUNT(*) FILTER (WHERE t.status = 'CONCLUIDA'))::float8 / COUNT(*) ASC, sc.nome
      LIMIT ${limite}
@@ -118,7 +121,7 @@ export async function adesaoPorPerfil(periodId: string): Promise<FatiaDeAdesao[]
            COUNT(*) FILTER (WHERE t.status = 'EM_ANDAMENTO')::int     AS "emAndamento"
       FROM evaluation_tasks t
       JOIN users u ON u.id = t."respondentId"
-     WHERE t."periodId" = ${periodId}
+     WHERE t."periodId" = ${periodId} AND t.status <> 'DISPENSADA'
      GROUP BY u.role
      ORDER BY COUNT(*) DESC
   `;
@@ -132,7 +135,7 @@ export async function enviosPorDia(
     SELECT DATE_TRUNC('day', t."concluidaEm") AS dia,
            COUNT(*)::int                      AS total
       FROM evaluation_tasks t
-     WHERE t."periodId" = ${periodId}
+     WHERE t."periodId" = ${periodId} AND t.status <> 'DISPENSADA'
        AND t."concluidaEm" IS NOT NULL
      GROUP BY 1
      ORDER BY 1

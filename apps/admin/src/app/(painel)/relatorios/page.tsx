@@ -73,7 +73,9 @@ export default async function Relatorios({
           moderacao: 'APROVADO',
         },
       }),
-      prisma.evaluationTask.count({ where: { periodId: ciclo.id } }),
+      prisma.evaluationTask.count({
+        where: { periodId: ciclo.id, status: { not: 'DISPENSADA' } },
+      }),
       prisma.evaluationTask.count({ where: { periodId: ciclo.id, status: 'CONCLUIDA' } }),
     ]);
 

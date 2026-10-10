@@ -40,6 +40,9 @@ async function tarefaDoRespondente(taskId: string) {
     // descobrir tarefas de outras pessoas por tentativa.
     throw new Error('Avaliação não encontrada.');
   }
+  // Retirado do ciclo depois de abrir a página: o formulário ainda está na
+  // tela dele, e salvar ou enviar daqui não pode gravar nada.
+  if (task.status === 'DISPENSADA') throw new Error('Avaliação não encontrada.');
   if (task.status === 'CONCLUIDA') throw new Error('Você já enviou esta avaliação.');
   if (task.period.status !== 'ABERTO') throw new Error('O período de avaliação não está aberto.');
   if (task.period.fechaEm < new Date()) throw new Error('O prazo desta avaliação encerrou.');

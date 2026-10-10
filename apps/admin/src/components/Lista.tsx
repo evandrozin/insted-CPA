@@ -36,6 +36,12 @@ type Props = {
   vazio?: React.ReactNode;
   /** Conteúdo extra entre o cabeçalho e a tabela — filtros, avisos, ações. */
   children?: React.ReactNode;
+  /**
+   * Parâmetros que precisam sobreviver à busca e à troca de página — o filtro
+   * de abas, por exemplo. Sem isto, ir para a página 2 de "alunos inativos"
+   * devolvia a lista inteira, e a aba escolhida valia só para a primeira tela.
+   */
+  parametros?: Record<string, string>;
 };
 
 export function Lista({
@@ -51,11 +57,16 @@ export function Lista({
   linhas,
   vazio,
   children,
+  parametros = {},
 }: Props) {
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
   const primeiro = total === 0 ? 0 : (pagina - 1) * POR_PAGINA + 1;
   const ultimo = Math.min(pagina * POR_PAGINA, total);
-  const url = (p: number) => `${href}?${new URLSearchParams({ ...(q ? { q } : {}), p: String(p) })}`;
+  const url = (p: number) =>
+    `${href}?${new URLSearchParams({ ...parametros, ...(q ? { q } : {}), p: String(p) })}`;
+  const semBusca = Object.keys(parametros).length
+    ? `${href}?${new URLSearchParams(parametros)}`
+    : href;
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10 lg:px-8">
@@ -73,6 +84,9 @@ export function Lista({
 
       {buscaPlaceholder && (
         <form className="mt-6 flex flex-wrap gap-2" action={href}>
+          {Object.entries(parametros).map(([nome, valor]) => (
+            <input key={nome} type="hidden" name={nome} value={valor} />
+          ))}
           <input
             name="q"
             defaultValue={q}
@@ -84,7 +98,7 @@ export function Lista({
           </button>
           {q && (
             <Link
-              href={href}
+              href={semBusca}
               className="rounded-lg border border-brand-navy/10 bg-white px-4 py-2 text-xs font-semibold text-slate-500 transition-colors hover:border-brand-teal/40"
             >
               Limpar

@@ -513,6 +513,12 @@ export class GeradorDeAlvos {
 
     if (task.status === 'CONCLUIDA') return 'concluida';
 
+    // Retirado do ciclo pela CPA: a tarefa fica de propósito, justamente para
+    // que reexecutar a geração não o traga de volta. Sem esta linha, o botão
+    // "Gerar tarefas" recriaria os cards de todo mundo que foi retirado — o
+    // status continuaria DISPENSADA, mas os alvos voltariam a existir.
+    if (task.status === 'DISPENSADA') return 'existente';
+
     await this.prisma.evaluationTaskTarget.deleteMany({ where: { taskId: task.id } });
     await this.prisma.evaluationTaskTarget.createMany({
       data: alvos.map((a) => ({ ...a, taskId: task.id })),

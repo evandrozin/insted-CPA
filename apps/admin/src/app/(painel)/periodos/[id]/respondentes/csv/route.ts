@@ -43,7 +43,11 @@ export async function GET(
   const tarefas = await prisma.evaluationTask.findMany({
     where: {
       periodId: id,
-      ...(status === 'TODOS' ? {} : { status: status as 'CONCLUIDA' | 'PENDENTE' }),
+      // "Todos" não traz os retirados: eles têm aba própria na tela, e o CSV
+      // segue a mesma regra para a planilha bater com o que se vê.
+      ...(status === 'TODOS'
+        ? { status: { not: 'DISPENSADA' as const } }
+        : { status: status as 'CONCLUIDA' | 'PENDENTE' | 'DISPENSADA' }),
       ...(q
         ? {
             respondent: {
@@ -82,7 +86,13 @@ export async function GET(
             : t.respondent.email,
         ),
         campo(t.respondent.role),
-        campo(t.status === 'CONCLUIDA' ? 'Respondeu' : 'Não respondeu'),
+        campo(
+          t.status === 'CONCLUIDA'
+            ? 'Respondeu'
+            : t.status === 'DISPENSADA'
+              ? 'Retirado do ciclo'
+              : 'Não respondeu',
+        ),
         campo(String(t._count.alvos)),
         campo(t.concluidaEm ? t.concluidaEm.toLocaleString('pt-BR') : ''),
       ].join(';'),

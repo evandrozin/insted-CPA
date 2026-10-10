@@ -39,7 +39,7 @@ export default async function Resultados({ params }: { params: Promise<{ id: str
       },
     }),
     prisma.evaluationTask.count({ where: { periodId: id, status: 'CONCLUIDA' } }),
-    prisma.evaluationTask.count({ where: { periodId: id } }),
+    prisma.evaluationTask.count({ where: { periodId: id, status: { not: 'DISPENSADA' } } }),
   ]);
 
   const adesao = tarefas > 0 ? Math.round((concluidas / tarefas) * 100) : 0;

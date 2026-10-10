@@ -284,7 +284,9 @@ export async function abrirCiclo(dados: FormData): Promise<void> {
     throw new Error('Só um ciclo em rascunho ou agendado pode ser aberto.');
   }
 
-  const tarefas = await prisma.evaluationTask.count({ where: { periodId } });
+  const tarefas = await prisma.evaluationTask.count({
+    where: { periodId, status: { not: 'DISPENSADA' } },
+  });
   if (tarefas === 0) {
     throw new Error('Gere as tarefas antes de abrir — sem elas ninguém tem o que responder.');
   }
@@ -406,6 +408,218 @@ export async function excluirCiclo(dados: FormData): Promise<void> {
   redirect('/periodos?ok=excluido');
 }
 
+/**
+ * Tira pessoas do ciclo — quem entrou a mais.
+ *
+ * A tarefa NÃO é apagada: fica marcada DISPENSADA. É isso que impede a pessoa de
+ * voltar sozinha — "Gerar tarefas" e "Incluir quem ficou de fora" reconhecem a
+ * tarefa existente e não a recriam — e é o que deixa a lista de retirados
+ * existir, com o desfazer ao lado.
+ *
+ * Os cards e os rascunhos são apagados na hora: rascunho é a única estrutura em
+ * que pessoa e resposta coexistem, e quem foi retirado não tem por que guardar
+ * o que escrevia.
+ *
+ * Quem JÁ ENVIOU é o caso delicado. Retirar sem apagar o envio deixaria a
+ * resposta dele no resultado, contando como se ele estivesse no ciclo. Apagar é
+ * irreversível — a resposta é anônima e não há como pedir de novo. Por isso só
+ * acontece com `apagarRespostas` marcado, e só enquanto o ciclo está aberto:
+ * depois do encerramento o vínculo entre pessoa e resposta não existe mais, e
+ * não há como saber qual resposta era dele.
+ */
+export async function retirarDoCiclo(periodId: string, dados: FormData): Promise<void> {
+  const eu = await exigirPainel();
+
+  const { status } = await estado(periodId);
+  if (status === 'ENCERRADO' || status === 'PUBLICADO') {
+    throw new Error(
+      'O ciclo já foi encerrado. Retirar alguém agora deixaria a resposta dele no resultado, ' +
+        'e o vínculo entre pessoa e resposta já foi apagado — não há como achá-la.',
+    );
+  }
+
+  const apagarRespostas = dados.get('apagarRespostas') === 'on';
+  const motivo = String(dados.get('motivo') ?? '').trim().slice(0, 200);
+
+  // As duas portas: linhas marcadas na tabela, ou uma lista de matrículas
+  // colada — o caso de quem tem uma planilha dos que entraram a mais.
+  const marcadas = dados.getAll('ids').map(String).filter(Boolean);
+  const matriculas = [
+    ...new Set(
+      String(dados.get('matriculas') ?? '')
+        .split(/[\s,;]+/)
+        .map((m) => m.trim())
+        .filter(Boolean),
+    ),
+  ];
+
+  if (marcadas.length === 0 && matriculas.length === 0) {
+    throw new Error('Marque quem sai na lista, ou informe as matrículas.');
+  }
+  if (matriculas.length > 300) {
+    throw new Error('Até 300 matrículas por vez.');
+  }
+
+  const tarefas = await prisma.evaluationTask.findMany({
+    where: {
+      periodId,
+      OR: [
+        ...(marcadas.length ? [{ id: { in: marcadas } }] : []),
+        ...(matriculas.length ? [{ respondent: { matricula: { in: matriculas } } }] : []),
+      ],
+    },
+    select: {
+      id: true,
+      status: true,
+      loteId: true,
+      respondent: { select: { matricula: true, nome: true } },
+    },
+  });
+
+  const emAberto = tarefas.filter((t) => t.status === 'PENDENTE' || t.status === 'EM_ANDAMENTO');
+  const enviadas = tarefas.filter((t) => t.status === 'CONCLUIDA');
+  const jaRetiradas = tarefas.filter((t) => t.status === 'DISPENSADA');
+
+  // Enviou e o lote ainda existe: dá para localizar e apagar o que gravou.
+  // Sem lote o envio é anterior à janela de retratação e não há como achá-lo.
+  const apagaveis = apagarRespostas ? enviadas.filter((t) => t.loteId) : [];
+  const semLote = apagarRespostas ? enviadas.filter((t) => !t.loteId).length : 0;
+  const puladasPorEnvio = apagarRespostas ? 0 : enviadas.length;
+
+  const retirar = [...emAberto, ...apagaveis];
+  const ids = retirar.map((t) => t.id);
+  const lotes = apagaveis.map((t) => t.loteId!);
+
+  const naoEncontradas = matriculas.filter(
+    (m) => !tarefas.some((t) => t.respondent.matricula === m),
+  ).length;
+
+  let respostasApagadas = 0;
+
+  if (ids.length > 0) {
+    await prisma.$transaction(
+      async (tx) => {
+        if (lotes.length > 0) {
+          // Answer cai em cascata a partir de ResponseSet.
+          const apagados = await tx.responseSet.deleteMany({ where: { loteId: { in: lotes } } });
+          respostasApagadas = apagados.count;
+        }
+
+        await tx.draftAnswer.deleteMany({ where: { taskId: { in: ids } } });
+        await tx.evaluationTaskTarget.deleteMany({ where: { taskId: { in: ids } } });
+        await tx.evaluationTask.updateMany({
+          where: { id: { in: ids } },
+          data: {
+            status: 'DISPENSADA',
+            progresso: 0,
+            iniciadaEm: null,
+            concluidaEm: null,
+            loteId: null,
+          },
+        });
+      },
+      { timeout: 20_000, maxWait: 10_000 },
+    );
+  }
+
+  const registro = await prisma.auditLog.create({
+    data: {
+      userId: eu.id,
+      acao: 'PERIOD_WITHDRAW_RESPONDENTS',
+      entidade: 'EvaluationPeriod',
+      entidadeId: periodId,
+      dadosDepois: {
+        motivo: motivo || null,
+        apagouRespostas: apagarRespostas,
+        retirados: retirar.slice(0, 300).map((t) => ({
+          matricula: t.respondent.matricula,
+          nome: t.respondent.nome,
+          estava: t.status,
+        })),
+        totalRetirados: retirar.length,
+        respostasApagadas,
+        enviadasMantidas: puladasPorEnvio,
+        semLote,
+        jaRetiradas: jaRetiradas.length,
+        naoEncontradas,
+      },
+    },
+    select: { id: true },
+  });
+
+  revalidatePath(`/periodos/${periodId}`);
+  revalidatePath(`/periodos/${periodId}/respondentes`);
+  redirect(`/periodos/${periodId}/respondentes?status=DISPENSADA&retirada=${registro.id}`);
+}
+
+/**
+ * Desfaz uma retirada: a pessoa volta ao ciclo, com os cards gerados de novo.
+ *
+ * Apaga a tarefa dispensada e deixa a inclusão normal refazer — que confere a
+ * elegibilidade de hoje. Quem não for mais elegível (aluno inativado entre uma
+ * coisa e outra) não volta, e a tela diz por quê.
+ */
+export async function recolocarNoCiclo(periodId: string, taskId: string): Promise<void> {
+  const eu = await exigirPainel();
+
+  const { status } = await estado(periodId);
+  if (status === 'ENCERRADO' || status === 'PUBLICADO') {
+    throw new Error('O ciclo já foi encerrado.');
+  }
+
+  const tarefa = await prisma.evaluationTask.findUnique({
+    where: { id: taskId },
+    select: {
+      id: true,
+      periodId: true,
+      periodFormId: true,
+      respondentId: true,
+      status: true,
+      respondent: { select: { matricula: true } },
+    },
+  });
+  if (!tarefa || tarefa.periodId !== periodId) throw new Error('Tarefa não encontrada neste ciclo.');
+  if (tarefa.status !== 'DISPENSADA') throw new Error('Esta pessoa não está retirada.');
+
+  await prisma.evaluationTask.delete({ where: { id: taskId } });
+
+  const r = await new GeradorDeAlvos(prisma).incluir(periodId, [tarefa.respondent.matricula]);
+
+  // Não era elegível hoje (aluno inativado, sem matrícula no semestre…): a
+  // inclusão recusou. Sem esta linha a pessoa estaria fora do ciclo E fora da
+  // lista de retirados — o clique em "recolocar" a faria desaparecer. A tarefa
+  // dispensada volta, e a tela diz por que não deu.
+  if (r.incluidos.length === 0) {
+    await prisma.evaluationTask.create({
+      data: {
+        periodId,
+        periodFormId: tarefa.periodFormId,
+        respondentId: tarefa.respondentId,
+        status: 'DISPENSADA',
+      },
+    });
+  }
+
+  const registro = await prisma.auditLog.create({
+    data: {
+      userId: eu.id,
+      acao: 'PERIOD_REINSTATE_RESPONDENT',
+      entidade: 'EvaluationPeriod',
+      entidadeId: periodId,
+      dadosDepois: {
+        matricula: tarefa.respondent.matricula,
+        voltou: r.incluidos.length > 0,
+        recusados: r.recusados,
+      },
+    },
+    select: { id: true },
+  });
+
+  revalidatePath(`/periodos/${periodId}`);
+  revalidatePath(`/periodos/${periodId}/respondentes`);
+  redirect(`/periodos/${periodId}/respondentes?status=TODOS&recolocado=${registro.id}`);
+}
+
 export async function publicarResultados(dados: FormData): Promise<void> {
   await exigirPainel();
 
@@ -511,7 +725,17 @@ export async function liberarReenvio(periodId: string, taskId: string): Promise<
  * a tela o lê de lá pelo id. Nome de aluno não viaja na URL: ela fica no
  * histórico do navegador e no log de qualquer proxy.
  */
-export async function incluirRespondentes(periodId: string, dados: FormData): Promise<void> {
+/**
+ * `modo` vem por `bind`, e não por `name` do botão: o React troca o `name` de
+ * um botão com ação por um identificador próprio, servidor e navegador
+ * passavam a discordar do atributo, e "incluir todos os elegíveis" podia
+ * chegar aqui sem o modo — caindo no padrão "lista" com a caixa vazia.
+ */
+export async function incluirRespondentes(
+  periodId: string,
+  modo: 'lista' | 'todos',
+  dados: FormData,
+): Promise<void> {
   await exigirPainel();
 
   const { status } = await estado(periodId);
@@ -522,7 +746,6 @@ export async function incluirRespondentes(periodId: string, dados: FormData): Pr
   }
 
   const bruto = String(dados.get('matriculas') ?? '');
-  const modo = String(dados.get('modo') ?? 'lista');
   const matriculas = [...new Set(bruto.split(/[\s,;]+/).map((m) => m.trim()).filter(Boolean))];
 
   if (modo === 'lista' && matriculas.length === 0) {

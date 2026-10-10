@@ -53,6 +53,10 @@ export default async function Responder({
   });
 
   if (!task || task.respondentId !== eu.id) notFound();
+  // Retirado do ciclo: para o aluno a tarefa deixa de existir. A mesma resposta
+  // de "não é sua" — dizer "você foi retirado" a quem abriu um link antigo
+  // seria uma explicação que a CPA não pediu para dar.
+  if (task.status === 'DISPENSADA') notFound();
   if (task.status === 'CONCLUIDA') redirect(`/responder/${taskId}/concluido`);
   if (task.period.status !== 'ABERTO') {
     return <Aviso titulo="Fora do prazo" texto="Este ciclo de avaliação não está aberto." />;
