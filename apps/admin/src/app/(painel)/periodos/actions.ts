@@ -23,6 +23,8 @@ import { exigirPainel } from '@/lib/sessao';
 import { redirect } from 'next/navigation';
 import { prisma } from '@insted/database';
 import { GeradorDeAlvos } from '@insted/avaliacao';
+import type { EscopoGeracao } from '@insted/avaliacao';
+import { montarEscopo } from './escopo';
 
 /** Estados em que o conteúdo (semestres, formulários) ainda pode mudar. */
 const CONTEUDO_EDITAVEL = ['RASCUNHO'] as const;
@@ -248,31 +250,106 @@ export async function alternarFormulario(formId: string, dados: FormData): Promi
 
 // ----------------------------------------------------------------- estados
 
+/** Lê o recorte do formulário da tela. A tradução vive em `escopo.ts`. */
+function lerEscopo(dados: FormData): EscopoGeracao {
+  return montarEscopo({
+    formularios: dados.getAll('f').map(String),
+    modalidades: dados.getAll('m').map(String),
+    cursos: dados.getAll('c').map(String),
+  });
+}
+
+/**
+ * Gera tarefas e cards para o recorte escolhido: formulários, modalidade e
+ * cursos.
+ *
+ * DOIS MODOS, e a diferença é o que protege quem está respondendo:
+ *
+ * - `novos` (padrão): cria tarefa só para quem ainda não tem. Quem já tem — não
+ *   começou, está em andamento, enviou ou foi retirado — NÃO é tocado: nem os
+ *   cards, nem o rascunho, nem o status. É o único modo aceito com o ciclo
+ *   aberto, e por isso soltar um público novo não interrompe o que roda.
+ * - `recalcular`: refaz os cards de quem já tem tarefa. Só em rascunho: com o
+ *   ciclo aberto, recalcular descartaria o rascunho de quem começou a responder.
+ *
+ * A trava está AQUI e não só na tela: um POST montado à mão com o ciclo aberto
+ * e `modo=recalcular` é recusado do mesmo jeito.
+ */
 export async function gerarAlvos(dados: FormData): Promise<void> {
-  await exigirPainel();
+  const eu = await exigirPainel();
 
   const periodId = String(dados.get('periodId') ?? '');
-  await exigirConteudoEditavel(periodId);
+  const { status } = await estado(periodId);
 
-  const r = await new GeradorDeAlvos(prisma).gerar(periodId);
+  if (!['RASCUNHO', 'AGENDADO', 'ABERTO'].includes(status)) {
+    throw new Error(
+      'O ciclo já foi encerrado: gerar tarefas agora criaria cards que ninguém pode responder.',
+    );
+  }
 
-  // A contagem fica registrada na trilha de auditoria — o painel mostra os
-  // números a partir das tarefas geradas.
-  await prisma.auditLog.create({
+  const modo = String(dados.get('modo') ?? 'novos') === 'recalcular' ? 'recalcular' : 'novos';
+
+  if (modo === 'recalcular' && status !== 'RASCUNHO') {
+    throw new Error(
+      'Recalcular só vale com o ciclo em rascunho. Com o ciclo agendado ou aberto, refazer os ' +
+        'cards descartaria o rascunho de quem já começou a responder — use "só quem ainda não ' +
+        'tem tarefa", que não toca em ninguém que já existe.',
+    );
+  }
+
+  const escopo = lerEscopo(dados);
+  if (!escopo.formularios || escopo.formularios.length === 0) {
+    // Sem isto, nenhum formulário marcado seria lido pelo gerador como "todos".
+    throw new Error('Marque ao menos um formulário.');
+  }
+
+  const gerador = new GeradorDeAlvos(prisma);
+
+  let tarefas = 0;
+  let alvos = 0;
+  let semAlvo = 0;
+  let avisos: string[] = [];
+  const recusas = new Map<string, number>();
+
+  if (modo === 'novos') {
+    const r = await gerador.incluir(periodId, undefined, escopo);
+    tarefas = r.incluidos.length;
+    alvos = r.alvos;
+    semAlvo = r.recusados.length;
+    for (const x of r.recusados) recusas.set(x.motivo, (recusas.get(x.motivo) ?? 0) + 1);
+  } else {
+    const r = await gerador.gerar(periodId, escopo);
+    tarefas = r.tarefas;
+    alvos = r.alvos;
+    semAlvo = r.respondentesSemAlvo;
+    avisos = r.avisos;
+  }
+
+  const registro = await prisma.auditLog.create({
     data: {
+      userId: eu.id,
       acao: 'PERIOD_GENERATE_TARGETS',
       entidade: 'EvaluationPeriod',
       entidadeId: periodId,
       dadosDepois: {
-        tarefas: r.tarefas,
-        alvos: r.alvos,
-        semestres: r.semestresAbrangidos,
-        avisos: r.avisos,
+        modo,
+        escopo: {
+          formularios: escopo.formularios,
+          modalidades: escopo.modalidades ?? [],
+          cursos: escopo.cursos ?? [],
+        },
+        tarefas,
+        alvos,
+        semAlvo,
+        avisos,
+        recusas: [...recusas].map(([motivo, total]) => ({ motivo, total })),
       },
     },
+    select: { id: true },
   });
 
   revalidatePath(`/periodos/${periodId}`);
+  redirect(`/periodos/${periodId}?geracao=${registro.id}#gerar`);
 }
 
 export async function abrirCiclo(dados: FormData): Promise<void> {

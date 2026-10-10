@@ -7,7 +7,9 @@
  */
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { prisma } from '@insted/database';
+import { Prisma, prisma } from '@insted/database';
+import { GeradorDeAlvos } from '@insted/avaliacao';
+import { lista, montarEscopo } from '../escopo';
 import {
   salvarCiclo,
   alternarSemestre,
@@ -45,8 +47,15 @@ const campo =
 
 const paraInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
-export default async function Ciclo({ params }: { params: Promise<{ id: string }> }) {
+export default async function Ciclo({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
+  const sp = await searchParams;
 
   const ciclo = await prisma.evaluationPeriod
     .findUnique({
@@ -81,6 +90,72 @@ export default async function Ciclo({ params }: { params: Promise<{ id: string }
   const st = STATUS[ciclo.status] ?? STATUS.RASCUNHO;
   const semestresLigados = new Set(ciclo.semestres.map((s) => s.termId));
   const formsLigados = new Set(ciclo.formularios.map((f) => f.formId));
+
+  // ───────────────────────── painel "Gerar tarefas e cards"
+  const geracaoAtiva = ['RASCUNHO', 'AGENDADO', 'ABERTO'].includes(ciclo.status);
+  const aberto = ciclo.status === 'ABERTO';
+  const temAluno = ciclo.formularios.some((f) => f.publico === 'ALUNO');
+
+  // A tela devolve o recorte pela URL quando o usuário pede a contagem, e é
+  // dela que os campos se repovoam. Sem pedido, o padrão é todos os formulários.
+  const comPrevia = sp.previa === '1';
+  const fMarcados = comPrevia ? lista(sp.f) : ciclo.formularios.map((f) => f.id);
+  const mMarcados = comPrevia ? lista(sp.m) : [];
+  const cMarcados = comPrevia ? lista(sp.c) : [];
+  const modoMarcado = sp.modo === 'recalcular' && conteudoEditavel ? 'recalcular' : 'novos';
+
+  // Cursos com aluno ativo no semestre mais recente do ciclo, com a contagem:
+  // é o que a CPA precisa ver para decidir "só estes cursos".
+  const termosDoCiclo = ciclo.semestres.length > 0 ? ciclo.semestres.map((x) => x.term) : [ciclo.term];
+  const semestreAtual = [...termosDoCiclo].sort(
+    (a, b) => b.ano - a.ano || b.semestre - a.semestre,
+  )[0];
+
+  const cursosDisponiveis = temAluno
+    ? await prisma.$queryRaw<{ id: string; nome: string; alunos: number }[]>(Prisma.sql`
+        SELECT c.id, c.nome, COUNT(DISTINCT e."studentId")::int AS alunos
+          FROM enrollments e
+          JOIN school_classes sc ON sc.id = e."classId"
+          JOIN courses c ON c.id = sc."courseId"
+          JOIN users u ON u.id = e."studentId"
+         WHERE e.ativo = true
+           AND sc."termId" = ${semestreAtual.id}
+           AND u.role = 'ALUNO' AND u.status = 'ATIVO' AND u."deletadoEm" IS NULL
+           AND c.ativo = true
+         GROUP BY c.id, c.nome
+         ORDER BY c.nome
+      `)
+    : [];
+
+  const previa =
+    comPrevia && fMarcados.length > 0
+      ? await new GeradorDeAlvos(prisma)
+          .previa(id, montarEscopo({ formularios: fMarcados, modalidades: mMarcados, cursos: cMarcados }))
+          .catch(() => null)
+      : null;
+
+  // Resultado da última geração, lido da auditoria pelo id: a URL carrega só o
+  // id, e os números ficam registrados no mesmo lugar de sempre.
+  const idGeracao = typeof sp.geracao === 'string' ? sp.geracao : null;
+  const geracao = idGeracao
+    ? await prisma.auditLog
+        .findFirst({
+          where: { id: idGeracao, acao: 'PERIOD_GENERATE_TARGETS', entidadeId: id },
+          select: { dadosDepois: true },
+        })
+        .then(
+          (l) =>
+            (l?.dadosDepois ?? null) as {
+              modo: 'novos' | 'recalcular';
+              tarefas: number;
+              alvos: number;
+              semAlvo: number;
+              avisos: string[];
+              recusas: { motivo: string; total: number }[];
+            } | null,
+        )
+        .catch(() => null)
+    : null;
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-10 lg:px-8">
@@ -284,14 +359,260 @@ export default async function Ciclo({ params }: { params: Promise<{ id: string }
           <h2 className="font-brand text-lg font-bold tracking-tight text-brand-navy">Liberar e encerrar</h2>
         </div>
 
+        {/* ---------------------------------------------- gerar tarefas */}
+        <div id="gerar" className="mt-4 rounded-2xl border border-brand-navy/10 bg-white px-5 py-5">
+          <p className="font-brand text-sm font-bold text-brand-navy">Gerar tarefas e cards</p>
+          <p className="mt-1 max-w-2xl text-xs text-slate-500">
+            Escolha para quem. Por padrão cria tarefa <strong>só para quem ainda não tem</strong>:
+            quem já tem — não começou, está respondendo, enviou ou foi retirado — não é tocado, nem
+            os cards, nem o rascunho.
+            {aberto && ' É assim que se solta um público novo sem interromper o que está rodando.'}
+          </p>
+
+          {geracao && (
+            <div className="mt-4 rounded-xl border border-brand-teal/30 bg-brand-teal/5 px-4 py-3 text-sm text-brand-navy">
+              <p>
+                <strong className="font-semibold text-brand-teal-hover">
+                  {geracao.tarefas.toLocaleString('pt-BR')}{' '}
+                  {geracao.tarefas === 1 ? 'tarefa criada' : 'tarefas criadas'}
+                </strong>
+                {geracao.modo === 'recalcular' && ' ou recalculadas'} ·{' '}
+                {geracao.alvos.toLocaleString('pt-BR')} cards
+                {geracao.semAlvo > 0 &&
+                  ` · ${geracao.semAlvo.toLocaleString('pt-BR')} sem nenhum card aplicável, ficaram de fora`}
+                .
+              </p>
+              {geracao.recusas.length > 0 && (
+                <ul className="mt-2 space-y-0.5 text-xs text-brand-orange">
+                  {geracao.recusas.map((r) => (
+                    <li key={r.motivo}>
+                      {r.total.toLocaleString('pt-BR')} — {r.motivo}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {geracao.avisos.length > 0 && (
+                <ul className="mt-2 space-y-0.5 text-xs text-brand-orange">
+                  {geracao.avisos.map((a) => (
+                    <li key={a}>{a}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {!geracaoAtiva ? (
+            <p className="mt-4 rounded-xl bg-brand-light px-4 py-3 text-xs text-slate-500">
+              Este ciclo não está mais recebendo tarefas.
+            </p>
+          ) : (
+            <form className="mt-4 flex flex-col gap-5">
+              <input type="hidden" name="periodId" value={ciclo.id} />
+
+              <fieldset>
+                <legend className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                  Para quais formulários
+                </legend>
+                <div className="mt-2 flex flex-col gap-1.5">
+                  {ciclo.formularios.map((pf) => (
+                    <label key={pf.id} className="flex flex-wrap items-center gap-2 text-sm text-brand-navy">
+                      <input
+                        type="checkbox"
+                        name="f"
+                        value={pf.id}
+                        defaultChecked={fMarcados.includes(pf.id)}
+                        className="h-3.5 w-3.5 accent-[color:var(--color-brand-teal)]"
+                      />
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                        {PUBLICO[pf.publico] ?? pf.publico}
+                      </span>
+                      {pf.form.nome}
+                      <span className="font-mono text-[10px] text-slate-400">v{pf.form.versao}</span>
+                    </label>
+                  ))}
+                  {ciclo.formularios.length === 0 && (
+                    <p className="text-xs text-slate-400">Nenhum formulário neste ciclo ainda.</p>
+                  )}
+                </div>
+              </fieldset>
+
+              {temAluno && (
+                <>
+                  <fieldset>
+                    <legend className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                      Alunos de qual modalidade
+                    </legend>
+                    <div className="mt-2 flex flex-wrap gap-4">
+                      {[
+                        ['PRESENCIAL', 'Presencial'],
+                        ['EAD', 'EAD'],
+                      ].map(([valor, rotulo]) => (
+                        <label key={valor} className="flex items-center gap-2 text-sm text-brand-navy">
+                          <input
+                            type="checkbox"
+                            name="m"
+                            value={valor}
+                            defaultChecked={mMarcados.includes(valor)}
+                            className="h-3.5 w-3.5 accent-[color:var(--color-brand-teal)]"
+                          />
+                          {rotulo}
+                        </label>
+                      ))}
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-slate-400">
+                      Sem marcar: todos. Aluno que cursa as duas aparece nas duas. Vale para
+                      formulário de aluno; docentes e técnicos não têm modalidade.
+                    </p>
+                  </fieldset>
+
+                  <fieldset>
+                    <legend className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                      Alunos matriculados em quais cursos
+                    </legend>
+                    <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-brand-navy/10 bg-brand-light/40 px-3 py-2">
+                      <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+                        {cursosDisponiveis.map((c) => (
+                          <label key={c.id} className="flex items-center gap-2 text-xs text-brand-navy">
+                            <input
+                              type="checkbox"
+                              name="c"
+                              value={c.id}
+                              defaultChecked={cMarcados.includes(c.id)}
+                              className="h-3.5 w-3.5 accent-[color:var(--color-brand-teal)]"
+                            />
+                            <span className="min-w-0 flex-1 truncate">{c.nome}</span>
+                            <span className="tabular-nums text-slate-400">{c.alunos}</span>
+                          </label>
+                        ))}
+                        {cursosDisponiveis.length === 0 && (
+                          <p className="text-xs text-slate-400">
+                            Nenhum curso com aluno ativo em {semestreAtual.codigo}.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-slate-400">
+                      Sem marcar: todos os cursos. Contagem de alunos ativos em {semestreAtual.codigo}.
+                    </p>
+                  </fieldset>
+                </>
+              )}
+
+              <fieldset>
+                <legend className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                  O que fazer com quem já tem tarefa
+                </legend>
+                <div className="mt-2 flex flex-col gap-1.5">
+                  <label className="flex items-start gap-2 text-sm text-brand-navy">
+                    <input
+                      type="radio"
+                      name="modo"
+                      value="novos"
+                      defaultChecked={modoMarcado === 'novos'}
+                      className="mt-1 accent-[color:var(--color-brand-teal)]"
+                    />
+                    <span>
+                      <strong className="font-semibold">Não tocar</strong> — criar só para quem
+                      ainda não tem
+                      <span className="block text-[11px] text-slate-400">
+                        Seguro com o ciclo aberto. Nada do que existe é alterado.
+                      </span>
+                    </span>
+                  </label>
+                  <label
+                    className={`flex items-start gap-2 text-sm ${
+                      conteudoEditavel ? 'text-brand-navy' : 'text-slate-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="modo"
+                      value="recalcular"
+                      disabled={!conteudoEditavel}
+                      defaultChecked={modoMarcado === 'recalcular'}
+                      className="mt-1 accent-[color:var(--color-brand-orange)]"
+                    />
+                    <span>
+                      <strong className="font-semibold">Recalcular</strong> os cards de quem já tem
+                      <span className="block text-[11px]">
+                        {conteudoEditavel
+                          ? 'Só em rascunho: refaz os cards a partir das matrículas de agora.'
+                          : 'Indisponível: com o ciclo agendado ou aberto, recalcular descartaria o rascunho de quem já começou.'}
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* GET: a prévia só conta, e volta para esta mesma página com o
+                    recorte na URL — nada é gravado. */}
+                <button
+                  type="submit"
+                  formMethod="get"
+                  formAction={`/periodos/${ciclo.id}#gerar`}
+                  name="previa"
+                  value="1"
+                  className={btn}
+                >
+                  Contar quem receberia
+                </button>
+                <button formAction={gerarAlvos} className={btnPrimario}>
+                  Gerar
+                </button>
+              </div>
+            </form>
+          )}
+
+          {previa && (
+            <div className="mt-5 rounded-xl border border-brand-navy/10 bg-brand-light px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                Contagem — nada foi gravado
+              </p>
+              <table className="mt-2 w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase tracking-[0.06em] text-slate-400">
+                    <th className="py-1 font-semibold">Formulário</th>
+                    <th className="py-1 text-right font-semibold">Elegíveis</th>
+                    <th className="py-1 text-right font-semibold">Já têm</th>
+                    <th className="py-1 text-right font-semibold">Receberiam agora</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {previa.formularios.map((f) => (
+                    <tr key={f.periodFormId} className="border-t border-brand-navy/5">
+                      <td className="py-1.5 text-brand-navy">{f.nome}</td>
+                      <td className="py-1.5 text-right tabular-nums text-slate-500">
+                        {f.elegiveis.toLocaleString('pt-BR')}
+                      </td>
+                      <td className="py-1.5 text-right tabular-nums text-slate-500">
+                        {f.jaTemTarefa.toLocaleString('pt-BR')}
+                      </td>
+                      <td className="py-1.5 text-right font-semibold tabular-nums text-brand-navy">
+                        {f.novas.toLocaleString('pt-BR')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {previa.semModalidade > 0 && (
+                <p className="mt-2 text-xs text-brand-orange">
+                  {previa.semModalidade.toLocaleString('pt-BR')} alunos ativos não têm nenhuma
+                  disciplina com modalidade definida (sem disciplina, ou com disciplinas sem
+                  modalidade informada): o filtro de modalidade não os alcança. Corrija nas
+                  alocações docentes se algum for do recorte.
+                </p>
+              )}
+              <p className="mt-2 text-[11px] text-slate-400">
+                &ldquo;Receberiam agora&rdquo; é quem ainda não tem tarefa. Alguém sem nenhum card
+                aplicável pode ficar de fora na geração.
+              </p>
+            </div>
+          )}
+        </div>
+
         <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-brand-navy/10 bg-white px-5 py-4">
           <div className="flex flex-wrap items-center gap-2">
-            <form>
-              <input type="hidden" name="periodId" value={ciclo.id} />
-              <button formAction={gerarAlvos} disabled={!conteudoEditavel} className={btn}>
-                Gerar tarefas e cards
-              </button>
-            </form>
             <form>
               <input type="hidden" name="periodId" value={ciclo.id} />
               <button
@@ -318,7 +639,7 @@ export default async function Ciclo({ params }: { params: Promise<{ id: string }
           </div>
 
           <p className="text-xs text-slate-400">
-            Gerar recalcula os cards a partir das matrículas atuais e não mexe em quem já respondeu.
+            Gerar, por padrão, só cria tarefa para quem ainda não tem — não toca em quem já existe.
             Depois de aberto, semestres e formulários ficam congelados.
           </p>
         </div>

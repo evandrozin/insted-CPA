@@ -30,7 +30,7 @@
  *   Ela nunca mexe em tarefa existente: com o ciclo aberto, recalcular os
  *   cards de quem já começou a responder descartaria o que ele preencheu.
  */
-import type { PrismaClient, Modalidade, TargetType } from '@prisma/client';
+import type { Prisma, PrismaClient, Modalidade, TargetType } from '@prisma/client';
 
 type Progresso = (msg: string) => void;
 
@@ -41,6 +41,39 @@ export type ResultadoGeracao = {
   ofertasSemModalidade: number;
   semestresAbrangidos: string[];
   avisos: string[];
+};
+
+/**
+ * Recorte de uma geração: para QUEM gerar, entre os formulários do ciclo.
+ *
+ * Sem recorte, o gerador entrega cada formulário a todos os seus elegíveis —
+ * era a única opção. O recorte existe para soltar um público de cada vez (os
+ * docentes agora, os alunos EAD depois) sem refazer o ciclo inteiro.
+ *
+ * Os filtros de aluno só valem para formulário de aluno; docente e
+ * técnico-administrativo não têm modalidade nem curso de matrícula.
+ */
+export type EscopoGeracao = {
+  /** Ids de PeriodForm. Vazio ou ausente: todos os formulários do ciclo. */
+  formularios?: string[];
+  /** Aluno com ao menos uma disciplina em uma destas modalidades. */
+  modalidades?: Modalidade[];
+  /** Aluno com matrícula ativa em turma de um destes cursos, no semestre atual. */
+  cursos?: string[];
+};
+
+/** Contagem de uma geração que ainda não aconteceu — só leitura. */
+export type PreviaDoEscopo = {
+  formularios: {
+    periodFormId: string;
+    nome: string;
+    publico: string;
+    elegiveis: number;
+    jaTemTarefa: number;
+    novas: number;
+  }[];
+  /** Alunos do recorte cujas disciplinas todas estão sem modalidade. */
+  semModalidade: number;
 };
 
 export type ResultadoInclusao = {
@@ -526,6 +559,116 @@ export class GeradorDeAlvos {
     return 'gravada';
   }
 
+  /** Os formulários do ciclo que o recorte alcança. */
+  private formulariosDoEscopo(ctx: Contexto, escopo?: EscopoGeracao): FormDoCiclo[] {
+    const ids = escopo?.formularios;
+    return ids && ids.length > 0 ? ctx.formularios.filter((f) => ids.includes(f.id)) : ctx.formularios;
+  }
+
+  /**
+   * Filtros extras de aluno, para somar à elegibilidade.
+   *
+   * A modalidade segue a regra que já vale nos blocos: aluno "é" de uma
+   * modalidade quando tem ao menos uma disciplina nela, nos semestres do ciclo.
+   * Disciplina ou curso inativado no painel não conta — a mesma exclusão que
+   * a geração dos cards aplica. O aluno misto casa com as duas.
+   */
+  private filtrosDeAluno(ctx: Contexto, escopo?: EscopoGeracao): Prisma.UserWhereInput[] {
+    const e: Prisma.UserWhereInput[] = [];
+
+    if (escopo?.modalidades && escopo.modalidades.length > 0) {
+      e.push({
+        inscricoesDisciplina: {
+          some: {
+            ativo: true,
+            assignment: {
+              ativo: true,
+              termId: { in: ctx.termIds },
+              modalidade: { in: escopo.modalidades },
+              subject: { ativo: true, OR: [{ course: null }, { course: { ativo: true } }] },
+            },
+          },
+        },
+      });
+    }
+
+    if (escopo?.cursos && escopo.cursos.length > 0) {
+      e.push({
+        matriculas: {
+          some: {
+            ativo: true,
+            classId: { in: ctx.turmasDoSemestreAtual },
+            class: { courseId: { in: escopo.cursos } },
+          },
+        },
+      });
+    }
+
+    return e;
+  }
+
+  /**
+   * Quantas pessoas cada formulário alcançaria — sem escrever nada.
+   *
+   * Só contagem, de propósito: calcular os cards de cada aluno para dizer "vão
+   * ser 9,0 por pessoa" seria uma consulta por aluno, e a prévia existe para
+   * ser rápida o bastante para clicar antes de cada geração.
+   */
+  async previa(periodId: string, escopo?: EscopoGeracao): Promise<PreviaDoEscopo> {
+    const ctx = await this.contexto(periodId);
+    const r: PreviaDoEscopo = { formularios: [], semModalidade: 0 };
+
+    for (const f of this.formulariosDoEscopo(ctx, escopo)) {
+      const base: Prisma.UserWhereInput =
+        f.publico === 'ALUNO'
+          ? { ...this.elegibilidadeAluno(ctx), AND: this.filtrosDeAluno(ctx, escopo) }
+          : {
+              role: f.publico as 'PROFESSOR' | 'TECNICO_ADMIN',
+              status: 'ATIVO',
+              deletadoEm: null,
+            };
+
+      const [elegiveis, jaTemTarefa] = await Promise.all([
+        this.prisma.user.count({ where: base }),
+        this.prisma.user.count({
+          where: { ...base, tarefas: { some: { periodFormId: f.id } } },
+        }),
+      ]);
+
+      r.formularios.push({
+        periodFormId: f.id,
+        nome: f.form.nome,
+        publico: f.publico,
+        elegiveis,
+        jaTemTarefa,
+        novas: elegiveis - jaTemTarefa,
+      });
+    }
+
+    // Quem o filtro de modalidade nunca alcança: disciplinas todas sem
+    // modalidade. Só faz sentido contar com o filtro ligado.
+    if (escopo?.modalidades && escopo.modalidades.length > 0) {
+      r.semModalidade = await this.prisma.user.count({
+        where: {
+          ...this.elegibilidadeAluno(ctx),
+          AND: this.filtrosDeAluno(ctx, { cursos: escopo.cursos }),
+          inscricoesDisciplina: {
+            none: {
+              ativo: true,
+              assignment: {
+                ativo: true,
+                termId: { in: ctx.termIds },
+                modalidade: { in: ['PRESENCIAL', 'SEMIPRESENCIAL', 'EAD'] },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    return r;
+  }
+
   /** Quem responde um formulário de aluno: ativo no semestre mais recente. */
   private elegibilidadeAluno(ctx: Contexto) {
     // Não basta ter matrícula em algum semestre abrangido: quem cursou 2026.1
@@ -542,7 +685,7 @@ export class GeradorDeAlvos {
 
   // ──────────────────────────────────────────────────────── ciclo inteiro
 
-  async gerar(periodId: string): Promise<ResultadoGeracao> {
+  async gerar(periodId: string, escopo?: EscopoGeracao): Promise<ResultadoGeracao> {
     const ctx = await this.contexto(periodId);
     const r: ResultadoGeracao = {
       tarefas: 0,
@@ -556,7 +699,7 @@ export class GeradorDeAlvos {
     this.log(`Semestres abrangidos: ${r.semestresAbrangidos.join(', ')}`);
     this.log(`Respondentes: quem está ativo em ${ctx.semestreAtual.codigo}.`);
 
-    for (const periodForm of ctx.formularios) {
+    for (const periodForm of this.formulariosDoEscopo(ctx, escopo)) {
       if (periodForm.publico !== 'ALUNO') {
         // Docente e técnico-administrativo não derivam alvos de matrícula: o
         // que eles avaliam não depende de disciplina cursada.
@@ -604,7 +747,7 @@ export class GeradorDeAlvos {
       }
 
       const alunos = await this.prisma.user.findMany({
-        where: this.elegibilidadeAluno(ctx),
+        where: { ...this.elegibilidadeAluno(ctx), AND: this.filtrosDeAluno(ctx, escopo) },
         select: { id: true },
       });
       this.log(`${alunos.length} alunos elegíveis para "${periodForm.form.nome}".`);
@@ -653,7 +796,11 @@ export class GeradorDeAlvos {
    *
    * Nunca altera tarefa existente — ver `gravar`.
    */
-  async incluir(periodId: string, matriculas?: string[]): Promise<ResultadoInclusao> {
+  async incluir(
+    periodId: string,
+    matriculas?: string[],
+    escopo?: EscopoGeracao,
+  ): Promise<ResultadoInclusao> {
     const ctx = await this.contexto(periodId);
     const r: ResultadoInclusao = { incluidos: [], recusados: [], alvos: 0 };
     const avisosIgnorados: string[] = [];
@@ -756,13 +903,19 @@ export class GeradorDeAlvos {
     }
 
     // ── todos os que faltam ───────────────────────────────────────────────
-    for (const periodForm of ctx.formularios) {
+    // O recorte vale só aqui: quando a CPA informa matrículas, ela já escolheu
+    // as pessoas, e filtrar de novo recusaria quem ela pediu pelo nome.
+    for (const periodForm of this.formulariosDoEscopo(ctx, escopo)) {
       const semTarefa = { tarefas: { none: { periodFormId: periodForm.id } } };
 
       const pessoas = await this.prisma.user.findMany({
         where:
           periodForm.publico === 'ALUNO'
-            ? { ...this.elegibilidadeAluno(ctx), ...semTarefa }
+            ? {
+                ...this.elegibilidadeAluno(ctx),
+                ...semTarefa,
+                AND: this.filtrosDeAluno(ctx, escopo),
+              }
             : {
                 role: periodForm.publico as 'PROFESSOR' | 'TECNICO_ADMIN',
                 status: 'ATIVO',
