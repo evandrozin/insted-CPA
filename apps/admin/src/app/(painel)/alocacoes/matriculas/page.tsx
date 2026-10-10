@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@insted/database';
 import { Lista, Etiqueta, lerParams, POR_PAGINA } from '@/components/Lista';
 import { SelecionarTodos } from '@/components/SelecionarTodos';
-import { alternarAluno, definirStatusEmLote } from './actions';
+import { alternarMatricula, definirMatriculasEmLote } from './actions';
 import { FILTROS, lerFiltro, montarWhere } from './filtro';
 
 export const dynamic = 'force-dynamic';
@@ -22,18 +22,22 @@ export default async function Matriculas({
   const { q, pagina, pular } = lerParams(sp);
   const filtro = lerFiltro(typeof sp.f === 'string' ? sp.f : '');
 
-  // `ok` volta da ação com números: situação aplicada, alterados, sem e-mail,
-  // e quantos já estavam assim.
-  const [okSituacao, okAlterados, okSemEmail, okJaEstavam] = (
+  // `ok` volta da ação, só com números: situação aplicada, matrículas mudadas,
+  // alunos ativados junto, matrículas-irmãs desligadas, sem e-mail, já estavam
+  // assim, e alunos que ficaram com mais de uma matrícula ativa.
+  const [okSituacao, okMatriculas, okAlunos, okIrmas, okSemEmail, okJaEstavam, okDuplas] = (
     typeof sp.ok === 'string' ? sp.ok : ''
   ).split('.');
   const resumo =
     okSituacao === 'ATIVO' || okSituacao === 'INATIVO'
       ? {
           situacao: okSituacao,
-          alterados: Number(okAlterados) || 0,
+          matriculas: Number(okMatriculas) || 0,
+          alunos: Number(okAlunos) || 0,
+          irmas: Number(okIrmas) || 0,
           semEmail: Number(okSemEmail) || 0,
           jaEstavam: Number(okJaEstavam) || 0,
+          duplas: Number(okDuplas) || 0,
         }
       : null;
 
@@ -133,52 +137,83 @@ export default async function Matriculas({
         <form key="acao">
           <input type="hidden" name="volta" value={volta} />
           <button
-            formAction={alternarAluno.bind(null, m.student.id)}
+            formAction={alternarMatricula.bind(null, m.id)}
             className={btn}
             title={
-              m.student.status === 'ATIVO'
-                ? 'Tira o aluno das próximas gerações de tarefa'
-                : 'Habilita o aluno para entrar em um ciclo'
+              m.ativo && m.student.status === 'ATIVO'
+                ? 'Desliga só esta matrícula. O aluno e as outras matrículas dele não mudam.'
+                : m.student.status === 'INATIVO'
+                  ? 'Liga esta matrícula e o aluno. As outras matrículas dele neste semestre ficam inativas.'
+                  : 'Liga de novo esta matrícula. As outras não mudam.'
             }
           >
-            {m.student.status === 'ATIVO' ? 'Inativar' : 'Ativar'}
+            {m.ativo && m.student.status === 'ATIVO' ? 'Inativar' : 'Ativar'}
           </button>
         </form>,
       ])}
     >
       {resumo && (
-        <p className="mt-6 rounded-2xl border border-brand-teal/30 bg-brand-teal/5 px-5 py-3 text-sm text-brand-navy">
-          <strong className="font-semibold text-brand-teal-hover">
-            {resumo.alterados.toLocaleString('pt-BR')}{' '}
-            {resumo.alterados === 1
-              ? resumo.situacao === 'ATIVO'
-                ? 'aluno ativado'
-                : 'aluno inativado'
-              : resumo.situacao === 'ATIVO'
-                ? 'alunos ativados'
-                : 'alunos inativados'}
-            .
-          </strong>
-          {resumo.jaEstavam > 0 && (
-            <> {resumo.jaEstavam.toLocaleString('pt-BR')} já estavam assim.</>
+        <div className="mt-6 rounded-2xl border border-brand-teal/30 bg-brand-teal/5 px-5 py-3 text-sm text-brand-navy">
+          <p>
+            <strong className="font-semibold text-brand-teal-hover">
+              {resumo.matriculas.toLocaleString('pt-BR')}{' '}
+              {resumo.situacao === 'ATIVO'
+                ? resumo.matriculas === 1
+                  ? 'matrícula ativada'
+                  : 'matrículas ativadas'
+                : resumo.matriculas === 1
+                  ? 'matrícula inativada'
+                  : 'matrículas inativadas'}
+              .
+            </strong>
+            {resumo.alunos > 0 && (
+              <>
+                {' '}
+                {resumo.alunos.toLocaleString('pt-BR')}{' '}
+                {resumo.alunos === 1 ? 'aluno estava inativo e foi ativado' : 'alunos estavam inativos e foram ativados'}{' '}
+                junto.
+              </>
+            )}
+            {resumo.jaEstavam > 0 && (
+              <> {resumo.jaEstavam.toLocaleString('pt-BR')} já estavam assim.</>
+            )}
+          </p>
+
+          {(resumo.irmas > 0 || resumo.semEmail > 0 || resumo.duplas > 0) && (
+            <ul className="mt-2 space-y-0.5 text-xs text-brand-orange">
+              {resumo.irmas > 0 && (
+                <li>
+                  {resumo.irmas.toLocaleString('pt-BR')}{' '}
+                  {resumo.irmas === 1
+                    ? 'outra matrícula do mesmo aluno, neste semestre, ficou inativa'
+                    : 'outras matrículas do mesmo aluno, neste semestre, ficaram inativas'}{' '}
+                  — clique em Ativar nela se precisar das duas.
+                </li>
+              )}
+              {resumo.duplas > 0 && (
+                <li>
+                  {resumo.duplas.toLocaleString('pt-BR')}{' '}
+                  {resumo.duplas === 1 ? 'aluno tem' : 'alunos têm'} mais de uma matrícula ativa no
+                  mesmo semestre: a resposta será carimbada com a turma da mais recente. Inative a
+                  que não vale.
+                </li>
+              )}
+              {resumo.semEmail > 0 && (
+                <li>
+                  {resumo.semEmail.toLocaleString('pt-BR')} ficaram de fora por o aluno não ter
+                  e-mail real — informe o e-mail em Cadastros → Usuários antes de ativar.
+                </li>
+              )}
+            </ul>
           )}
-          {resumo.semEmail > 0 && (
-            <>
-              {' '}
-              <span className="text-brand-orange">
-                {resumo.semEmail.toLocaleString('pt-BR')} ficaram de fora por não terem e-mail real
-              </span>{' '}
-              — informe o e-mail em Cadastros → Usuários antes de ativar.
-            </>
-          )}
-          {resumo.situacao === 'ATIVO' && resumo.alterados > 0 && (
-            <>
-              {' '}
+
+          {resumo.situacao === 'ATIVO' && resumo.matriculas > 0 && (
+            <p className="mt-2 text-xs text-slate-500">
               Quem foi ativado não entra sozinho no ciclo aberto: use{' '}
               <em>Incluir quem ficou de fora</em> na lista de respondentes do ciclo.
-            </>
+            </p>
           )}
-        </p>
+        </div>
       )}
 
       {/* ---------------------------------------------------------- abas */}
@@ -218,24 +253,25 @@ export default async function Matriculas({
         <input type="hidden" name="f" value={filtro} />
 
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-brand-navy">Situação do aluno em lote</p>
+          <p className="text-sm font-semibold text-brand-navy">Situação das matrículas em lote</p>
           <p className="mt-0.5 max-w-2xl text-xs text-slate-500">
             Marque as linhas, ou aplique a tudo que casa com a aba e a busca atuais — inclusive o
-            que está em outras páginas. A mudança vale para o aluno, não para a turma: quem tem
-            duas matrículas muda uma vez só, e a próxima importação do JACAD respeita o que você
-            decidiu aqui.
+            que está em outras páginas. A mudança vale para a <strong>matrícula</strong> (a linha),
+            não para o aluno inteiro; ativar liga também o aluno, se ele estava inativo. Em lote,
+            as outras matrículas do aluno não são desligadas: o que você marcar fica ativo. A
+            próxima importação do JACAD respeita o que você decidiu aqui.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
           <button
-            formAction={definirStatusEmLote.bind(null, 'ATIVO', 'marcadas')}
+            formAction={definirMatriculasEmLote.bind(null, 'ATIVO', 'marcadas')}
             className="rounded-lg bg-brand-teal px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-brand-teal-hover"
           >
             Ativar marcadas
           </button>
           <button
-            formAction={definirStatusEmLote.bind(null, 'INATIVO', 'marcadas')}
+            formAction={definirMatriculasEmLote.bind(null, 'INATIVO', 'marcadas')}
             className={btn}
           >
             Inativar marcadas
@@ -245,7 +281,7 @@ export default async function Matriculas({
               reativar quem o JACAD marcou como inativo de propósito. */}
           {(filtro || q) && (
             <button
-              formAction={definirStatusEmLote.bind(null, 'ATIVO', 'filtro')}
+              formAction={definirMatriculasEmLote.bind(null, 'ATIVO', 'filtro')}
               className="rounded-lg border border-brand-teal/50 px-3 py-1.5 text-[11px] font-semibold text-brand-teal-hover transition-colors hover:bg-brand-teal/10"
               title="Ignora a seleção e aplica a tudo que casa com a aba e a busca atuais"
             >

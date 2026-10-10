@@ -1,24 +1,35 @@
 'use server';
 
 /**
- * Situação do aluno, pela tela de matrículas.
+ * Situação da matrícula — e do aluno, quando for preciso — pela tela de
+ * matrículas.
  *
- * O que vem do JACAD como inativo nem sempre está: aluno com a matrícula
- * regularizada depois da importação continua marcado como inativo aqui, e quem
- * está inativo não entra na geração de tarefas do ciclo.
+ * A UNIDADE É A MATRÍCULA, não o aluno. A primeira versão desta tela agia no
+ * status do aluno, e um aluno com duas matrículas no semestre mudava as duas
+ * linhas de uma vez. Só que a linha é que importa: quem decide a turma e o
+ * curso carimbados na resposta — e o recorte da adesão — é a matrícula ATIVA
+ * mais recente. Duas ativas e a resposta cai na turma que a comissão não
+ * escolheu.
  *
- * Toda mudança grava `statusManual`. É isso que impede a próxima importação de
- * desfazer o que a CPA decidiu — a promoção do JACAD respeita a marca e não
- * reescreve o status de quem foi editado à mão.
+ * Por isso:
  *
- * Mudar o status NÃO coloca o aluno no ciclo que já está aberto: as tarefas são
- * geradas uma vez. Quem foi ativado depois entra por "Incluir quem ficou de
- * fora", na lista de respondentes do ciclo. Misturar as duas coisas aqui
- * mexeria no que está sendo respondido, e a tela de matrículas não é o lugar.
+ * - INATIVAR uma linha desliga só aquela matrícula. O aluno continua ativo.
+ * - ATIVAR uma linha liga aquela matrícula e, se o aluno estava inativo, liga
+ *   o aluno também (sem isso ele não é elegível a ciclo nenhum). Nesse caso as
+ *   OUTRAS matrículas dele no mesmo semestre ficam inativas — a CPA clicou em
+ *   uma, e é uma que vale. A tela diz quantas, e religar é um clique.
+ * - Em lote não há essa desativação das irmãs: a seleção explícita decide, e
+ *   quem marcou as duas linhas quer as duas ativas.
+ *
+ * Toda mudança grava `edicaoManual` (matrícula) e `statusManual` (aluno). É isso
+ * que impede a próxima importação do JACAD de religar o que a CPA desligou.
+ *
+ * Mudar a situação NÃO mexe no ciclo que já está aberto: as tarefas são geradas
+ * uma vez. Quem foi ativado depois entra por "Incluir quem ficou de fora".
  */
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { prisma } from '@insted/database';
+import { Prisma, prisma } from '@insted/database';
 import { exigirPainel } from '@/lib/sessao';
 import { SEM_EMAIL, lerFiltro, montarWhere } from './filtro';
 
@@ -26,49 +37,174 @@ type Novo = 'ATIVO' | 'INATIVO';
 type Modo = 'marcadas' | 'filtro';
 
 type Resultado = {
-  alterados: number;
-  jaEstavam: number;
+  /** Matrículas que mudaram de situação. */
+  matriculas: number;
+  /** Alunos que passaram de inativo a ativo junto. */
+  alunos: number;
+  /** Outras matrículas do mesmo aluno, desativadas por consequência. */
+  irmas: number;
+  /** Ficaram de fora por o aluno não ter e-mail real. */
   semEmail: number;
+  /** Já estavam na situação pedida. */
+  jaEstavam: number;
+  /** Alunos que terminaram com mais de uma matrícula ativa no semestre. */
+  duplas: number;
+};
+
+const VAZIO: Resultado = {
+  matriculas: 0,
+  alunos: 0,
+  irmas: 0,
+  semEmail: 0,
+  jaEstavam: 0,
+  duplas: 0,
 };
 
 /**
- * Aplica o status a um conjunto de alunos.
- *
- * Ativar quem não tem e-mail real é recusado, como na tela de usuários: a conta
- * que o JACAD cria sem e-mail usa um endereço provisório, e quem fosse ativado
- * assim não receberia aviso nenhum. Fica contado à parte para a tela dizer
- * quantos — recusar em silêncio faria parecer que o lote inteiro passou.
+ * Quantos dos alunos tocados ficaram com duas matrículas ativas no mesmo
+ * semestre. Não é erro — há quem curse duas turmas de verdade —, mas é
+ * exatamente a situação em que a turma da resposta é decidida pela mais recente,
+ * e a comissão precisa saber.
  */
-async function aplicar(studentIds: string[], novo: Novo): Promise<Resultado> {
-  if (studentIds.length === 0) return { alterados: 0, jaEstavam: 0, semEmail: 0 };
+async function contarDuplas(studentIds: string[]): Promise<number> {
+  if (studentIds.length === 0) return 0;
 
-  const alunos = await prisma.user.findMany({
-    where: { id: { in: studentIds }, role: 'ALUNO', deletadoEm: null },
-    select: { id: true, status: true, email: true },
+  const linhas = await prisma.$queryRaw<{ total: number }[]>(Prisma.sql`
+    SELECT COUNT(*)::int AS total
+      FROM (
+        SELECT e."studentId", sc."termId"
+          FROM enrollments e
+          JOIN school_classes sc ON sc.id = e."classId"
+         WHERE e."studentId" = ANY(${studentIds}::text[])
+           AND e.ativo = true
+         GROUP BY e."studentId", sc."termId"
+        HAVING COUNT(*) > 1
+      ) duplas
+  `);
+
+  return linhas[0]?.total ?? 0;
+}
+
+/**
+ * Liga matrículas e, quando preciso, o aluno.
+ *
+ * `desativarIrmas` só vale para quem ESTAVA inativo: aluno já ativo que tem uma
+ * matrícula desligada e volta a ligá-la não tem as outras tocadas — não há
+ * ambiguidade nova, só uma matrícula que voltou.
+ */
+async function ativar(
+  matriculaIds: string[],
+  opcoes: { desativarIrmas: boolean },
+): Promise<Resultado> {
+  if (matriculaIds.length === 0) return { ...VAZIO };
+
+  const linhas = await prisma.enrollment.findMany({
+    where: { id: { in: matriculaIds }, student: { deletadoEm: null, role: 'ALUNO' } },
+    select: {
+      id: true,
+      ativo: true,
+      studentId: true,
+      class: { select: { termId: true } },
+      student: { select: { status: true, email: true } },
+    },
   });
 
-  const jaEstavam = alunos.filter((a) => a.status === novo).length;
-  const candidatos = alunos.filter((a) => a.status !== novo);
+  const barradas = linhas.filter(
+    (l) => l.student.status === 'INATIVO' && l.student.email.endsWith(SEM_EMAIL),
+  );
+  const barradasIds = new Set(barradas.map((l) => l.id));
+  const validas = linhas.filter((l) => !barradasIds.has(l.id));
 
-  const barrados =
-    novo === 'ATIVO' ? candidatos.filter((a) => a.email.endsWith(SEM_EMAIL)) : [];
-  const barradosIds = new Set(barrados.map((a) => a.id));
-  const alvos = candidatos.filter((a) => !barradosIds.has(a.id));
+  const jaEstavam = validas.filter((l) => l.ativo && l.student.status === 'ATIVO').length;
+  const aMudar = validas.filter((l) => !(l.ativo && l.student.status === 'ATIVO'));
 
-  if (alvos.length > 0) {
-    await prisma.user.updateMany({
-      where: { id: { in: alvos.map((a) => a.id) } },
-      data: { status: novo, statusManual: true },
+  const alunosInativos = [
+    ...new Set(aMudar.filter((l) => l.student.status === 'INATIVO').map((l) => l.studentId)),
+  ];
+
+  // Irmãs: outras matrículas ATIVAS do mesmo aluno, no mesmo semestre, que não
+  // estão sendo ligadas agora. Só dos alunos que estavam inativos.
+  let irmasIds: string[] = [];
+  if (opcoes.desativarIrmas && alunosInativos.length > 0) {
+    const semestres = [
+      ...new Set(
+        aMudar.filter((l) => alunosInativos.includes(l.studentId)).map((l) => l.class.termId),
+      ),
+    ];
+    const irmas = await prisma.enrollment.findMany({
+      where: {
+        studentId: { in: alunosInativos },
+        id: { notIn: matriculaIds },
+        ativo: true,
+        class: { termId: { in: semestres } },
+      },
+      select: { id: true },
+    });
+    irmasIds = irmas.map((i) => i.id);
+  }
+
+  await prisma.$transaction(async (tx) => {
+    if (aMudar.length > 0) {
+      await tx.enrollment.updateMany({
+        where: { id: { in: aMudar.map((l) => l.id) } },
+        data: { ativo: true, edicaoManual: true },
+      });
+    }
+    if (alunosInativos.length > 0) {
+      await tx.user.updateMany({
+        where: { id: { in: alunosInativos } },
+        data: { status: 'ATIVO', statusManual: true },
+      });
+    }
+    if (irmasIds.length > 0) {
+      await tx.enrollment.updateMany({
+        where: { id: { in: irmasIds } },
+        data: { ativo: false, edicaoManual: true },
+      });
+    }
+  });
+
+  const tocados = [...new Set(validas.map((l) => l.studentId))];
+
+  return {
+    matriculas: aMudar.length,
+    alunos: alunosInativos.length,
+    irmas: irmasIds.length,
+    semEmail: barradas.length,
+    jaEstavam,
+    duplas: await contarDuplas(tocados),
+  };
+}
+
+/** Desliga matrículas. O aluno não é tocado. */
+async function inativar(matriculaIds: string[]): Promise<Resultado> {
+  if (matriculaIds.length === 0) return { ...VAZIO };
+
+  const linhas = await prisma.enrollment.findMany({
+    where: { id: { in: matriculaIds }, student: { deletadoEm: null, role: 'ALUNO' } },
+    select: { id: true, ativo: true, studentId: true },
+  });
+
+  const aMudar = linhas.filter((l) => l.ativo);
+
+  if (aMudar.length > 0) {
+    await prisma.enrollment.updateMany({
+      where: { id: { in: aMudar.map((l) => l.id) } },
+      data: { ativo: false, edicaoManual: true },
     });
   }
 
-  return { alterados: alvos.length, jaEstavam, semEmail: barrados.length };
+  return {
+    ...VAZIO,
+    matriculas: aMudar.length,
+    jaEstavam: linhas.length - aMudar.length,
+  };
 }
 
 /**
  * Volta para a tela de onde veio, com o resumo na URL.
  *
- * O resumo carrega só números — nome de aluno não viaja na URL.
+ * Só números — nome de aluno não viaja na URL.
  */
 function concluir(dados: FormData, novo: Novo, r: Resultado): never {
   revalidatePath('/alocacoes/matriculas');
@@ -79,23 +215,29 @@ function concluir(dados: FormData, novo: Novo, r: Resultado): never {
       ? destino
       : '/alocacoes/matriculas';
 
-  const resumo = [novo, r.alterados, r.semEmail, r.jaEstavam].join('.');
+  const resumo = [novo, r.matriculas, r.alunos, r.irmas, r.semEmail, r.jaEstavam, r.duplas].join(
+    '.',
+  );
   const separador = base.includes('?') ? '&' : '?';
   redirect(`${base}${separador}ok=${resumo}`);
 }
 
-/** Liga ou desliga UM aluno — o botão de cada linha. */
-export async function alternarAluno(studentId: string, dados: FormData): Promise<void> {
-  await exigirPainel();
+/** O botão de cada linha: liga ou desliga ESSA matrícula. */
+export async function alternarMatricula(matriculaId: string, dados: FormData): Promise<void> {
+  const eu = await exigirPainel();
 
-  const aluno = await prisma.user.findUnique({
-    where: { id: studentId },
-    select: { status: true, role: true },
+  const m = await prisma.enrollment.findUnique({
+    where: { id: matriculaId },
+    select: { ativo: true, student: { select: { status: true, role: true } } },
   });
-  if (!aluno || aluno.role !== 'ALUNO') throw new Error('Aluno não encontrado.');
+  if (!m || m.student.role !== 'ALUNO') throw new Error('Matrícula não encontrada.');
 
-  const novo: Novo = aluno.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
-  const r = await aplicar([studentId], novo);
+  // "Efetivamente ativa": a matrícula e o aluno. Matrícula ligada de aluno
+  // inativo conta como desligada — é o caso das 81 que vieram inativas.
+  const efetiva = m.ativo && m.student.status === 'ATIVO';
+  const novo: Novo = efetiva ? 'INATIVO' : 'ATIVO';
+
+  const r = novo === 'ATIVO' ? await ativar([matriculaId], { desativarIrmas: true }) : await inativar([matriculaId]);
 
   if (novo === 'ATIVO' && r.semEmail > 0) {
     throw new Error(
@@ -106,11 +248,12 @@ export async function alternarAluno(studentId: string, dados: FormData): Promise
 
   await prisma.auditLog.create({
     data: {
-      acao: 'ALUNO_STATUS_MANUAL',
-      entidade: 'User',
-      entidadeId: studentId,
-      dadosAntes: { status: aluno.status },
-      dadosDepois: { status: novo, origem: 'matriculas' },
+      userId: eu.id,
+      acao: 'MATRICULA_STATUS_MANUAL',
+      entidade: 'Enrollment',
+      entidadeId: matriculaId,
+      dadosAntes: { matriculaAtiva: m.ativo, alunoStatus: m.student.status },
+      dadosDepois: { situacao: novo, ...r },
     },
   });
 
@@ -118,7 +261,7 @@ export async function alternarAluno(studentId: string, dados: FormData): Promise
 }
 
 /**
- * Liga ou desliga vários alunos de uma vez.
+ * Liga ou desliga várias matrículas de uma vez.
  *
  * `marcadas`: as linhas selecionadas. `filtro`: tudo que casa com a aba e a
  * busca atuais, inclusive o que está em outras páginas — o `where` é
@@ -126,7 +269,7 @@ export async function alternarAluno(studentId: string, dados: FormData): Promise
  * alvos. Assim "aplicar a todos" não pode ser ampliado por quem montar a
  * requisição na mão.
  */
-export async function definirStatusEmLote(
+export async function definirMatriculasEmLote(
   novo: Novo,
   modo: Modo,
   dados: FormData,
@@ -136,39 +279,37 @@ export async function definirStatusEmLote(
   if (novo !== 'ATIVO' && novo !== 'INATIVO') throw new Error('Situação inválida.');
   if (modo !== 'marcadas' && modo !== 'filtro') throw new Error('Modo inválido.');
 
-  let matriculaIds: string[] | null = null;
-
-  if (modo === 'marcadas') {
-    matriculaIds = dados.getAll('ids').map(String).filter(Boolean);
-    if (matriculaIds.length === 0) throw new Error('Nenhuma matrícula marcada.');
-  }
-
   const q = String(dados.get('q') ?? '');
   const f = lerFiltro(dados.get('f'));
 
-  const matriculas = await prisma.enrollment.findMany({
-    where:
-      modo === 'marcadas'
-        ? { id: { in: matriculaIds! }, student: { deletadoEm: null } }
-        : montarWhere(q, f),
-    select: { studentId: true },
-  });
+  let ids: string[];
+  if (modo === 'marcadas') {
+    ids = dados.getAll('ids').map(String).filter(Boolean);
+    if (ids.length === 0) throw new Error('Nenhuma matrícula marcada.');
+  } else {
+    const achadas = await prisma.enrollment.findMany({
+      where: montarWhere(q, f),
+      select: { id: true },
+    });
+    ids = achadas.map((a) => a.id);
+  }
 
-  // Um aluno com duas matrículas aparece duas vezes na lista; conta uma só.
-  const alunos = [...new Set(matriculas.map((m) => m.studentId))];
-  const r = await aplicar(alunos, novo);
+  // Sem desativar irmãs: quem marcou as duas linhas quer as duas ativas, e
+  // "ativar o filtro" não pode decidir sozinho qual matrícula de cada aluno vale.
+  const r =
+    novo === 'ATIVO' ? await ativar(ids, { desativarIrmas: false }) : await inativar(ids);
 
   await prisma.auditLog.create({
     data: {
       userId: eu.id,
-      acao: 'ALUNO_STATUS_MANUAL_LOTE',
-      entidade: 'User',
+      acao: 'MATRICULA_STATUS_MANUAL_LOTE',
+      entidade: 'Enrollment',
       dadosDepois: {
-        status: novo,
+        situacao: novo,
         modo,
         filtro: f || null,
         busca: q || null,
-        considerados: alunos.length,
+        considerados: ids.length,
         ...r,
       },
     },

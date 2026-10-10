@@ -364,6 +364,11 @@ model Enrollment {
   studentId String
   classId   String
   ativo     Boolean  @default(true)
+  /// A CPA decidiu o `ativo` desta matrícula pelo painel. A promoção do JACAD
+  /// não a religa: sem isto, a próxima importação reativaria a matrícula que a
+  /// comissão acabou de desativar — e a resposta voltaria a ser carimbada com a
+  /// turma errada, porque quem decide a turma é a matrícula ativa mais recente.
+  edicaoManual Boolean @default(false)
   criadoEm  DateTime @default(now())
 
   student User        @relation(fields: [studentId], references: [id], onDelete: Cascade)

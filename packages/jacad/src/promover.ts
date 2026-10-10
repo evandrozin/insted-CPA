@@ -300,6 +300,19 @@ export class JacadPromotor {
       ).map((u) => u.matricula),
     );
 
+    // Matrículas cujo `ativo` foi decidido pela CPA. Mesmo princípio do status
+    // do aluno: aluno com duas matrículas no semestre tem a turma da resposta
+    // decidida pela ativa mais recente, e a comissão escolhe qual vale. Sem esta
+    // guarda, cada importação religaria a que foi desativada.
+    const matriculaManual = new Set(
+      (
+        await this.prisma.enrollment.findMany({
+          where: { edicaoManual: true },
+          select: { studentId: true, classId: true },
+        })
+      ).map((e) => `${e.studentId}:${e.classId}`),
+    );
+
     const donoDoEmail = new Map(
       (await this.prisma.user.findMany({ select: { email: true, matricula: true } })).map((u) => [
         u.email,
@@ -350,7 +363,7 @@ export class JacadPromotor {
         await this.prisma.enrollment.upsert({
           where: { studentId_classId: { studentId: aluno.id, classId } },
           create: { studentId: aluno.id, classId },
-          update: { ativo: true },
+          update: matriculaManual.has(`${aluno.id}:${classId}`) ? {} : { ativo: true },
         });
         r.matriculasTurma++;
       }
