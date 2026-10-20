@@ -265,6 +265,82 @@ liberada e já foi testado ponta a ponta — falta só a tag. No dia em que exis
 troca-se a URL do link para `/entrar/jacad` e o problema acaba, sem mudar mais
 nada no CPA.
 
+## Portal do professor — outro link, outra chave
+
+O portal do professor tem a mesma tela de *Links Alternativos*, mas com outras
+tags. As disponíveis são:
+
+```
+<id_funcionario>  <id_professor>  <email>  <id_perfil>  <cpf>  <nome>
+```
+
+**A chave escolhida é `<id_perfil>`.** É o número da *pessoa* no JACAD — o mesmo
+`idPerfil` que a conciliação de docentes já grava: a matrícula do docente no CPA
+é `JACAD-P-<idPerfil>`. Por isso o link funciona sem nova importação e sem
+consultar o JACAD.
+
+| Tag | Serve? | Por quê |
+|---|---|---|
+| `<id_perfil>` | **sim, é a chave** | já é a matrícula do docente no CPA |
+| `<email>` | como segundo fator | pode divergir entre portal e cadastro |
+| `<id_professor>` / `<id_funcionario>` | não | é o vínculo, não a pessoa; o CPA não os guarda |
+| `<cpf>` | **não, de propósito** | dado pessoal na URL, no histórico e em log de proxy |
+| `<nome>` | não | não é único |
+
+### Como configurar no portal do professor
+
+Em *Links Alternativos*, **Adicionar**:
+
+| Campo | Valor |
+|---|---|
+| Descrição | `Avaliação Institucional — Docentes` |
+| URL/Link | `https://<cpa>/entrar/portal-docente` |
+| Status | `ATIVO` |
+
+Na aba **Params**, um parâmetro:
+
+| Campo | Valor |
+|---|---|
+| Key | `idperfil` |
+| Value | `<id_perfil>` |
+| Criptografia | `Base 64` |
+| Se nulo | `Não enviar` |
+
+Opcional, para endurecer: um segundo parâmetro `email` com `<email>` em Base 64.
+Quando vem, o e-mail precisa ser o do cadastro encontrado; divergência é
+recusada. Atenção: docente cujo e-mail no portal difere do cadastro de contato
+fica de fora — comece só com `idperfil`.
+
+### O que a rota faz (`/entrar/portal-docente`)
+
+- aceita Base 64 **ou** texto puro, como a dos alunos;
+- só entra quem é `PROFESSOR`. `ADMIN`/`GESTOR` são recusados e registrados;
+- docente inativo recebe mensagem clara; id desconhecido vira "cadastro ainda
+  não importado" e fica na auditoria com o valor recebido;
+- `email` sozinho (sem `idperfil`) também localiza o docente — é a saída se o
+  `<id_perfil>` do portal se revelar diferente do `idPerfil` da API;
+- `cpf` é ignorado, mesmo que o portal o envie.
+
+Auditoria (`audit_logs`): `PORTAL_DOCENTE_LOGIN`, `PORTAL_DOCENTE_LOGIN_FALHOU`
+(com o motivo e o `idperfil` recebido; o e-mail só entra mascarado, `ab***@dominio`)
+e `PORTAL_DOCENTE_LOGIN_RECUSADO`. A rota dos alunos (`/entrar/portal`) não foi
+alterada.
+
+### Primeiro teste, antes de divulgar
+
+Abra o link pelo portal com um docente conciliado. Se cair em "cadastro ainda não
+importado", o `<id_perfil>` do portal não é o `idPerfil` da API: o valor que
+chegou está em `PORTAL_DOCENTE_LOGIN_FALHOU`, e basta trocar o parâmetro para
+`email`.
+
+O risco é o mesmo já aceito para os alunos: Base 64 é codificação, não prova de
+identidade. Quem souber o `idPerfil` de um colega responde no lugar dele, e a
+resposta gravada não guarda indício disso.
+
+Alcance (homologação, 20/10/2026): dos docentes ativos reais, todos têm
+matrícula `JACAD-P-<id>`. Os 24 docentes sem conciliação ficam inativos e sem
+cards, então também não entram por este link.
+
 ## O login local, que continua existindo
 
 O login local está implementado e testado: primeiro acesso confere RA + e-mail
