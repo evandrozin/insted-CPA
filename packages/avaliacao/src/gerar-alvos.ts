@@ -382,28 +382,43 @@ export class GeradorDeAlvos {
     // efeito real ao botão "inativar": a CPA exclui do ciclo o que não
     // deve ser avaliado (modalidades sem avaliação, disciplinas
     // descontinuadas) sem depender de mudar nada no JACAD.
-    const ofertas = await this.prisma.studentSubject.findMany({
-      where: {
-        studentId: alunoId,
-        ativo: true,
-        assignment: {
+    //
+    // A matrícula também manda: a oferta nasce da matrícula do JACAD (a
+    // alocação guarda a turma dela), e matrícula inativada na tela de
+    // Matrículas não pode seguir gerando card de professor. Só sai a oferta de
+    // turma onde o aluno TEM matrícula e ela está inativa — sem matrícula
+    // nenhuma naquela turma (optativa, DP) a oferta continua valendo.
+    const [ofertasDoAluno, matriculas] = await Promise.all([
+      this.prisma.studentSubject.findMany({
+        where: {
+          studentId: alunoId,
           ativo: true,
-          termId: { in: ctx.termIds },
-          subject: { ativo: true, OR: [{ course: null }, { course: { ativo: true } }] },
-        },
-      },
-      select: {
-        assignment: {
-          select: {
-            id: true,
-            modalidade: true,
-            termId: true,
-            teacher: { select: { nome: true } },
-            subject: { select: { nome: true } },
+          assignment: {
+            ativo: true,
+            termId: { in: ctx.termIds },
+            subject: { ativo: true, OR: [{ course: null }, { course: { ativo: true } }] },
           },
         },
-      },
-    });
+        select: {
+          assignment: {
+            select: {
+              id: true,
+              classId: true,
+              modalidade: true,
+              termId: true,
+              teacher: { select: { nome: true } },
+              subject: { select: { nome: true } },
+            },
+          },
+        },
+      }),
+      this.prisma.enrollment.findMany({
+        where: { studentId: alunoId },
+        select: { classId: true, ativo: true },
+      }),
+    ]);
+    const turmasInativas = new Set(matriculas.filter((m) => !m.ativo).map((m) => m.classId));
+    const ofertas = ofertasDoAluno.filter(({ assignment: a }) => !turmasInativas.has(a.classId));
 
     const alvos: Alvo[] = [];
     let ordem = 0;

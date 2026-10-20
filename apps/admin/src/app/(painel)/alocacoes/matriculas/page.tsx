@@ -4,6 +4,7 @@ import { Lista, Etiqueta, lerParams, POR_PAGINA } from '@/components/Lista';
 import { SelecionarTodos } from '@/components/SelecionarTodos';
 import { alternarMatricula, definirMatriculasEmLote } from './actions';
 import { FILTROS, lerFiltro, montarWhere } from './filtro';
+import { SELECAO_INSCRICAO, disciplinasDaTurma } from '@/lib/disciplinas-matricula';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,7 +59,6 @@ export default async function Matriculas({
             matricula: true,
             status: true,
             email: true,
-            _count: { select: { inscricoesDisciplina: true } },
           },
         },
         class: {
@@ -76,6 +76,16 @@ export default async function Matriculas({
     Promise.all(FILTROS.map((f) => prisma.enrollment.count({ where: montarWhere('', f.chave) }))),
   ]);
 
+  // Disciplinas de cada linha, contadas POR MATRÍCULA e com a mesma regra do
+  // gerador — o total do aluno misturava semestres e matrículas inativas, e foi
+  // isso que escondeu disciplinas de uma matrícula inativa.
+  const inscricoes = await prisma.studentSubject.findMany({
+    where: { studentId: { in: [...new Set(matriculas.map((m) => m.student.id))] } },
+    select: { studentId: true, ...SELECAO_INSCRICAO },
+  });
+  const porAluno = new Map<string, typeof inscricoes>();
+  for (const i of inscricoes) porAluno.set(i.studentId, [...(porAluno.get(i.studentId) ?? []), i]);
+
   // A página só volta junto na aba "Todas", onde a lista não encolhe com a
   // ação. Nas outras, ativar um aluno o tira da aba — e voltar à página 3 de
   // uma lista que agora tem duas devolveria uma tela vazia.
@@ -89,7 +99,7 @@ export default async function Matriculas({
     <Lista
       eyebrow="Vínculos"
       titulo="Matrículas"
-      descricao="Aluno × turma. A coluna de disciplinas mostra em quantas ofertas o aluno está inscrito — é o número de cards de professor que ele receberá."
+      descricao="Aluno × turma. A coluna de disciplinas conta as desta matrícula que geram card de professor; clique no número para ver cada uma e o motivo das que não geram."
       buscaPlaceholder="Buscar por aluno, RA ou turma…"
       q={q}
       pagina={pagina}
@@ -133,7 +143,25 @@ export default async function Matriculas({
         <span className="text-slate-500">{m.class.nome}</span>,
         m.class.course.nome,
         <span className="font-mono text-xs text-slate-400">{m.class.term.codigo}</span>,
-        m.student._count.inscricoesDisciplina,
+        (() => {
+          const { todas, comCard } = disciplinasDaTurma(
+            porAluno.get(m.student.id) ?? [],
+            m.classId,
+            m.ativo,
+          );
+          return (
+            <Link
+              href={`/alocacoes/matriculas/${m.id}`}
+              className="font-semibold text-brand-teal hover:text-brand-teal-hover"
+              title="Ver as disciplinas desta matrícula e quais geram card"
+            >
+              {comCard}
+              {comCard !== todas.length && (
+                <span className="font-normal text-slate-400"> de {todas.length}</span>
+              )}
+            </Link>
+          );
+        })(),
         <form key="acao">
           <input type="hidden" name="volta" value={volta} />
           <button
