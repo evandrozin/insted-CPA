@@ -176,7 +176,9 @@ export default async function Adesao({
       )}
 
       {/* --------------------------------------------------- perfil e curso */}
-      <div className="mt-10 grid gap-6 lg:grid-cols-2">
+      {/* Uma coluna só: lado a lado, "Por perfil" (uma linha) deixava um vazio
+          enorme ao lado de "Por curso", que é a lista longa. */}
+      <div className="mt-10 space-y-10">
         <Fatias
           titulo="Por perfil"
           descricao="Quem recebeu a avaliação, por tipo de respondente."
@@ -239,7 +241,7 @@ export default async function Adesao({
                     <span className="text-brand-navy">{t.rotulo}</span>
                     {t.detalhe && <span className="ml-2 text-xs text-slate-400">{t.detalhe}</span>}
                   </td>
-                  <td className="w-40 px-5 py-2.5">
+                  <td className="w-40 px-5 py-2.5 sm:w-64">
                     <span className="block h-1.5 overflow-hidden rounded-full bg-slate-100">
                       <span
                         className="block h-full rounded-full bg-brand-teal"
@@ -247,7 +249,7 @@ export default async function Adesao({
                       />
                     </span>
                   </td>
-                  <td className="w-28 px-5 py-2.5 text-right text-xs tabular-nums text-slate-500">
+                  <td className="w-40 whitespace-nowrap px-5 py-2.5 text-right text-xs tabular-nums text-slate-500">
                     {numero(t.concluidas)}/{numero(t.tarefas)} · {pct(t)}%
                   </td>
                 </tr>
@@ -288,7 +290,7 @@ function Fatias({
                     <span className="text-brand-navy">{f.rotulo}</span>
                     {f.detalhe && <span className="ml-2 text-xs text-slate-400">{f.detalhe}</span>}
                   </td>
-                  <td className="w-28 px-5 py-2.5">
+                  <td className="w-40 px-5 py-2.5 sm:w-64">
                     <span className="block h-1.5 overflow-hidden rounded-full bg-slate-100">
                       <span
                         className="block h-full rounded-full bg-brand-teal"
@@ -296,7 +298,7 @@ function Fatias({
                       />
                     </span>
                   </td>
-                  <td className="w-28 px-5 py-2.5 text-right text-xs tabular-nums text-slate-500">
+                  <td className="w-40 whitespace-nowrap px-5 py-2.5 text-right text-xs tabular-nums text-slate-500">
                     {numero(f.concluidas)}/{numero(f.tarefas)} · {pct(f)}%
                   </td>
                 </tr>
