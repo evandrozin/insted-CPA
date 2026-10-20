@@ -1,0 +1,24 @@
+# Fora da imagem: segredo, dado real e lixo de build.
+
+# Segredos. `.env-hub.example` guarda token real do JACAD — o nome "example"
+# engana, e o `.env*` abaixo não o pegaria pelo ponto, por isso está explícito.
+.env*
+!.env.example
+.env-hub.example
+
+# Respostas reais de 2025 e material de origem da CPA: nunca vão para imagem.
+CPA
+
+node_modules
+**/node_modules
+.next
+**/.next
+.turbo
+.git
+.claude
+docs
+infra
+coverage
+uploads
+**/*.log
+**/*.tsbuildinfo

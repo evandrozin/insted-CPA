@@ -20,3 +20,7 @@ CPA/
 
 # Artefatos de build
 *.tsbuildinfo
+
+# Dump do banco: contém dados pessoais e respostas. Nunca versionar.
+*.pgdump
+*.dump
