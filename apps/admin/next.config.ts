@@ -25,6 +25,19 @@ for (let i = 0; i < 5; i++) {
 const config: NextConfig = {
   reactStrictMode: true,
 
+  // Bibliotecas que leem arquivos do próprio pacote em tempo de execução (as
+  // fontes do pdfkit são .afm ao lado do código). Empacotadas pelo webpack,
+  // perdem esses arquivos e a exportação falha só em produção.
+  serverExternalPackages: ['pdfkit', 'exceljs'],
+
+  // As fontes do pdfkit são módulos carregados por `require` dinâmico
+  // (`#standard-fonts/Helvetica`), que o rastreio de dependências não enxerga:
+  // sem isto o pacote da rota sai sem elas e o PDF falha só no Vercel. O
+  // caminho sobe dois níveis porque o `node_modules` fica na raiz do monorepo.
+  outputFileTracingIncludes: {
+    '/periodos/adesao/exportar': ['../../node_modules/pdfkit/js/standard-fonts/**/*'],
+  },
+
   // Pacotes do monorepo entram como TypeScript, sem passo de build próprio.
   transpilePackages: ['@insted/database', '@insted/avaliacao', '@insted/jacad'],
 

@@ -199,15 +199,42 @@ export default async function Adesao({
 
       {/* ------------------------------------------------------------ turmas */}
       <section className="mt-10">
-        <h2 className="font-brand text-lg font-bold text-brand-navy">Turmas que mais faltam</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          As {turmas.length} com menor adesão. É por onde começa a cobrança.
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-brand text-lg font-bold text-brand-navy">Turmas que mais faltam</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Todas as {numero(turmas.length)} turmas do ciclo, da menor adesão para a maior. É por
+              onde começa a cobrança.
+            </p>
+          </div>
+
+          {/* Link comum, não botão: o download é um GET que a rota atende, e
+              <a download> funciona sem JavaScript. O Excel leva também as
+              abas de cursos e resumo. */}
+          <div className="flex gap-1.5">
+            {(
+              [
+                ['xlsx', 'Baixar Excel', 'Planilha com turmas, cursos e resumo — para filtrar e ordenar'],
+                ['pdf', 'Baixar PDF', 'Lista de turmas pronta para imprimir ou enviar'],
+              ] as const
+            ).map(([formato, rotulo, dica]) => (
+              <a
+                key={formato}
+                href={`/periodos/adesao/exportar?ciclo=${ciclo.id}&formato=${formato}`}
+                download
+                title={dica}
+                className="rounded-lg border border-brand-navy/10 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 transition-colors hover:border-brand-teal/40 hover:text-brand-teal-hover"
+              >
+                {rotulo}
+              </a>
+            ))}
+          </div>
+        </div>
         <div className="mt-4 overflow-hidden rounded-2xl border border-brand-navy/10 bg-white">
           <table className="w-full text-sm">
             <tbody>
-              {turmas.map((t) => (
-                <tr key={`${t.rotulo}-${t.detalhe}`} className="border-b border-slate-50 last:border-0">
+              {turmas.map((t, i) => (
+                <tr key={`${i}-${t.rotulo}-${t.detalhe}`} className="border-b border-slate-50 last:border-0">
                   <td className="px-5 py-2.5">
                     <span className="text-brand-navy">{t.rotulo}</span>
                     {t.detalhe && <span className="ml-2 text-xs text-slate-400">{t.detalhe}</span>}

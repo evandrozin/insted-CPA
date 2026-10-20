@@ -82,12 +82,17 @@ export async function adesaoPorCurso(periodId: string): Promise<FatiaDeAdesao[]>
 }
 
 /**
- * Adesão por turma, das piores para as melhores.
+ * Adesão por turma, das piores para as melhores — TODAS as turmas do ciclo.
  *
  * Ordenado por percentual crescente porque a lista existe para a cobrança: o
  * que interessa é a turma onde ninguém respondeu, não a que já terminou.
+ *
+ * Agrupa pelo id da turma, e não só pelo nome: duas turmas com o mesmo nome no
+ * mesmo curso virariam uma linha só, e a contagem de uma esconderia a da outra.
+ * Sem limite — a tela e as exportações mostram o conjunto inteiro; quem corta
+ * é quem lê, não a consulta.
  */
-export async function adesaoPorTurma(periodId: string, limite = 30): Promise<FatiaDeAdesao[]> {
+export async function adesaoPorTurma(periodId: string): Promise<FatiaDeAdesao[]> {
   return prisma.$queryRaw<FatiaDeAdesao[]>`
     SELECT sc.nome                                                    AS rotulo,
            c.nome                                                     AS detalhe,
@@ -105,9 +110,8 @@ export async function adesaoPorTurma(periodId: string, limite = 30): Promise<Fat
       JOIN school_classes sc ON sc.id = m."classId"
       JOIN courses c         ON c.id = sc."courseId"
      WHERE t."periodId" = ${periodId} AND t.status <> 'DISPENSADA'
-     GROUP BY sc.nome, c.nome
+     GROUP BY sc.id, sc.nome, c.nome
      ORDER BY (COUNT(*) FILTER (WHERE t.status = 'CONCLUIDA'))::float8 / COUNT(*) ASC, sc.nome
-     LIMIT ${limite}
   `;
 }
 
