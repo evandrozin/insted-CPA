@@ -31,7 +31,7 @@ async function tarefaDoRespondente(taskId: string) {
     where: { id: taskId },
     include: {
       period: { select: { status: true, fechaEm: true, mensagemConclusao: true } },
-      periodForm: { select: { id: true, anonimo: true } },
+      periodForm: { select: { id: true, anonimo: true, publico: true } },
     },
   });
 
@@ -433,9 +433,13 @@ export async function enviar(taskId: string, dados: FormData): Promise<void> {
 
   const ofertas = await prisma.teachingAssignment.findMany({
     where: { id: { in: alvos.map((a) => a.targetRefId).filter(Boolean) as string[] } },
-    select: { id: true, teacherId: true, subjectId: true },
+    select: { id: true, teacherId: true, subjectId: true, classId: true },
   });
   const ofertaPorId = new Map(ofertas.map((o) => [o.id, o]));
+
+  // Quem responde NÃO é aluno (docente, técnico). Muda o que se grava de um card
+  // que aponta para uma oferta — ver abaixo.
+  const doDocente = task.periodForm.publico !== 'ALUNO';
 
   // Tudo montado em memória, gravado em lote.
   //
@@ -456,19 +460,33 @@ export async function enviar(taskId: string, dados: FormData): Promise<void> {
     const oferta = targetRefId !== '__global__' ? ofertaPorId.get(targetRefId) : undefined;
     const id = randomUUID();
 
+    // Docente respondendo sobre uma disciplina que LECIONA. O card é da oferta
+    // (turma × disciplina), mas gravar o professor e a disciplina da oferta
+    // apontaria a resposta de volta para quem respondeu — o professor da oferta
+    // é o próprio respondente. Grava-se só a TURMA, o mesmo grão dos cards de
+    // turma do docente. Para aluno nada muda: `doDocente` é falso e os campos
+    // saem como sempre saíram.
+    const disciplinaDeDocente =
+      doDocente && alvo.targetType === 'DISCIPLINA' && oferta ? oferta : null;
+
     conjuntos.push({
       id,
       periodId: task.periodId,
       periodFormId: task.periodFormId,
       blockId: alvo.blockId,
       targetType: alvo.targetType,
-      targetRefId: alvo.targetRefId,
-      teacherId: oferta?.teacherId ?? null,
-      subjectId: oferta?.subjectId ?? null,
+      targetRefId: disciplinaDeDocente ? disciplinaDeDocente.classId : alvo.targetRefId,
+      teacherId: doDocente ? null : (oferta?.teacherId ?? null),
+      subjectId: doDocente ? null : (oferta?.subjectId ?? null),
       departmentId: alvo.targetType === 'DEPARTAMENTO' ? alvo.targetRefId : null,
       courseId: alvo.targetType === 'CURSO' ? alvo.targetRefId : null,
       // Turma AVALIADA (docente opinando sobre a turma), não a do respondente.
-      classId: alvo.targetType === 'TURMA' ? alvo.targetRefId : null,
+      classId:
+        alvo.targetType === 'TURMA'
+          ? alvo.targetRefId
+          : disciplinaDeDocente
+            ? disciplinaDeDocente.classId
+            : null,
       // ---- recorte do respondente: agregado, nunca identificável ----
       respondentRole: 'ALUNO',
       respondentCourseId: matricula?.class.courseId ?? null,

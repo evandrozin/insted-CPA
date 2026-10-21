@@ -31,7 +31,7 @@ import {
   definirCondicao,
 } from './actions';
 import { lerCondicao, descreverCondicao } from '@/lib/condicao';
-import { TIPOS_ALVO, ROTULO_ALVO } from './alvos';
+import { TIPOS_ALVO, rotuloDoAlvo, textoDoRepetido } from './alvos';
 
 export const dynamic = 'force-dynamic';
 
@@ -308,7 +308,7 @@ export default async function Formulario({ params }: { params: Promise<{ id: str
                   </span>
                   {bloco.repetivel && (
                     <span className="rounded bg-brand-teal/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-brand-teal-hover">
-                      um card por professor
+                      {textoDoRepetido(bloco.targetType, form.publico)}
                     </span>
                   )}
 
@@ -397,7 +397,7 @@ export default async function Formulario({ params }: { params: Promise<{ id: str
                           >
                             {TIPOS_ALVO.map((t) => (
                               <option key={t} value={t}>
-                                {ROTULO_ALVO[t]}
+                                {rotuloDoAlvo(t, form.publico)}
                               </option>
                             ))}
                           </select>

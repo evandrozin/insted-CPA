@@ -163,6 +163,12 @@ type Alvo = {
 type EscopoDocente = {
   cursos: { id: string; nome: string }[];
   turmas: { id: string; nome: string; curso: string | null }[];
+  /**
+   * As ofertas dele: turma × disciplina, uma por alocação ativa. Base do bloco
+   * "disciplinas que leciona" — um card por oferta, e não por turma: quem dá
+   * duas disciplinas à mesma turma percebe cada uma de um jeito.
+   */
+  ofertas: { id: string; disciplina: string; turma: string; termId: string }[];
 };
 
 type BlocoDoForm = {
@@ -295,7 +301,10 @@ export class GeradorDeAlvos {
         class: { ativo: true },
       },
       select: {
+        id: true,
         teacherId: true,
+        termId: true,
+        subject: { select: { nome: true } },
         class: {
           select: {
             id: true,
@@ -307,7 +316,7 @@ export class GeradorDeAlvos {
     });
 
     for (const a of alocacoes) {
-      const escopo = escopos.get(a.teacherId) ?? { cursos: [], turmas: [] };
+      const escopo = escopos.get(a.teacherId) ?? { cursos: [], turmas: [], ofertas: [] };
 
       // Curso inativado no painel sai do ciclo, como em todo o resto: é o que
       // dá efeito ao botão "inativar" sem depender de mexer no JACAD.
@@ -322,12 +331,24 @@ export class GeradorDeAlvos {
         });
       }
 
+      escopo.ofertas.push({
+        id: a.id,
+        disciplina: a.subject.nome,
+        turma: a.class.nome,
+        termId: a.termId,
+      });
+
       escopos.set(a.teacherId, escopo);
     }
 
     for (const escopo of escopos.values()) {
       escopo.cursos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
       escopo.turmas.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      escopo.ofertas.sort(
+        (a, b) =>
+          a.turma.localeCompare(b.turma, 'pt-BR') ||
+          a.disciplina.localeCompare(b.disciplina, 'pt-BR'),
+      );
     }
 
     return escopos;
@@ -357,6 +378,28 @@ export class GeradorDeAlvos {
     let ordem = 0;
 
     for (const bloco of periodForm.form.blocos) {
+      // Docente: "disciplinas que leciona" — um card por oferta (turma ×
+      // disciplina) dele no semestre do ciclo. É o que o tipo DISCIPLINA quer
+      // dizer quando quem responde é professor.
+      if (
+        bloco.repetivel &&
+        bloco.targetType === 'DISCIPLINA' &&
+        periodForm.publico === 'PROFESSOR'
+      ) {
+        for (const oferta of escopo?.ofertas ?? []) {
+          const semestre = ctx.rotuloTerm.get(oferta.termId);
+          alvos.push({
+            blockId: bloco.id,
+            targetType: 'DISCIPLINA',
+            targetRefId: oferta.id,
+            rotulo: oferta.disciplina,
+            subtitulo: ctx.multiSemestre && semestre ? `${oferta.turma} · ${semestre}` : oferta.turma,
+            ordem: ordem++,
+          });
+        }
+        continue;
+      }
+
       const porDisciplina =
         bloco.repetivel &&
         (bloco.targetType === 'PROFESSOR_DISCIPLINA' || bloco.targetType === 'DISCIPLINA');

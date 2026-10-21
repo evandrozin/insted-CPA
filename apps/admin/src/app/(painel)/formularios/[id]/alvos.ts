@@ -45,3 +45,39 @@ export const ROTULO_ALVO: Record<TargetType, string> = {
   PROFESSOR_DISCIPLINA: 'Professores do respondente',
   AUTOAVALIACAO: 'O próprio respondente',
 };
+
+/**
+ * O rótulo certo para o PÚBLICO do formulário.
+ *
+ * O mesmo tipo de alvo significa coisas diferentes conforme quem responde:
+ * `DISCIPLINA` é "disciplinas cursadas" para o aluno, que as tem pela matrícula,
+ * e "disciplinas que leciona" para o docente, que as tem pelas alocações. Um
+ * rótulo só mandava a CPA escolher "Disciplinas cursadas" para um professor —
+ * e, pior, um bloco assim num formulário de docente era ignorado pelo gerador.
+ */
+export function rotuloDoAlvo(tipo: TargetType, publico: string): string {
+  if (publico === 'PROFESSOR') {
+    if (tipo === 'DISCIPLINA') return 'Disciplinas que leciona (um card por turma/disciplina dele)';
+    if (tipo === 'PROFESSOR_DISCIPLINA') return 'Professores do respondente (só para alunos)';
+  }
+  return ROTULO_ALVO[tipo];
+}
+
+/** O selo do bloco repetível: "um card por quê", conforme quem responde. */
+export function textoDoRepetido(tipo: TargetType, publico: string): string {
+  if (publico === 'PROFESSOR') {
+    switch (tipo) {
+      case 'CURSO':
+        return 'um card por curso em que atua';
+      case 'TURMA':
+        return 'um card por turma dele';
+      case 'DISCIPLINA':
+        return 'um card por turma/disciplina que leciona';
+      case 'DEPARTAMENTO':
+        return 'um card por setor';
+      default:
+        return 'um card por alvo';
+    }
+  }
+  return tipo === 'DEPARTAMENTO' ? 'um card por setor' : 'um card por professor';
+}
