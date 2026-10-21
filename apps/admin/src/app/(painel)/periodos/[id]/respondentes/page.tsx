@@ -218,7 +218,16 @@ export default async function Respondentes({
           />
         ),
         <span className="font-mono text-xs text-slate-400">{t.respondent.matricula}</span>,
-        <span className="font-medium">{t.respondent.nome}</span>,
+        <span className="block">
+          <span className="font-medium">{t.respondent.nome}</span>
+          <Link
+            href={`/periodos/${id}/respondentes/${t.id}/previa`}
+            className="mt-0.5 block text-[11px] font-semibold text-brand-teal hover:text-brand-teal-hover"
+            title="Ver o formulário como esta pessoa vai ver (somente leitura)"
+          >
+            ver como ela vê →
+          </Link>
+        </span>,
         t.respondent.email.endsWith('@sem-email.insted.local') ? (
           <Etiqueta tom="alerta">sem e-mail</Etiqueta>
         ) : (

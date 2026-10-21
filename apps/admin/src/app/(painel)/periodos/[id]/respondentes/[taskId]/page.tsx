@@ -16,6 +16,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@insted/database';
+import { exigirPainel } from '@/lib/sessao';
 import { GeradorDeAlvos } from '@insted/avaliacao';
 import { Etiqueta } from '@/components/Lista';
 import { atualizarCardsDoRespondente } from '../../../actions';
@@ -50,6 +51,9 @@ export default async function CardsDoRespondente({
   params: Promise<{ id: string; taskId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  // A guarda do layout protege a navegação; a página confere por conta própria,
+  // porque ela lê tarefas de pessoas.
+  await exigirPainel();
   const { id, taskId } = await params;
   const sp = await searchParams;
 
@@ -116,6 +120,13 @@ export default async function CardsDoRespondente({
           um com as alocações de hoje: o que não confere (turma trocada, oferta desligada, turma
           desativada) vem marcado para remover. Você pode marcar ou desmarcar qualquer card que
           não seja fixo do formulário.
+          {' '}
+          <Link
+            href={`/periodos/${id}/respondentes/${taskId}/previa`}
+            className="font-semibold text-brand-teal"
+          >
+            Ver o formulário como ela vê →
+          </Link>
           {alocacoes && (
             <>
               {' '}
