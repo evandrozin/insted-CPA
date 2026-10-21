@@ -16,6 +16,38 @@ import { dormir } from './client.js';
 
 type Progresso = (msg: string) => void;
 
+/**
+ * Um perfil candidato de um nome ambíguo, como fica guardado em
+ * `jacad_docente_conciliacoes.candidatos`.
+ *
+ * `email`, `cpf` e `dataNascimento` existem para a pessoa que decide na tela de
+ * docentes ambíguos conseguir distinguir os homônimos — sem eles só há cargo e
+ * situação, e na prática nenhum dos dois separa duas pessoas. Ficam no banco
+ * porque o servidor do painel normalmente NÃO alcança a API (o IP de saída em
+ * hospedagem serverless não está liberado), então a tela não pode consultá-los
+ * na hora. Quem não foi escolhido tem esses três campos apagados na resolução.
+ *
+ * Registros antigos não os têm: a tela detecta isso e pede para recarregar.
+ */
+export type CandidatoDocente = {
+  idPerfil: number;
+  nome: string;
+  cargo: string | null;
+  temEmail: boolean;
+  status: string | null;
+  email?: string | null;
+  cpf?: string | null;
+  dataNascimento?: string | null;
+};
+
+export type OpcoesConciliacao = {
+  /**
+   * Só reconsulta os nomes que hoje estão AMBÍGUOS. Serve para carregar os
+   * dados dos candidatos sem refazer a conciliação dos que já estão resolvidos.
+   */
+  soAmbiguos?: boolean;
+};
+
 export type ResultadoConciliacao = {
   total: number;
   conciliados: number;
@@ -41,7 +73,10 @@ export class ConciliadorDocentes {
     private readonly onProgresso: Progresso = () => {},
   ) {}
 
-  async conciliar(idPeriodoLetivo?: number): Promise<ResultadoConciliacao> {
+  async conciliar(
+    idPeriodoLetivo?: number,
+    opcoes: OpcoesConciliacao = {},
+  ): Promise<ResultadoConciliacao> {
     const linhas = await this.prisma.jacadMatriculaDisciplina.findMany({
       where: {
         professor: { not: null },
@@ -51,7 +86,19 @@ export class ConciliadorDocentes {
       distinct: ['professor'],
     });
 
-    const nomes = [...new Set(linhas.map((l) => l.professor!).filter(Boolean))].sort();
+    let nomes = [...new Set(linhas.map((l) => l.professor!).filter(Boolean))].sort();
+
+    if (opcoes.soAmbiguos) {
+      const ambiguos = new Set(
+        (
+          await this.prisma.jacadDocenteConciliacao.findMany({
+            where: { status: 'AMBIGUO' },
+            select: { nomeNormalizado: true },
+          })
+        ).map((c) => c.nomeNormalizado),
+      );
+      nomes = nomes.filter((n) => ambiguos.has(normalizarNome(n)));
+    }
     const r: ResultadoConciliacao = {
       total: nomes.length,
       conciliados: 0,
@@ -106,13 +153,18 @@ export class ConciliadorDocentes {
         // só o mínimo necessário para distinguir as pessoas.
         candidatos:
           status === 'AMBIGUO'
-            ? exatos.map((p) => ({
-                idPerfil: p.idPerfil,
-                nome: p.nome,
-                cargo: p.cargo ?? null,
-                temEmail: Boolean(p.email),
-                status: p.status ?? null,
-              }))
+            ? exatos.map(
+                (p): CandidatoDocente => ({
+                  idPerfil: p.idPerfil,
+                  nome: p.nome,
+                  cargo: p.cargo ?? null,
+                  temEmail: Boolean(p.email),
+                  status: p.status ?? null,
+                  email: p.email ? String(p.email).trim().toLowerCase() : null,
+                  cpf: p.cpf ? String(p.cpf).replace(/\D/g, '') : null,
+                  dataNascimento: p.dataNascimento ? String(p.dataNascimento).slice(0, 10) : null,
+                }),
+              )
             : undefined,
         conciliadoEm: new Date(),
       };

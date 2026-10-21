@@ -176,6 +176,29 @@ docentes ativos e conciliar por CPF. Isso zera a ambiguidade e vira o importador
 CSV da Fase 1. Enquanto isso, 72% dos docentes já entram funcionando, e os 28%
 restantes são uma fila de decisão curta — não um bloqueio do ciclo.
 
+### A fila de decisão: tela "Docentes ambíguos"
+
+Em **Cadastros → Docentes ambíguos** a CPA escolhe, para cada nome ambíguo, qual
+perfil é o docente. Só ADMIN confirma (é uma decisão de identidade), e cada
+escolha deixa `DOCENTE_CONCILIADO_MANUAL` na auditoria.
+
+- **Os dados para decidir ficam no banco.** O servidor do painel normalmente não
+  alcança a API (IP de saída em hospedagem serverless não está liberado), então a
+  tela não consulta o JACAD. Os candidatos guardam e-mail, CPF e nascimento,
+  carregados de uma máquina com IP liberado:
+  `npm run homolog -- jacad conciliar-docentes --so-ambiguos` (só reconsulta os
+  ambíguos; os resolvidos não são tocados). O CPF aparece mascarado.
+- **A escolha vai para o MESMO cadastro.** O docente já existe, inativo, com as
+  alocações penduradas nele. A ação troca a matrícula para `JACAD-P-<idPerfil>`
+  (a que o importador daria a um conciliado), ativa e marca `statusManual`; o `id`
+  não muda, então alocações e respostas ficam. Criar um cadastro novo deixaria o
+  antigo com as alocações ativas e dobraria os cards de professor dos alunos.
+- **A conciliação vira `MANUAL`**, que a re-execução do importador não sobrescreve,
+  e quem não foi escolhido perde e-mail, CPF e nascimento do registro.
+- **E-mail é único.** Se o e-mail do perfil já é de outra conta (docente que
+  também é da comissão), a tela recusa e oferece "sem e-mail": o docente fica ativo
+  com e-mail provisório e entra pelo link do portal (`idperfil`), que não usa e-mail.
+
 
 
 ## Configuração

@@ -14,6 +14,7 @@
  * A página lê o banco direto porque ainda não existe API. Se o Postgres não
  * estiver de pé, ela mostra o estado vazio em vez de estourar.
  */
+import Link from 'next/link';
 import { prisma } from '@insted/database';
 import {
   conciliarDocentes,
@@ -423,7 +424,10 @@ export default async function IntegracaoJacad() {
           para outra pessoa é o pior defeito possível aqui.
         </p>
         <p className="mt-2 text-sm text-slate-600">
-          Os ambíguos ficam registrados para decisão manual e entram INATIVOS até serem resolvidos.
+          Os ambíguos ficam registrados para decisão manual e entram INATIVOS até serem resolvidos —{' '}
+          <Link href="/cadastros/docentes-ambiguos" className="font-semibold text-brand-teal">
+            resolva em Docentes ambíguos →
+          </Link>.
           A saída definitiva é uma planilha da secretaria com nome, CPF e e-mail institucional —
           conciliar por CPF zera a ambiguidade.
         </p>

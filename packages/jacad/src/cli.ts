@@ -37,7 +37,13 @@ function opcoes(argv: string[]): Record<string, string> {
   const o: Record<string, string> = {};
   for (const a of argv) {
     const m = a.match(/^--([^=]+)=(.*)$/);
-    if (m) o[m[1]] = m[2];
+    if (m) {
+      o[m[1]] = m[2];
+      continue;
+    }
+    // Flag sem valor (`--so-ambiguos`): presente quer dizer ligada.
+    const flag = a.match(/^--([^=]+)$/);
+    if (flag) o[flag[1]] = 'true';
   }
   return o;
 }
@@ -200,7 +206,7 @@ async function main() {
     case 'conciliar-docentes': {
       const periodo = o.periodo ? Number(o.periodo) : undefined;
       const c = new ConciliadorDocentes(prisma, clientes().jacad, log);
-      const r = await c.conciliar(periodo);
+      const r = await c.conciliar(periodo, { soAmbiguos: o['so-ambiguos'] !== undefined });
       log('\n─────────────────────────────────────');
       log(`  docentes ............. ${r.total}`);
       log(`  conciliados .......... ${r.conciliados}`);
@@ -270,7 +276,11 @@ async function main() {
   sync matriculas --periodo=<id>      importa alunos e matrículas
   sync disciplinas --periodo=<id>     importa disciplinas + professor (lento)
   sync tudo --periodo=<id>            tudo acima, na ordem
-  conciliar-docentes [--periodo=<id>] casa professores com /basicos/perfis
+  conciliar-docentes [--periodo=<id>] [--so-ambiguos]
+                                      casa professores com /basicos/perfis.
+                                      --so-ambiguos reconsulta só os nomes ambíguos
+                                      (carrega e-mail/CPF dos candidatos para a tela
+                                      Docentes ambíguos, sem refazer os resolvidos)
   promover --periodo=<id>             staging -> entidades do CPA`);
       process.exitCode = 1;
   }
