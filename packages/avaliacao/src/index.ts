@@ -4,4 +4,8 @@ export type {
   ResultadoInclusao,
   EscopoGeracao,
   PreviaDoEscopo,
+  CardDaTarefa,
+  CardQueFalta,
+  PlanoDaTarefa,
+  ResultadoAtualizacao,
 } from './gerar-alvos.js';

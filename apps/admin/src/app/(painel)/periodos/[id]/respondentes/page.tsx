@@ -224,7 +224,14 @@ export default async function Respondentes({
         ) : (
           <span className="text-xs text-slate-500">{t.respondent.email}</span>
         ),
-        t._count.alvos,
+        <Link
+          key="cards"
+          href={`/periodos/${id}/respondentes/${t.id}`}
+          className="font-semibold text-brand-teal hover:text-brand-teal-hover"
+          title="Ver os cards desta pessoa e tirar os que não são dela"
+        >
+          {t._count.alvos}
+        </Link>,
         t.status === 'CONCLUIDA' ? (
           <Etiqueta tom="ok">enviado</Etiqueta>
         ) : t.status === 'DISPENSADA' ? (

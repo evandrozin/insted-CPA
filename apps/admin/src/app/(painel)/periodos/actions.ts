@@ -858,3 +858,76 @@ export async function incluirRespondentes(
   revalidatePath(`/periodos/${periodId}/respondentes`);
   redirect(`/periodos/${periodId}/respondentes?status=TODOS&inclusao=${registro.id}`);
 }
+
+/**
+ * Atualiza os cards da tarefa de UMA pessoa: remove os marcados e, se pedido,
+ * inclui os que faltam.
+ *
+ * Existe porque a tarefa é gerada uma vez e as alocações mudam depois (turma
+ * trocada, turma desativada). Refazer o ciclo inteiro destruiria o rascunho de
+ * quem já começou; aqui só se mexe numa pessoa, no que a CPA confirmou.
+ *
+ * Só vale para ciclo ainda vivo, e nunca para tarefa enviada ou retirada. O que
+ * pode ser removido é decidido de novo pelo gerador, no servidor — o que veio do
+ * formulário HTML é só um pedido.
+ */
+export async function atualizarCardsDoRespondente(
+  periodId: string,
+  taskId: string,
+  dados: FormData,
+): Promise<void> {
+  const eu = await exigirPainel();
+
+  const { status } = await estado(periodId);
+  if (!['RASCUNHO', 'AGENDADO', 'ABERTO'].includes(status)) {
+    throw new Error('O ciclo já foi encerrado: os cards não podem mais mudar.');
+  }
+
+  const tarefa = await prisma.evaluationTask.findUnique({
+    where: { id: taskId },
+    select: { periodId: true },
+  });
+  if (!tarefa || tarefa.periodId !== periodId) throw new Error('Tarefa não encontrada neste ciclo.');
+
+  const remover = dados.getAll('remover').map(String).filter(Boolean);
+  const incluirFaltantes = dados.get('incluir') === 'on';
+  if (remover.length === 0 && !incluirFaltantes) {
+    throw new Error('Marque ao menos um card para remover, ou a inclusão dos que faltam.');
+  }
+
+  const gerador = new GeradorDeAlvos(prisma);
+
+  // Descartar rascunho é irreversível: se algum card marcado tem, exige que a
+  // pessoa tenha dito que sabe. Conferido aqui, não só na tela.
+  const plano = await gerador.planejarTarefa(taskId);
+  const pedidos = new Set(remover);
+  const comRascunho = plano.cards.filter((c) => c.removivel && pedidos.has(c.id) && c.rascunhos > 0);
+  if (comRascunho.length > 0 && dados.get('ciente') !== 'on') {
+    const total = comRascunho.reduce((t, c) => t + c.rascunhos, 0);
+    throw new Error(
+      `${total} resposta(s) em rascunho dos cards marcados seriam descartadas. Marque "estou ciente" ` +
+        'para confirmar, ou desmarque esses cards.',
+    );
+  }
+
+  const r = await gerador.atualizarTarefa(taskId, { remover, incluirFaltantes });
+
+  // Pedido que não mudou nada (card fixo, id velho) não vira linha de auditoria.
+  if (r.removidos + r.incluidos > 0) {
+    await prisma.auditLog.create({
+      data: {
+        userId: eu.id,
+        acao: 'PERIOD_TASK_CARDS_UPDATED',
+        entidade: 'EvaluationTask',
+        entidadeId: taskId,
+        dadosDepois: { periodId, ...r },
+      },
+    });
+  }
+
+  revalidatePath(`/periodos/${periodId}/respondentes`);
+  revalidatePath(`/periodos/${periodId}/respondentes/${taskId}`);
+  redirect(
+    `/periodos/${periodId}/respondentes/${taskId}?ok=${r.removidos}.${r.rascunhosDescartados}.${r.incluidos}`,
+  );
+}

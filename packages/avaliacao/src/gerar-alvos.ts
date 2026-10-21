@@ -76,6 +76,60 @@ export type PreviaDoEscopo = {
   semModalidade: number;
 };
 
+/** Um card da tarefa de uma pessoa, com o que a tela de revisão precisa saber dele. */
+export type CardDaTarefa = {
+  id: string;
+  blockId: string;
+  targetType: TargetType;
+  targetRefId: string | null;
+  rotulo: string;
+  subtitulo: string | null;
+  ordem: number;
+  /** O card já foi respondido e enviado: nunca é removido. */
+  concluido: boolean;
+  /** O gerador ainda produziria este card hoje, com as alocações e turmas atuais? */
+  valido: boolean;
+  /** Para um card que o gerador não produz mais: por quê, em palavras. */
+  motivo: string | null;
+  /** Pode ser removido: vem de bloco repetível e ainda não foi enviado. */
+  removivel: boolean;
+  /** Respostas em rascunho neste card — descartadas se ele for removido. */
+  rascunhos: number;
+};
+
+/** Um card que o gerador produziria hoje e a tarefa ainda não tem. */
+export type CardQueFalta = {
+  blockId: string;
+  targetType: TargetType;
+  targetRefId: string | null;
+  rotulo: string;
+  subtitulo: string | null;
+  ordem: number;
+};
+
+export type PlanoDaTarefa = {
+  taskId: string;
+  periodId: string;
+  status: string;
+  progresso: number;
+  respondenteId: string;
+  nome: string;
+  matricula: string;
+  papel: string;
+  formulario: string;
+  /** Falso para tarefa enviada ou retirada do ciclo: não há o que atualizar. */
+  editavel: boolean;
+  motivoBloqueio: string | null;
+  cards: CardDaTarefa[];
+  faltam: CardQueFalta[];
+};
+
+export type ResultadoAtualizacao = {
+  removidos: number;
+  rascunhosDescartados: number;
+  incluidos: number;
+};
+
 export type ResultadoInclusao = {
   incluidos: { matricula: string; nome: string; cards: number }[];
   recusados: { matricula: string; nome: string | null; motivo: string }[];
@@ -581,6 +635,246 @@ export class GeradorDeAlvos {
       data: alvos.map((a) => ({ ...a, taskId: task.id })),
     });
     return 'gravada';
+  }
+
+  // ───────────────────────────────────────── atualização de UMA tarefa
+
+  /**
+   * Os cards que o gerador produziria hoje para a pessoa dona de uma tarefa.
+   *
+   * É a MESMA regra da geração (`alvosDoAluno`, `alvosDeEquipe`), de propósito:
+   * "o que deveria estar aqui" não pode ter uma segunda definição, ou a tela de
+   * revisão e o gerador discordariam sobre o que é um card errado.
+   */
+  private async cardsDesejados(taskId: string) {
+    const task = await this.prisma.evaluationTask.findUnique({
+      where: { id: taskId },
+      select: {
+        id: true,
+        periodId: true,
+        periodFormId: true,
+        status: true,
+        progresso: true,
+        respondent: { select: { id: true, nome: true, matricula: true, role: true } },
+      },
+    });
+    if (!task) throw new Error('Tarefa não encontrada.');
+
+    const ctx = await this.contexto(task.periodId);
+    const periodForm = ctx.formularios.find((f) => f.id === task.periodFormId);
+    if (!periodForm) throw new Error('O formulário desta tarefa não está mais no ciclo.');
+
+    let alvos: Alvo[];
+    if (periodForm.publico === 'ALUNO') {
+      alvos = (await this.alvosDoAluno(ctx, periodForm, task.respondent.id)).alvos;
+    } else {
+      const escopo =
+        periodForm.publico === 'PROFESSOR'
+          ? (await this.escoposDocentes(ctx, [task.respondent.id])).get(task.respondent.id)
+          : undefined;
+      alvos = this.alvosDeEquipe(ctx, periodForm, escopo, []);
+    }
+
+    return { task, periodForm, alvos };
+  }
+
+  /**
+   * O que mudaria na tarefa de UMA pessoa, sem gravar nada.
+   *
+   * Existe porque a tarefa é gerada uma vez e as alocações mudam depois — o
+   * docente cuja turma foi trocada, a turma desativada. Refazer o ciclo inteiro
+   * destruiria o rascunho de quem já começou; aqui só se mexe numa pessoa, e
+   * só no que ela mesma confirmar.
+   */
+  async planejarTarefa(taskId: string): Promise<PlanoDaTarefa> {
+    const { task, periodForm, alvos } = await this.cardsDesejados(taskId);
+
+    const chave = (blockId: string, ref: string | null) => `${blockId}|${ref ?? ''}`;
+    const desejados = new Set(alvos.map((a) => chave(a.blockId, a.targetRefId)));
+    const repetiveis = new Set(periodForm.form.blocos.filter((b) => b.repetivel).map((b) => b.id));
+
+    const atuais = await this.prisma.evaluationTaskTarget.findMany({
+      where: { taskId },
+      orderBy: { ordem: 'asc' },
+    });
+
+    // Rascunhos por card: o rascunho é chaveado por pergunta + referência, e a
+    // pergunta diz de que bloco é. Só a contagem sai daqui — nunca o conteúdo.
+    const rascunhos = await this.prisma.draftAnswer.findMany({
+      where: { taskId },
+      select: { targetRefId: true, question: { select: { blockId: true } } },
+    });
+    const porCard = new Map<string, number>();
+    for (const r of rascunhos) {
+      const k = `${r.question.blockId}|${r.targetRefId}`;
+      porCard.set(k, (porCard.get(k) ?? 0) + 1);
+    }
+
+    const motivoDe = (t: { targetType: TargetType }) => {
+      switch (t.targetType) {
+        case 'TURMA':
+          return 'esta turma não está mais entre as turmas ativas dele (oferta desligada, trocada ou turma inativa)';
+        case 'CURSO':
+          return 'ele não tem mais oferta ativa neste curso';
+        case 'PROFESSOR_DISCIPLINA':
+        case 'DISCIPLINA':
+          return 'a oferta foi desligada, trocada ou a pessoa saiu dela';
+        case 'DEPARTAMENTO':
+          return 'este setor não faz mais parte da configuração do formulário';
+        default:
+          return 'o formulário não gera mais este card';
+      }
+    };
+
+    const cards: CardDaTarefa[] = atuais.map((t) => {
+      const valido = desejados.has(chave(t.blockId, t.targetRefId));
+      return {
+        id: t.id,
+        blockId: t.blockId,
+        targetType: t.targetType,
+        targetRefId: t.targetRefId,
+        rotulo: t.rotulo,
+        subtitulo: t.subtitulo,
+        ordem: t.ordem,
+        concluido: t.concluido,
+        valido,
+        motivo: valido ? null : motivoDe(t),
+        removivel: repetiveis.has(t.blockId) && !t.concluido,
+        rascunhos: porCard.get(`${t.blockId}|${t.targetRefId ?? '__global__'}`) ?? 0,
+      };
+    });
+
+    const existentes = new Set(atuais.map((t) => chave(t.blockId, t.targetRefId)));
+    const faltam = alvos.filter((a) => !existentes.has(chave(a.blockId, a.targetRefId)));
+
+    const bloqueio =
+      task.status === 'CONCLUIDA'
+        ? 'Esta tarefa já foi enviada: os cards dela não mudam mais.'
+        : task.status === 'DISPENSADA'
+          ? 'Esta pessoa foi retirada do ciclo. Recoloque-a antes de mexer nos cards.'
+          : null;
+
+    return {
+      taskId,
+      periodId: task.periodId,
+      status: task.status,
+      progresso: task.progresso,
+      respondenteId: task.respondent.id,
+      nome: task.respondent.nome,
+      matricula: task.respondent.matricula,
+      papel: task.respondent.role,
+      formulario: periodForm.form.nome,
+      editavel: bloqueio === null,
+      motivoBloqueio: bloqueio,
+      cards,
+      faltam,
+    };
+  }
+
+  /**
+   * Aplica numa tarefa só o que a CPA marcou: remove os cards escolhidos e,
+   * se pedido, inclui os que faltam.
+   *
+   * Regras que não se negociam:
+   * - o plano é recalculado AQUI, e a remoção é a interseção do que foi pedido
+   *   com o que o plano diz ser removível — um id forjado ou velho não remove
+   *   card fixo nem card já enviado;
+   * - o rascunho dos cards que ficam não é tocado; o dos removidos é descartado
+   *   (é o preço de tirar o card, e a tela avisa antes);
+   * - tudo numa transação, e a ordem dos cards é reajustada à do formulário.
+   */
+  async atualizarTarefa(
+    taskId: string,
+    opcoes: { remover: string[]; incluirFaltantes: boolean },
+  ): Promise<ResultadoAtualizacao> {
+    const plano = await this.planejarTarefa(taskId);
+    if (!plano.editavel) throw new Error(plano.motivoBloqueio ?? 'Tarefa não editável.');
+
+    const pedidos = new Set(opcoes.remover);
+    const remover = plano.cards.filter((c) => c.removivel && pedidos.has(c.id));
+    const incluir = opcoes.incluirFaltantes ? plano.faltam : [];
+
+    if (remover.length === 0 && incluir.length === 0) {
+      return { removidos: 0, rascunhosDescartados: 0, incluidos: 0 };
+    }
+
+    const { alvos } = await this.cardsDesejados(taskId);
+    const ordemDesejada = new Map(
+      alvos.map((a) => [`${a.blockId}|${a.targetRefId ?? ''}`, a.ordem] as const),
+    );
+
+    let rascunhosDescartados = 0;
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const c of remover) {
+        if (c.targetRefId !== null) {
+          rascunhosDescartados += (
+            await tx.draftAnswer.deleteMany({
+              where: { taskId, targetRefId: c.targetRefId, question: { blockId: c.blockId } },
+            })
+          ).count;
+        }
+        await tx.evaluationTaskTarget.delete({ where: { id: c.id } });
+      }
+
+      if (incluir.length > 0) {
+        await tx.evaluationTaskTarget.createMany({
+          data: incluir.map((a) => ({ ...a, taskId })),
+        });
+      }
+
+      // A ordem volta a ser a do formulário. Quem sobrou fora da lista desejada
+      // (card mantido de propósito) vai para o fim, na ordem em que estava.
+      const restantes = await tx.evaluationTaskTarget.findMany({ where: { taskId } });
+      const ordenados = restantes
+        .map((t) => ({
+          id: t.id,
+          ordem: t.ordem,
+          alvo: ordemDesejada.get(`${t.blockId}|${t.targetRefId ?? ''}`) ?? 10_000 + t.ordem,
+        }))
+        .sort((x, y) => x.alvo - y.alvo || x.ordem - y.ordem);
+      for (const [i, t] of ordenados.entries()) {
+        if (t.ordem !== i) {
+          await tx.evaluationTaskTarget.update({ where: { id: t.id }, data: { ordem: i } });
+        }
+      }
+    });
+
+    await this.recalcularProgresso(taskId);
+
+    return { removidos: remover.length, rascunhosDescartados, incluidos: incluir.length };
+  }
+
+  /**
+   * Mesma conta do salvamento de etapa (`responder/actions.ts`): respostas em
+   * rascunho sobre o total previsto. Só mexe em tarefa em andamento — a
+   * pendente continua em zero, e a enviada nem chega aqui.
+   */
+  private async recalcularProgresso(taskId: string): Promise<void> {
+    const task = await this.prisma.evaluationTask.findUnique({
+      where: { id: taskId },
+      select: { status: true },
+    });
+    if (task?.status !== 'EM_ANDAMENTO') return;
+
+    const [respondidas, alvos] = await Promise.all([
+      this.prisma.draftAnswer.count({ where: { taskId } }),
+      this.prisma.evaluationTaskTarget.findMany({ where: { taskId }, select: { blockId: true } }),
+    ]);
+    const porBloco = alvos.length
+      ? await this.prisma.question.groupBy({
+          by: ['blockId'],
+          where: { blockId: { in: [...new Set(alvos.map((a) => a.blockId))] }, ativa: true },
+          _count: true,
+        })
+      : [];
+    const mapa = new Map(porBloco.map((b) => [b.blockId, b._count]));
+    const total = alvos.reduce((t, a) => t + (mapa.get(a.blockId) ?? 0), 0);
+
+    await this.prisma.evaluationTask.update({
+      where: { id: taskId },
+      data: { progresso: total ? Math.min(99, Math.round((respondidas / total) * 100)) : 0 },
+    });
   }
 
   /** Os formulários do ciclo que o recorte alcança. */
