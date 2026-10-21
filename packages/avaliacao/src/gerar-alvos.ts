@@ -192,7 +192,10 @@ export class GeradorDeAlvos {
 
     const turmasDoSemestreAtual = (
       await this.prisma.schoolClass.findMany({
-        where: { termId: semestreAtual.id },
+        // Turma desativada no painel (Cadastros → Turmas) não existe para o
+        // ciclo: o aluno que só está nela deixa de ser elegível, e as ofertas
+        // dela deixam de virar card. Sem isto, desativar seria só visual.
+        where: { termId: semestreAtual.id, ativo: true },
         select: { id: true },
       })
     ).map((t) => t.id);
@@ -231,7 +234,12 @@ export class GeradorDeAlvos {
     if (ids.length === 0) return escopos;
 
     const alocacoes = await this.prisma.teachingAssignment.findMany({
-      where: { teacherId: { in: ids }, termId: { in: ctx.termIds }, ativo: true },
+      where: {
+        teacherId: { in: ids },
+        termId: { in: ctx.termIds },
+        ativo: true,
+        class: { ativo: true },
+      },
       select: {
         teacherId: true,
         class: {
@@ -395,6 +403,7 @@ export class GeradorDeAlvos {
           ativo: true,
           assignment: {
             ativo: true,
+            class: { ativo: true },
             termId: { in: ctx.termIds },
             subject: { ativo: true, OR: [{ course: null }, { course: { ativo: true } }] },
           },
@@ -598,6 +607,7 @@ export class GeradorDeAlvos {
             ativo: true,
             assignment: {
               ativo: true,
+              class: { ativo: true },
               termId: { in: ctx.termIds },
               modalidade: { in: escopo.modalidades },
               subject: { ativo: true, OR: [{ course: null }, { course: { ativo: true } }] },
@@ -672,6 +682,7 @@ export class GeradorDeAlvos {
               ativo: true,
               assignment: {
                 ativo: true,
+                class: { ativo: true },
                 termId: { in: ctx.termIds },
                 modalidade: { in: ['PRESENCIAL', 'SEMIPRESENCIAL', 'EAD'] },
               },
