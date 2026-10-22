@@ -94,9 +94,16 @@ export async function testarConexao(): Promise<void> {
   revalidatePath('/integracoes/jacad');
   if (!r.ok) {
     throw new Error(
-      r.status === 403 || r.status === 401
-        ? `O JACAD recusou a autenticação (HTTP ${r.status}). Confira o token e se o IP deste servidor está liberado.`
-        : `Falha ao autenticar (HTTP ${r.status}): ${r.mensagem}`,
+      r.status === 422
+        ? // 422: a chamada chegou e o JACAD não reconheceu o valor. Não é o IP —
+          // um IP bloqueado nem chega a ler o token.
+          `O JACAD não reconheceu o token (HTTP 422${r.detalhe ? `: "${r.detalhe}"` : ''}). ` +
+            'O valor de JACAD_TOKEN deste ambiente está diferente do correto: cole-o inteiro, ' +
+            'sem aspas, espaço ou quebra de linha, e publique de novo — o Vercel só aplica ' +
+            'uma variável alterada em um deploy novo.'
+        : r.status === 403 || r.status === 401
+          ? `O JACAD recusou a autenticação (HTTP ${r.status}). Confira o token e se o IP deste servidor está liberado.`
+          : `Falha ao autenticar (HTTP ${r.status}): ${r.mensagem}`,
     );
   }
 }

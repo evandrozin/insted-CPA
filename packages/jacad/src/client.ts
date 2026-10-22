@@ -200,13 +200,24 @@ export class JacadClient {
   }
 
   /** Diagnóstico do painel: testa a autenticação sem lançar. */
-  async testarConexao(): Promise<{ ok: boolean; status: number; mensagem: string }> {
+  async testarConexao(): Promise<{
+    ok: boolean;
+    status: number;
+    mensagem: string;
+    /** O que o próprio JACAD respondeu, em uma linha (ex.: "Nenhum Token encontrado…"). */
+    detalhe?: string;
+  }> {
     try {
       await this.token(true);
       return { ok: true, status: 200, mensagem: 'Autenticação bem-sucedida.' };
     } catch (e) {
       const err = e as JacadError;
-      return { ok: false, status: err.status ?? 0, mensagem: err.message };
+      return {
+        ok: false,
+        status: err.status ?? 0,
+        mensagem: err.message,
+        detalhe: mensagemDoCorpo(err.body),
+      };
     }
   }
 
@@ -237,10 +248,38 @@ function safeJson(texto: string): any {
 }
 
 /** Monta o cliente a partir do ambiente (+ overrides da tabela de parâmetros). */
+/**
+ * Limpa um valor de variável de ambiente: espaços e quebra de linha nas pontas e
+ * UM par de aspas em volta.
+ *
+ * Existe porque a causa mais comum de "o token está certo mas o JACAD não o
+ * reconhece" é o valor ter vindo com aspas (`JACAD_TOKEN="abc"`, como num .env) ou
+ * com um espaço colado junto — e a API responde 422 para qualquer diferença, de
+ * um caractere que seja.
+ */
+export function limparVariavel(valor: string | undefined): string {
+  let v = (valor ?? '').trim();
+  const par = v.match(/^(["'])(.*)\1$/s);
+  if (par) v = par[2].trim();
+  return v;
+}
+
+/** A frase de erro que o JACAD devolveu no corpo, sem o resto do JSON. */
+function mensagemDoCorpo(corpo: string | undefined): string | undefined {
+  if (!corpo) return undefined;
+  try {
+    const m = (JSON.parse(corpo) as { message?: unknown }).message;
+    if (typeof m === 'string' && m.trim()) return m.replace(/\s+/g, ' ').trim().slice(0, 160);
+  } catch {
+    /* corpo não é JSON */
+  }
+  return corpo.replace(/\s+/g, ' ').trim().slice(0, 160) || undefined;
+}
+
 export function clienteDoAmbiente(override: Partial<JacadConfig> = {}): JacadClient {
   return new JacadClient({
-    baseUrl: process.env.JACAD_BASE_URL ?? 'https://insted-developer.jacad.com.br',
-    apiKey: process.env.JACAD_TOKEN ?? '',
+    baseUrl: limparVariavel(process.env.JACAD_BASE_URL) || 'https://insted-developer.jacad.com.br',
+    apiKey: limparVariavel(process.env.JACAD_TOKEN),
     pageSize: Number(process.env.JACAD_PAGE_SIZE) || 200,
     timeoutMs: (Number(process.env.JACAD_TIMEOUT) || 60) * 1000,
     sleepMs: Number(process.env.JACAD_SLEEP_MS) || 150,

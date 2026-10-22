@@ -142,7 +142,9 @@ const dataHora = (d: Date | null) =>
 
 export default async function IntegracaoJacad() {
   const { recursos, cpa, erro } = await carregar();
-  const tokenConfigurado = Boolean(process.env.JACAD_TOKEN);
+  const tokenBruto = process.env.JACAD_TOKEN ?? '';
+  const tokenConfigurado = Boolean(tokenBruto);
+  const pontasSuspeitas = tokenBruto !== tokenBruto.trim() || /^["']|["']$/.test(tokenBruto);
 
   // Períodos já em staging alimentam os seletores. Antes do primeiro sync a
   // lista é vazia, e os botões que dependem dela ficam desabilitados — é a
@@ -186,7 +188,19 @@ export default async function IntegracaoJacad() {
             </p>
             <p className="mt-0.5 text-sm font-semibold">
               {tokenConfigurado ? (
-                <span className="text-brand-teal-hover">configurado</span>
+                <>
+                  <span className="text-brand-teal-hover">configurado</span>
+                  {/* Só o tamanho, nunca o valor: serve para comparar com o token
+                      certo e para denunciar aspas ou espaço colados nas pontas. */}
+                  <span className="ml-2 text-xs font-normal text-slate-400">
+                    {tokenBruto.length} caracteres
+                  </span>
+                  {pontasSuspeitas && (
+                    <span className="ml-2 text-xs font-normal text-brand-orange">
+                      há aspas ou espaço nas pontas — remova
+                    </span>
+                  )}
+                </>
               ) : (
                 <span className="text-brand-orange">ausente — defina JACAD_TOKEN</span>
               )}
