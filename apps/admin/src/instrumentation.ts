@@ -23,35 +23,12 @@ export async function onRequestError(
   _request: { path: string; method: string },
   context: { routePath: string; routeType: string },
 ): Promise<void> {
-  if (process.env.NEXT_RUNTIME !== 'nodejs') return;
-
-  const e = err as { digest?: unknown; message?: unknown } | null;
-  if (!e || typeof e.digest !== 'string' || typeof e.message !== 'string') return;
-  const digest: string = e.digest;
-  const mensagem: string = e.message;
-
-  // redirect() e notFound() também chegam como erro; não são falha.
-  if (digest.startsWith('NEXT_')) return;
-
-  // Só Error simples: os do Prisma, do driver e da plataforma são subclasses.
-  const simples = Object.getPrototypeOf(err) === Error.prototype;
-  if (!simples) return;
-
-  try {
-    const { prisma } = await import('@insted/database');
-    await prisma.auditLog.create({
-      data: {
-        acao: 'ERRO_ACAO',
-        entidade: 'Erro',
-        dadosDepois: {
-          digest,
-          mensagem: mensagem.slice(0, 500),
-          rota: context.routePath,
-          tipo: context.routeType,
-        },
-      },
-    });
-  } catch {
-    // Falhar ao registrar não pode esconder o erro original nem gerar outro.
+  // `if` positivo em volta do import: é o formato que o webpack reconhece para
+  // tirar o código do bundle edge (que não tem node:crypto, usado pelo banco).
+  // Com `return` antecipado ele compila o import também para o edge e o
+  // servidor de desenvolvimento quebra.
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { registrarErro } = await import('./instrumentation-node');
+    await registrarErro(err, context);
   }
 }

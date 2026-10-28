@@ -140,7 +140,21 @@ const dataHora = (d: Date | null) =>
     ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d)
     : '—';
 
-export default async function IntegracaoJacad() {
+export default async function IntegracaoJacad({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const falha =
+    typeof sp.erro === 'string' && sp.erro
+      ? {
+          mensagem: sp.erro.slice(0, 500),
+          status: typeof sp.status === 'string' ? Number(sp.status) : null,
+          // Só o que parece mesmo um endereço IP: o valor vem da URL.
+          ip: typeof sp.ip === 'string' && /^[0-9a-fA-F:.]{3,45}$/.test(sp.ip) ? sp.ip : null,
+        }
+      : null;
   const { recursos, cpa, erro } = await carregar();
   const tokenBruto = process.env.JACAD_TOKEN ?? '';
   const tokenConfigurado = Boolean(tokenBruto);
@@ -172,6 +186,37 @@ export default async function IntegracaoJacad() {
           entidades da avaliação.
         </p>
       </header>
+
+      {/* ------------------------------------------------- falha da última ação */}
+      {falha && (
+        <section className="mt-6 rounded-2xl border border-brand-orange/40 bg-brand-orange/5 px-5 py-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-orange">
+            A última ação falhou
+            {falha.status !== null && !Number.isNaN(falha.status) && ` · HTTP ${falha.status}`}
+          </p>
+          <p className="mt-1 text-sm text-brand-navy">{falha.mensagem}</p>
+
+          {falha.ip ? (
+            <div className="mt-3 rounded-xl bg-white px-4 py-3 text-sm">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+                IP de saída deste servidor — o que o JACAD enxerga
+              </p>
+              <p className="mt-0.5 font-mono text-base font-semibold text-brand-navy">{falha.ip}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {falha.status === 422
+                  ? 'O erro acima é do TOKEN, não do IP: liberar este IP não resolve.'
+                  : falha.status === 401 || falha.status === 403 || falha.status === 0
+                    ? 'É este o endereço que o JACAD precisa liberar. No Vercel ele muda a cada execução: o liberado hoje pode não ser o de amanhã. A saída estável é importar de uma máquina de IP fixo.'
+                    : 'Só precisa ser liberado se o erro acima for de bloqueio (401, 403 ou tempo esgotado).'}
+              </p>
+            </div>
+          ) : (
+            <p className="mt-2 text-xs text-slate-500">
+              Não consegui descobrir o IP de saída deste servidor agora.
+            </p>
+          )}
+        </section>
+      )}
 
       {/* ---------------------------------------------------------- conexão */}
       <section className="mt-8 rounded-2xl border border-brand-navy/10 bg-white px-5 py-4">
