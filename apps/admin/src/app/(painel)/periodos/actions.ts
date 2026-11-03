@@ -69,11 +69,19 @@ const filtroDoPublico = (pos: boolean) => (pos ? { semestre: 0 } : { semestre: {
 export async function criarCiclo(dados: FormData): Promise<void> {
   await exigirPainel();
 
-  const pos = String(dados.get('publico') ?? '') === 'pos';
+  const publico = String(dados.get('publico') ?? '');
+  const pos = publico === 'pos';
+  // Técnico-administrativo não tem semestre: quem responde vem do cadastro por
+  // papel, não de matrícula. O ciclo só precisa de um semestre como âncora.
+  const administrativo = publico === 'administrativo';
   const ano = Number(dados.get('ano'));
   const nome =
     String(dados.get('nome') ?? '').trim() ||
-    (pos ? `Avaliação Institucional — Pós-graduação ${ano}` : `Avaliação Institucional ${ano}`);
+    (pos
+      ? `Avaliação Institucional — Pós-graduação ${ano}`
+      : administrativo
+        ? `Avaliação Institucional — Administrativo ${ano}`
+        : `Avaliação Institucional ${ano}`);
 
   if (!ano || ano < 2000 || ano > 2100) throw new Error('Informe um ano válido.');
 
@@ -103,7 +111,9 @@ export async function criarCiclo(dados: FormData): Promise<void> {
       fechaEm: new Date(hoje.getTime() + 15 * 24 * 60 * 60 * 1000),
       // Por padrão o ciclo cobre todos os semestres do ano — é o que "anual"
       // significa. A CPA pode desmarcar depois.
-      semestres: { create: termos.map((t) => ({ termId: t.id, rotulo: t.codigo })) },
+      semestres: administrativo
+        ? undefined
+        : { create: termos.map((t) => ({ termId: t.id, rotulo: t.codigo })) },
     },
   });
 
@@ -126,9 +136,11 @@ export async function duplicarCiclo(dados: FormData): Promise<void> {
 
   const origem = await prisma.evaluationPeriod.findUnique({
     where: { id: origemId },
-    include: { formularios: true, term: true },
+    include: { formularios: true, term: true, semestres: { select: { termId: true } } },
   });
   if (!origem) throw new Error('Ciclo de origem não encontrado.');
+  // Ciclo sem semestres vinculados (administrativo) gera outro igual.
+  const semSemestres = origem.semestres.length === 0;
 
   // O ciclo de pós gera outro de pós; o de graduação, outro de graduação.
   const semestres = await prisma.academicTerm.findMany({
@@ -151,7 +163,9 @@ export async function duplicarCiclo(dados: FormData): Promise<void> {
       minimoRespostasExibicao: origem.minimoRespostasExibicao,
       mensagemBoasVindas: origem.mensagemBoasVindas,
       mensagemConclusao: origem.mensagemConclusao,
-      semestres: { create: semestres.map((t) => ({ termId: t.id, rotulo: t.codigo })) },
+      semestres: semSemestres
+        ? undefined
+        : { create: semestres.map((t) => ({ termId: t.id, rotulo: t.codigo })) },
       formularios: {
         create: origem.formularios.map((f) => ({
           formId: f.formId,
@@ -264,6 +278,16 @@ export async function alternarFormulario(formId: string, dados: FormData): Promi
   } else {
     const form = await prisma.formTemplate.findUnique({ where: { id: formId } });
     if (!form) throw new Error('Formulário não encontrado.');
+    // Ciclo administrativo nasce sem semestres. Um formulário de aluno nele
+    // alcançaria os alunos do semestre âncora, que não são o público do ciclo.
+    if (form.publico === 'ALUNO') {
+      const ligados = await prisma.evaluationPeriodTerm.count({ where: { periodId } });
+      if (ligados === 0) {
+        throw new Error(
+          'Este ciclo não tem semestres vinculados (é administrativo). Formulário de aluno precisa de ao menos um semestre.',
+        );
+      }
+    }
     await prisma.periodForm.create({
       data: { periodId, formId, publico: form.publico, obrigatorio: true, anonimo: true },
     });
