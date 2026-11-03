@@ -20,6 +20,7 @@
     "db:formulario-docentes": "tsx prisma/formulario-docentes-2026.ts",
     "db:formulario-ead": "tsx prisma/formulario-graduacao-ead.ts",
     "db:formulario-pos": "tsx prisma/formulario-pos-graduacao.ts",
+    "db:formulario-tecnico": "tsx prisma/formulario-tecnico-administrativo.ts",
     "db:demo": "tsx prisma/demonstracao.ts",
     "db:respostas-teste": "tsx prisma/respostas-teste.ts",
     "db:aluno-teste": "tsx prisma/aluno-teste.ts",

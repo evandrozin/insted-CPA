@@ -341,6 +341,35 @@ Alcance (homologação, 20/10/2026): dos docentes ativos reais, todos têm
 matrícula `JACAD-P-<id>`. Os 24 docentes sem conciliação ficam inativos e sem
 cards, então também não entram por este link.
 
+## Técnico-administrativo — entrada só com o e-mail
+
+O corpo técnico não tem portal como os acadêmicos. A decisão da comissão: a
+validação é **apenas o e-mail**, o que basta para impedir mais de uma resposta por
+funcionário, porque a tarefa é uma por pessoa e o envio a fecha ("Você já enviou
+esta avaliação").
+
+O link a distribuir é `/entrar/tecnico`: a pessoa digita o e-mail, o sistema o
+procura entre os cadastros TECNICO_ADMIN (Cadastros → Técnico-administrativo, um a
+um ou por planilha) e abre direto a avaliação. Sem senha.
+
+O que a porta vigia, porque o e-mail sozinho não prova quem é:
+
+- só entra conta TECNICO_ADMIN **ativa**; o e-mail de um ADMIN, GESTOR, professor ou
+  aluno recebe a mesma resposta de "não encontrado", de modo que um e-mail forjado
+  nunca abre o painel nem revela quem é quem;
+- 5 recusas do mesmo e-mail ou 20 do mesmo IP em 15 minutos bloqueiam a tentativa;
+- toda entrada vira `TECNICO_LOGIN` e toda recusa `TECNICO_LOGIN_RECUSADO`, com IP
+  e user agent.
+
+O risco é o mesmo já aceito para os alunos e docentes: quem souber o e-mail de um
+colega responde no lugar dele, e a resposta gravada não guarda indício disso. A
+saída, se um dia a CPA quiser endurecer, é mandar um link único por e-mail em vez
+de aceitar o e-mail digitado.
+
+O formulário é `npm run homolog -- formulario-tecnico` (rascunho). O que veio da
+conversão automática do PDF em `formularios-2026.ts` saiu quebrado e não deve ser
+usado.
+
 ## O login local, que continua existindo
 
 O login local está implementado e testado: primeiro acesso confere RA + e-mail

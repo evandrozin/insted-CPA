@@ -135,6 +135,10 @@ switch (comando) {
     rodar(['tsx', 'prisma/formulario-pos-graduacao.ts']);
     break;
 
+  case 'formulario-tecnico':
+    rodar(['tsx', 'prisma/formulario-tecnico-administrativo.ts']);
+    break;
+
   case 'formulario-docentes':
     // `...resto` repassa `--simplificado`, que escolhe a variante do
     // instrumento — sem isso a bandeira morre no wrapper.
@@ -193,6 +197,7 @@ switch (comando) {
   npm.cmd run homolog -- formulario-presencial
   npm.cmd run homolog -- formulario-ead
   npm.cmd run homolog -- formulario-pos
+  npm.cmd run homolog -- formulario-tecnico
   npm.cmd run homolog -- formulario-docentes
   npm.cmd run homolog -- publicar-2026
   npm.cmd run homolog -- demo
