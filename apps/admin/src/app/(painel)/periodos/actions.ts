@@ -58,23 +58,37 @@ async function exigirAjustavel(periodId: string) {
 
 // ----------------------------------------------------------------- criação
 
+/**
+ * Semestre "especial": o período do JACAD que não é semestral ("POS - 2026").
+ * O promotor o guarda com semestre 0, em um semestre letivo só dele — é isso que
+ * mantém o aluno de pós fora do ciclo da graduação, e o de graduação fora do
+ * ciclo do pós. Os dois mundos não se misturam em um mesmo ciclo.
+ */
+const filtroDoPublico = (pos: boolean) => (pos ? { semestre: 0 } : { semestre: { gt: 0 } });
+
 export async function criarCiclo(dados: FormData): Promise<void> {
   await exigirPainel();
 
+  const pos = String(dados.get('publico') ?? '') === 'pos';
   const ano = Number(dados.get('ano'));
-  const nome = String(dados.get('nome') ?? '').trim() || `Avaliação Institucional ${ano}`;
+  const nome =
+    String(dados.get('nome') ?? '').trim() ||
+    (pos ? `Avaliação Institucional — Pós-graduação ${ano}` : `Avaliação Institucional ${ano}`);
 
   if (!ano || ano < 2000 || ano > 2100) throw new Error('Informe um ano válido.');
 
   // O semestre de referência é o mais recente do ano — só um ponto de
   // ancoragem; a abrangência real vem dos semestres vinculados.
-  const term = await prisma.academicTerm.findFirst({
-    where: { ano },
+  const termos = await prisma.academicTerm.findMany({
+    where: { ano, ...filtroDoPublico(pos) },
     orderBy: { semestre: 'desc' },
   });
+  const term = termos[0];
   if (!term) {
     throw new Error(
-      `Nenhum semestre letivo de ${ano} foi importado ainda. Importe do JACAD antes de criar o ciclo.`,
+      pos
+        ? `Nenhum período de pós-graduação de ${ano} foi promovido ainda. Importe as matrículas do período "POS - ${ano}" no JACAD e promova antes de criar o ciclo.`
+        : `Nenhum semestre letivo de ${ano} foi importado ainda. Importe do JACAD antes de criar o ciclo.`,
     );
   }
 
@@ -89,12 +103,7 @@ export async function criarCiclo(dados: FormData): Promise<void> {
       fechaEm: new Date(hoje.getTime() + 15 * 24 * 60 * 60 * 1000),
       // Por padrão o ciclo cobre todos os semestres do ano — é o que "anual"
       // significa. A CPA pode desmarcar depois.
-      semestres: {
-        create: (await prisma.academicTerm.findMany({ where: { ano } })).map((t) => ({
-          termId: t.id,
-          rotulo: t.codigo,
-        })),
-      },
+      semestres: { create: termos.map((t) => ({ termId: t.id, rotulo: t.codigo })) },
     },
   });
 
@@ -117,17 +126,17 @@ export async function duplicarCiclo(dados: FormData): Promise<void> {
 
   const origem = await prisma.evaluationPeriod.findUnique({
     where: { id: origemId },
-    include: { formularios: true },
+    include: { formularios: true, term: true },
   });
   if (!origem) throw new Error('Ciclo de origem não encontrado.');
 
-  const term = await prisma.academicTerm.findFirst({
-    where: { ano },
+  // O ciclo de pós gera outro de pós; o de graduação, outro de graduação.
+  const semestres = await prisma.academicTerm.findMany({
+    where: { ano, ...filtroDoPublico(origem.term.semestre === 0) },
     orderBy: { semestre: 'desc' },
   });
+  const term = semestres[0];
   if (!term) throw new Error(`Nenhum semestre letivo de ${ano} foi importado ainda.`);
-
-  const semestres = await prisma.academicTerm.findMany({ where: { ano } });
   const hoje = new Date();
 
   const novo = await prisma.evaluationPeriod.create({
@@ -216,6 +225,21 @@ export async function alternarSemestre(termId: string, dados: FormData): Promise
     });
   } else {
     const term = await prisma.academicTerm.findUnique({ where: { id: termId } });
+
+    // Pós e graduação não dividem ciclo: o formulário de cada um seria entregue
+    // ao aluno do outro. Quem quer os dois cria dois ciclos.
+    const ligados = await prisma.evaluationPeriodTerm.findMany({
+      where: { periodId },
+      include: { term: { select: { semestre: true } } },
+    });
+    if (term && ligados.some((l) => (l.term.semestre === 0) !== (term.semestre === 0))) {
+      throw new Error(
+        term.semestre === 0
+          ? 'Este é um período de pós-graduação e o ciclo cobre semestres da graduação. Pós e graduação ficam em ciclos separados.'
+          : 'Este ciclo cobre um período de pós-graduação. Pós e graduação ficam em ciclos separados.',
+      );
+    }
+
     await prisma.evaluationPeriodTerm.create({
       data: { periodId, termId, rotulo: term?.codigo },
     });

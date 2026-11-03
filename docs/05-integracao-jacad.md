@@ -201,6 +201,33 @@ escolha deixa `DOCENTE_CONCILIADO_MANUAL` na auditoria.
 
 
 
+## Pós-graduação
+
+O JACAD guarda a pós em um período próprio, que não é semestral: **"POS - 2026"**
+(`idPeriodoLetivo` 39), com `semestre = 0`. O `grau` dos cursos vem vazio, então o
+nível do curso não identifica a pós — o que a separa é o período.
+
+- **Promoção.** Período com `semestre = 0` vira um semestre letivo PRÓPRIO, com o
+  nome do período ("POS - 2026"), e não cai em 2026.1 nem 2026.2. Antes disso a
+  promoção recusava o período por "não ter semestre".
+- **Ciclo.** Em *Ciclos → Público: Pós-graduação* o ciclo cobre só esse semestre.
+  O ciclo escolhe quem responde pelo semestre das turmas; por isso o aluno de
+  pós não recebe formulário da graduação e o de graduação não recebe o da pós. O
+  aluno que faz os dois recebe os dois, cada um no seu ciclo. A tela recusa juntar
+  semestre de pós e de graduação no mesmo ciclo.
+- **Quais cursos.** O painel "Gerar tarefas e cards" do ciclo de pós lista os
+  cursos de pós com a contagem de alunos; marcar só alguns deixa os outros fora.
+- **Formulário.** `npm run homolog -- formulario-pos` cria o instrumento (rascunho).
+
+Passo a passo para trazer os alunos:
+
+```
+npm run homolog -- jacad sync matriculas --periodo=39
+```
+
+Depois, no painel: **Importar do JACAD → Promover** o período 39, criar o ciclo de pós
+e vincular o formulário.
+
 ## Configuração
 
 ```bash

@@ -168,21 +168,33 @@ export class JacadPromotor {
       where: { idPeriodoLetivo },
     });
     if (!periodo) throw new Error(`Período ${idPeriodoLetivo} não está em staging.`);
-    if (!periodo.ano || !periodo.semestre) {
+    if (!periodo.ano || periodo.semestre == null) {
       throw new Error(
         `Período ${idPeriodoLetivo} sem ano/semestre no JACAD — não dá para gerar o código do semestre letivo.`,
       );
     }
 
-    const codigoTerm = `${periodo.ano}.${periodo.semestre}`;
+    // Semestre 0 é como o JACAD marca o período que NÃO é semestral: "POS - 2026",
+    // "CL - 2026", "CT - 2019". Ele ganha um semestre letivo PRÓPRIO, com o nome do
+    // próprio período, e não cai em 2026.1 nem em 2026.2. É isso que separa o aluno
+    // de pós do de graduação: o ciclo escolhe quem responde pelo semestre das
+    // turmas, e um semestre à parte não é enxergado pelo ciclo da graduação.
+    const especial = periodo.semestre === 0;
+    const codigoTerm = especial
+      ? periodo.descricao?.trim() || `${periodo.ano}.0`
+      : `${periodo.ano}.${periodo.semestre}`;
     const term = await this.prisma.academicTerm.upsert({
       where: { codigo: codigoTerm },
       create: {
         codigo: codigoTerm,
         ano: periodo.ano,
         semestre: periodo.semestre,
-        inicioEm: new Date(periodo.ano, (periodo.semestre - 1) * 6, 1),
-        fimEm: new Date(periodo.ano, (periodo.semestre - 1) * 6 + 5, 30),
+        inicioEm: especial
+          ? new Date(periodo.ano, 0, 1)
+          : new Date(periodo.ano, (periodo.semestre - 1) * 6, 1),
+        fimEm: especial
+          ? new Date(periodo.ano, 11, 31)
+          : new Date(periodo.ano, (periodo.semestre - 1) * 6 + 5, 30),
       },
       update: {},
     });

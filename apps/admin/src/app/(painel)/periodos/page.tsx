@@ -82,6 +82,17 @@ export default async function Periodos() {
                 ))}
               </select>
             </label>
+            <label className="text-xs text-slate-500">
+              Público
+              <select
+                name="publico"
+                defaultValue="graduacao"
+                className="mt-1 block rounded-lg border border-brand-navy/15 bg-white px-3 py-2 text-sm text-brand-navy"
+              >
+                <option value="graduacao">Graduação</option>
+                <option value="pos">Pós-graduação</option>
+              </select>
+            </label>
             <label className="min-w-56 flex-1 text-xs text-slate-500">
               Nome (opcional)
               <input
