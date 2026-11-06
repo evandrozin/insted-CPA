@@ -73,15 +73,18 @@ export async function criarCiclo(dados: FormData): Promise<void> {
   const pos = publico === 'pos';
   // Técnico-administrativo não tem semestre: quem responde vem do cadastro por
   // papel, não de matrícula. O ciclo só precisa de um semestre como âncora.
-  const administrativo = publico === 'administrativo';
+  // Egresso também não tem semestre: o ciclo é só o calendário da página pública.
+  const administrativo = publico === 'administrativo' || publico === 'egressos';
   const ano = Number(dados.get('ano'));
   const nome =
     String(dados.get('nome') ?? '').trim() ||
     (pos
       ? `Avaliação Institucional — Pós-graduação ${ano}`
-      : administrativo
-        ? `Avaliação Institucional — Administrativo ${ano}`
-        : `Avaliação Institucional ${ano}`);
+      : publico === 'egressos'
+        ? `Programa de Acompanhamento de Egressos ${ano}`
+        : administrativo
+          ? `Avaliação Institucional — Administrativo ${ano}`
+          : `Avaliação Institucional ${ano}`);
 
   if (!ano || ano < 2000 || ano > 2100) throw new Error('Informe um ano válido.');
 
@@ -412,7 +415,9 @@ export async function abrirCiclo(dados: FormData): Promise<void> {
   const tarefas = await prisma.evaluationTask.count({
     where: { periodId, status: { not: 'DISPENSADA' } },
   });
-  if (tarefas === 0) {
+  // Ciclo de egressos não tem tarefa: responde-se pela página pública.
+  const publicos = await prisma.periodForm.count({ where: { periodId, publico: 'EGRESSO' } });
+  if (tarefas === 0 && publicos === 0) {
     throw new Error('Gere as tarefas antes de abrir — sem elas ninguém tem o que responder.');
   }
 

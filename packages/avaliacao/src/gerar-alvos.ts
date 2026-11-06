@@ -268,7 +268,10 @@ export class GeradorDeAlvos {
 
     return {
       periodId,
-      formularios: periodo.formularios,
+      // Egresso responde por página pública, sem tarefa: não há ninguém a quem
+      // gerar cards, e tratá-lo como papel de usuário consultaria um papel que
+      // não existe.
+      formularios: periodo.formularios.filter((f) => f.publico !== 'EGRESSO'),
       termIds: terms.map((t) => t.id),
       rotuloTerm: new Map(terms.map((t) => [t.id, t.rotulo ?? t.codigo])),
       multiSemestre: terms.length > 1,

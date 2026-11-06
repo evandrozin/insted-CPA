@@ -370,6 +370,31 @@ O formulário é `npm run homolog -- formulario-tecnico` (rascunho). O que veio 
 conversão automática do PDF em `formularios-2026.ts` saiu quebrado e não deve ser
 usado.
 
+## Egressos — página pública, sem validação
+
+Decisão da comissão: egresso não tem matrícula, conta nem portal. O questionário
+é uma **página pública** do Insted, `/egressos`, sem login, e o egresso informa o
+curso de origem.
+
+- Público do formulário: `EGRESSO` (migração `20261106120000_publico_egresso`, só
+  acrescenta um valor ao enum). O gerador de tarefas **ignora** esse público.
+- Ciclo: Ciclos → Público: **Egressos**. Nasce sem semestres e abre sem tarefas.
+  A página mostra o formulário enquanto houver um ciclo de egressos aberto.
+- Formulário: `npm run homolog -- formulario-egressos` (rascunho). "Nome completo"
+  saiu do instrumento (o texto promete sigilo), a idade virou faixa e as perguntas
+  do trabalho atual ficaram opcionais.
+- Curso de origem: lista de cursos (inclusive desativados e sem os de pós) mais
+  "Outro curso". A escolha vira `respondentCourseId` das respostas — é o recorte
+  por curso nos resultados.
+- Anonimato: sem sessão, sem tarefa e sem lote; nada liga a resposta a ninguém.
+  O registro `EGRESSO_ENVIO` guarda só uma impressão (HMAC) da rede, para limitar
+  abuso (30 envios por hora por rede) — nunca o IP.
+
+**O que isto não garante:** a mesma pessoa pode responder mais de uma vez, e quem
+nunca estudou aqui também pode responder. É o preço de não validar, aceito pela
+comissão. As defesas são um campo-isca contra robô, o limite por rede e a
+conferência de tudo que chega contra o formulário.
+
 ## O login local, que continua existindo
 
 O login local está implementado e testado: primeiro acesso confere RA + e-mail

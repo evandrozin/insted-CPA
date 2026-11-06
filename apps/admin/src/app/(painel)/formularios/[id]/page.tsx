@@ -42,6 +42,7 @@ const PUBLICO: Record<string, string> = {
   ALUNO: 'Discentes',
   PROFESSOR: 'Docentes',
   TECNICO_ADMIN: 'Técnico-administrativo',
+  EGRESSO: 'Egressos',
 };
 
 const TIPO: Record<string, string> = {

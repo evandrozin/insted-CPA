@@ -28,6 +28,7 @@ const PUBLICO: Record<string, string> = {
   ALUNO: 'Discentes',
   PROFESSOR: 'Docentes',
   TECNICO_ADMIN: 'Técnico-administrativo',
+  EGRESSO: 'Egressos',
 };
 
 const STATUS: Record<string, { rotulo: string; classe: string }> = {
@@ -134,6 +135,22 @@ export default async function Ciclo({
           .catch(() => null)
       : null;
 
+  // Egressos respondem por página pública, sem tarefa: o que mostra a adesão é
+  // quantas vezes o primeiro bloco foi gravado (um conjunto por envio).
+  const comEgresso = ciclo.formularios.some((f) => f.publico === 'EGRESSO');
+  const enviosEgresso = comEgresso
+    ? await (async () => {
+        const formId = ciclo.formularios.find((f) => f.publico === 'EGRESSO')!.formId;
+        const primeiro = await prisma.questionBlock.findFirst({
+          where: { formId },
+          orderBy: { ordem: 'asc' },
+          select: { id: true },
+        });
+        if (!primeiro) return 0;
+        return prisma.responseSet.count({ where: { periodId: id, blockId: primeiro.id } });
+      })().catch(() => 0)
+    : 0;
+
   // Resultado da última geração, lido da auditoria pelo id: a URL carrega só o
   // id, e os números ficam registrados no mesmo lugar de sempre.
   const idGeracao = typeof sp.geracao === 'string' ? sp.geracao : null;
@@ -196,6 +213,26 @@ export default async function Ciclo({
           </div>
         ))}
       </dl>
+
+      {comEgresso && (
+        <p className="mt-3 rounded-2xl border border-brand-teal/30 bg-brand-teal/5 px-5 py-3 text-sm text-slate-600">
+          <strong className="font-semibold text-brand-navy">Egressos respondem por uma página pública</strong>,
+          sem login e sem tarefa gerada: <code className="font-mono text-xs">/egressos</code>. O
+          formulário aparece quando o ciclo está aberto. Respostas recebidas:{' '}
+          <strong className="tabular-nums text-brand-navy">{enviosEgresso.toLocaleString('pt-BR')}</strong>.
+          {ciclo.formularios.length > 0 && (
+            <>
+              {' '}
+              <Link
+                href={`/periodos/${ciclo.id}/resultados`}
+                className="font-semibold text-brand-teal hover:text-brand-teal-hover"
+              >
+                Resultados →
+              </Link>
+            </>
+          )}
+        </p>
+      )}
 
       {/* Aparece sempre que houver tarefa, e não só depois do primeiro
           envio: a lista serve principalmente para saber QUEM FALTA — que é
@@ -617,9 +654,16 @@ export default async function Ciclo({
               <input type="hidden" name="periodId" value={ciclo.id} />
               <button
                 formAction={abrirCiclo}
-                disabled={!['RASCUNHO', 'AGENDADO'].includes(ciclo.status) || ciclo._count.tarefas === 0}
+                disabled={
+                  !['RASCUNHO', 'AGENDADO'].includes(ciclo.status) ||
+                  (ciclo._count.tarefas === 0 && !comEgresso)
+                }
                 className={btnPrimario}
-                title={ciclo._count.tarefas === 0 ? 'Gere as tarefas antes de abrir' : undefined}
+                title={
+                  ciclo._count.tarefas === 0 && !comEgresso
+                    ? 'Gere as tarefas antes de abrir'
+                    : undefined
+                }
               >
                 Abrir para os respondentes
               </button>

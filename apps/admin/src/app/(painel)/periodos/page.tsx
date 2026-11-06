@@ -92,6 +92,7 @@ export default async function Periodos() {
                 <option value="graduacao">Graduação</option>
                 <option value="pos">Pós-graduação</option>
                 <option value="administrativo">Administrativo</option>
+                <option value="egressos">Egressos</option>
               </select>
             </label>
             <label className="min-w-56 flex-1 text-xs text-slate-500">
@@ -160,7 +161,10 @@ export default async function Periodos() {
                             c.formularios.length > 0 &&
                             c.formularios.every((f) => f.publico === 'TECNICO_ADMIN')
                               ? 'técnico-administrativo'
-                              : `semestres ${semestres}`}
+                              : c.formularios.length > 0 &&
+                                  c.formularios.every((f) => f.publico === 'EGRESSO')
+                                ? 'egressos'
+                                : `semestres ${semestres}`}
                           </span>
                         </div>
                         <p className="mt-1.5 font-brand text-base font-semibold text-brand-navy">

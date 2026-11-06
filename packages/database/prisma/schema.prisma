@@ -58,6 +58,10 @@ enum FormAudience {
   ALUNO
   PROFESSOR
   TECNICO_ADMIN
+  /// Quem já concluiu o curso. Não tem conta nem tarefa: responde por uma página
+  /// pública (`/egressos`), sem login. O formulário é gravado como resposta
+  /// anônima do ciclo, com o curso de origem como único recorte.
+  EGRESSO
 }
 
 enum FormStatus {
