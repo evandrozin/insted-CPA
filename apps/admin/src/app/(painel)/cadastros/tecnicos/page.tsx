@@ -5,6 +5,7 @@
  * do JACAD, que só conhece aluno e docente. E separada da Comissão porque o
  * papel é outro — o técnico responde a avaliação, não a administra.
  */
+import Link from 'next/link';
 import { prisma } from '@insted/database';
 import { Lista, Etiqueta, lerParams, POR_PAGINA } from '@/components/Lista';
 import { exigirPainel } from '@/lib/sessao';
@@ -171,6 +172,15 @@ export default async function Tecnicos({
           </button>
         </div>
       </FormComSenha>
+
+      <p className="mt-3 text-sm">
+        <Link
+          href="/cadastros/tecnicos/importar"
+          className="font-semibold text-brand-teal hover:text-brand-teal-hover"
+        >
+          Importar vários por planilha →
+        </Link>
+      </p>
 
       {formulario ? (
         <p className="mt-4 text-xs text-slate-400">

@@ -366,6 +366,15 @@ colega responde no lugar dele, e a resposta gravada não guarda indício disso. 
 saída, se um dia a CPA quiser endurecer, é mandar um link único por e-mail em vez
 de aceitar o e-mail digitado.
 
+O quadro inteiro entra por planilha: Cadastros → Técnico-administrativo → *Importar
+vários por planilha* (`/cadastros/tecnicos/importar`). Aceita `.xlsx` e `.csv` com as
+colunas Nome e E-mail (matrícula opcional); o cabeçalho pode estar abaixo de título.
+A tela mostra a prévia linha a linha antes de gravar, e **nunca converte** quem já
+existe com outro papel (docente, aluno, comissão): vira "conflito" e fica como está —
+ao contrário do cadastro individual, que promove. Não gera senha: o técnico entra só
+com o e-mail. Relatórios de RH em `.xls` antigo precisam ser salvos como `.xlsx`, e
+costumam não trazer e-mail: a coluna tem de ser acrescentada.
+
 O formulário é `npm run homolog -- formulario-tecnico` (rascunho). O que veio da
 conversão automática do PDF em `formularios-2026.ts` saiu quebrado e não deve ser
 usado.
