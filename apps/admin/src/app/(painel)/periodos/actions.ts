@@ -416,7 +416,13 @@ export async function abrirCiclo(dados: FormData): Promise<void> {
     where: { periodId, status: { not: 'DISPENSADA' } },
   });
   // Ciclo de egressos não tem tarefa: responde-se pela página pública.
-  const publicos = await prisma.periodForm.count({ where: { periodId, publico: 'EGRESSO' } });
+  //
+  // A comparação é feita aqui, e não numa consulta `where publico = 'EGRESSO'`: o
+  // valor novo do enum só existe no banco depois da migração, e uma consulta com
+  // ele quebraria a abertura de QUALQUER ciclo enquanto a migração não rodou.
+  const publicos = (
+    await prisma.periodForm.findMany({ where: { periodId }, select: { publico: true } })
+  ).filter((f) => f.publico === 'EGRESSO').length;
   if (tarefas === 0 && publicos === 0) {
     throw new Error('Gere as tarefas antes de abrir — sem elas ninguém tem o que responder.');
   }
