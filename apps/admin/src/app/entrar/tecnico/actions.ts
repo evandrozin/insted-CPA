@@ -31,6 +31,7 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { prisma } from '@insted/database';
 import { abrirSessao, garantirSessaoPossivel } from '@/lib/sessao';
+import { semEmail } from '@/lib/tecnicos';
 
 const TELA = '/entrar/tecnico';
 const LIMITE_POR_EMAIL = 5;
@@ -104,6 +105,9 @@ export async function entrarTecnico(dados: FormData): Promise<void> {
   if (!email || email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     voltar('Informe o seu e-mail completo, por exemplo nome@insted.edu.br.');
   }
+
+  // E-mail provisório de quem entrou sem e-mail pela planilha: nunca abre acesso.
+  if (semEmail(email)) voltar(NAO_ENCONTRADO);
 
   const ip = await ipDaRequisicao();
   if (await bloqueado(email, ip)) {

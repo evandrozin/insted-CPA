@@ -15,9 +15,10 @@ import type { SituacaoLinha } from '@/lib/importar-tecnicos';
 
 const ROTULO: Record<SituacaoLinha, { texto: string; classe: string }> = {
   novo: { texto: 'novo', classe: 'bg-brand-teal/10 text-brand-teal-hover' },
+  semEmail: { texto: 'novo, sem e-mail', classe: 'bg-brand-orange/10 text-brand-orange' },
+  completar: { texto: 'completa e-mail', classe: 'bg-brand-teal/10 text-brand-teal-hover' },
   ja: { texto: 'já cadastrado', classe: 'bg-slate-100 text-slate-500' },
   inativo: { texto: 'inativo', classe: 'bg-brand-orange/10 text-brand-orange' },
-  conflito: { texto: 'conflito', classe: 'bg-brand-orange/10 text-brand-orange' },
   erro: { texto: 'erro', classe: 'bg-red-50 text-red-600' },
 };
 
@@ -31,9 +32,11 @@ export function ImportadorTecnicos() {
   const linhas = estado.linhas ?? [];
   const conta = (s: SituacaoLinha) => linhas.filter((l) => l.situacao === s).length;
   const novos = conta('novo');
+  const semEmail = conta('semEmail');
+  const completar = conta('completar');
   const inativos = conta('inativo');
   const reativar = Boolean(estado.reativar);
-  const aGravar = novos + (reativar ? inativos : 0);
+  const aGravar = novos + semEmail + completar + (reativar ? inativos : 0);
 
   if (estado.concluido) {
     const c = estado.concluido;
@@ -41,11 +44,23 @@ export function ImportadorTecnicos() {
       <div className="mt-8 rounded-2xl border border-brand-teal/30 bg-brand-teal/5 px-5 py-5">
         <p className="font-brand text-lg font-bold text-brand-navy">Importação concluída</p>
         <p className="mt-2 text-sm text-slate-600">
-          {c.criados} cadastrado{c.criados === 1 ? '' : 's'}
+          {c.criados} cadastrado{c.criados === 1 ? '' : 's'} com e-mail
+          {c.semEmail > 0 && <>, {c.semEmail} sem e-mail</>}
+          {c.completados > 0 && <>, {c.completados} com e-mail completado</>}
           {c.reativados > 0 && <>, {c.reativados} reativado{c.reativados === 1 ? '' : 's'}</>}
-          {c.semMudanca > 0 && <> · {c.semMudanca} sem mudança (já existiam, em conflito ou com erro)</>}
+          {c.semMudanca > 0 && <> · {c.semMudanca} sem mudança (já existiam ou com erro)</>}
           .
         </p>
+        {c.semEmail > 0 && (
+          <p className="mt-3 rounded-xl border border-brand-orange/30 bg-brand-orange/5 px-4 py-3 text-sm text-slate-600">
+            Os <strong>{c.semEmail} sem e-mail</strong> entraram <strong>inativos</strong>. Em{' '}
+            <Link href="/cadastros/tecnicos" className="font-semibold text-brand-teal">
+              Técnico-administrativo
+            </Link>
+            , use <strong>Editar</strong> para informar o e-mail de cada um — a conta ativa sozinha.
+            Enquanto estiverem inativos, não recebem tarefa.
+          </p>
+        )}
         <p className="mt-3 rounded-xl bg-white px-4 py-3 text-sm text-slate-600">
           Não há senha a entregar: os técnicos entram só com o e-mail, pelo link{' '}
           <code className="font-mono text-xs text-brand-navy">/entrar/tecnico</code>.
@@ -111,10 +126,11 @@ export function ImportadorTecnicos() {
             Prévia — {estado.arquivo}
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            {linhas.length} linhas: <strong>{novos}</strong> novas
+            {linhas.length} linhas: <strong>{novos}</strong> novas com e-mail
+            {semEmail > 0 && <>, <strong>{semEmail}</strong> novas sem e-mail</>}
+            {completar > 0 && <>, {completar} a completar com e-mail</>}
             {conta('ja') > 0 && <>, {conta('ja')} já cadastrada{conta('ja') === 1 ? '' : 's'}</>}
             {inativos > 0 && <>, {inativos} inativa{inativos === 1 ? '' : 's'}</>}
-            {conta('conflito') > 0 && <>, {conta('conflito')} em conflito</>}
             {conta('erro') > 0 && <>, {conta('erro')} com erro</>}. Nada foi gravado ainda.
           </p>
 
@@ -144,7 +160,7 @@ export function ImportadorTecnicos() {
                         >
                           {r.texto}
                         </span>
-                        {l.motivo && l.situacao !== 'ja' && l.situacao !== 'novo' && (
+                        {l.motivo && l.situacao !== 'ja' && (
                           <span className="ml-2 text-xs text-slate-500">{l.motivo}</span>
                         )}
                       </td>
@@ -166,13 +182,13 @@ export function ImportadorTecnicos() {
               >
                 {pendente
                   ? 'Gravando…'
-                  : `Cadastrar ${novos} novo${novos === 1 ? '' : 's'}${
-                      reativar && inativos ? ` e reativar ${inativos}` : ''
-                    }`}
+                  : `Cadastrar ${novos + semEmail} novo${novos + semEmail === 1 ? '' : 's'}${
+                      completar ? `, completar ${completar}` : ''
+                    }${reativar && inativos ? ` e reativar ${inativos}` : ''}`}
               </button>
               <p className="text-xs text-slate-400">
-                Linhas com erro ou conflito não são gravadas. Corrija a planilha e envie de novo, se
-                quiser incluí-las.
+                Só entram linhas com nome. Quem está sem e-mail entra inativo, até alguém informar o
+                e-mail na edição do registro.
               </p>
             </form>
           ) : (

@@ -18,6 +18,7 @@ import { redirect } from 'next/navigation';
 import { prisma, criarConta, redefinirSenha, revogarAcesso } from '@insted/database';
 import { exigirPainel } from '@/lib/sessao';
 import type { EstadoSenha } from '@/lib/estado-senha';
+import { semEmail } from '@/lib/tecnicos';
 
 function comoErro(anterior: EstadoSenha, e: unknown): EstadoSenha {
   return { n: anterior.n + 1, erro: e instanceof Error ? e.message : 'Erro inesperado.' };
@@ -69,6 +70,81 @@ export async function novaSenhaTecnico(
   } catch (e) {
     return comoErro(anterior, e);
   }
+}
+
+/**
+ * Edita nome, e-mail e matrícula de um técnico.
+ *
+ * Existe principalmente para completar quem entrou sem e-mail pela planilha:
+ * ao trocar o e-mail provisório por um de verdade, a conta ativa sozinha. Só
+ * mexe em conta TECNICO_ADMIN — esta tela nunca altera docente, aluno ou
+ * comissão.
+ *
+ * Erros voltam por redirecionamento: em produção o Next troca a mensagem de
+ * qualquer erro de ação por um texto genérico.
+ */
+export async function editarTecnico(userId: string, dados: FormData): Promise<void> {
+  await exigirPainel();
+
+  // O tipo explícito é o que permite ao compilador entender que, depois de
+  // `volta(...)`, a execução não continua.
+  const volta: (qs: Record<string, string>) => never = (qs) =>
+    redirect(`/cadastros/tecnicos?${new URLSearchParams(qs)}`);
+
+  const nome = String(dados.get('nome') ?? '').replace(/\s+/g, ' ').trim();
+  const email = String(dados.get('email') ?? '').trim().toLowerCase();
+  const matricula = String(dados.get('matricula') ?? '').trim().slice(0, 40);
+
+  if (nome.length < 3) volta({ erro: 'Informe o nome completo.' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || semEmail(email)) {
+    volta({ erro: 'Informe um e-mail válido.' });
+  }
+  if (!matricula) volta({ erro: 'A matrícula não pode ficar vazia.' });
+
+  const atual = await prisma.user.findFirst({
+    where: { id: userId, role: 'TECNICO_ADMIN', deletadoEm: null },
+    select: { id: true, email: true, status: true },
+  });
+  if (!atual) volta({ erro: 'Técnico não encontrado.' });
+
+  const outro = await prisma.user.findFirst({
+    where: {
+      id: { not: userId },
+      OR: [{ email: { equals: email, mode: 'insensitive' } }, { matricula }],
+    },
+    select: { email: true, matricula: true },
+  });
+  if (outro) {
+    volta({
+      erro:
+        outro.email.toLowerCase() === email
+          ? 'Esse e-mail já pertence a outra conta.'
+          : 'Essa matrícula já pertence a outra conta.',
+    });
+  }
+
+  // Quem estava sem e-mail passa a ter um: pronto para responder.
+  const completouEmail = semEmail(atual.email);
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      nome,
+      email,
+      matricula,
+      ...(completouEmail ? { status: 'ATIVO' as const } : {}),
+    },
+  });
+  await prisma.auditLog.create({
+    data: {
+      acao: 'TECNICO_EDITADO',
+      entidade: 'User',
+      entidadeId: userId,
+      dadosDepois: { completouEmail },
+    },
+  });
+
+  revalidatePath('/cadastros/tecnicos');
+  volta({ ok: completouEmail ? 'ativado' : 'editado' });
 }
 
 export async function removerTecnico(userId: string): Promise<void> {

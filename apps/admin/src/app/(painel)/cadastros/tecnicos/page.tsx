@@ -9,7 +9,8 @@ import Link from 'next/link';
 import { prisma } from '@insted/database';
 import { Lista, Etiqueta, lerParams, POR_PAGINA } from '@/components/Lista';
 import { exigirPainel } from '@/lib/sessao';
-import { adicionarTecnico, novaSenhaTecnico, removerTecnico } from './actions';
+import { adicionarTecnico, editarTecnico, novaSenhaTecnico, removerTecnico } from './actions';
+import { semEmail } from '@/lib/tecnicos';
 import { FormComSenha } from '@/components/FormComSenha';
 
 export const dynamic = 'force-dynamic';
@@ -24,6 +25,8 @@ const AVISOS: Record<string, string> = {
   senha: 'Nova senha provisória gerada.',
   'revogado-respondente': 'Acesso revogado. A pessoa continua no sistema como respondente.',
   'revogado-desativado': 'Acesso revogado e cadastro desativado.',
+  editado: 'Cadastro atualizado.',
+  ativado: 'E-mail informado — o técnico está ativo e já pode entrar em /entrar/tecnico.',
 };
 
 export default async function Tecnicos({
@@ -36,6 +39,8 @@ export default async function Tecnicos({
   const { q, pagina, pular } = lerParams(sp);
 
   const aviso = typeof sp.ok === 'string' ? AVISOS[sp.ok] : null;
+  const erro = typeof sp.erro === 'string' ? sp.erro.slice(0, 300) : null;
+  const idEdicao = typeof sp.editar === 'string' ? sp.editar : null;
 
   const where = {
     deletadoEm: null,
@@ -50,7 +55,7 @@ export default async function Tecnicos({
       : {}),
   };
 
-  const [total, pessoas, formulario] = await Promise.all([
+  const [total, pessoas, formulario, emEdicao, semEmailTotal] = await Promise.all([
     prisma.user.count({ where }),
     prisma.user.findMany({
       where,
@@ -71,6 +76,15 @@ export default async function Tecnicos({
       where: { publico: 'TECNICO_ADMIN' },
       orderBy: { versao: 'desc' },
       select: { nome: true, status: true },
+    }),
+    idEdicao
+      ? prisma.user.findFirst({
+          where: { id: idEdicao, role: 'TECNICO_ADMIN', deletadoEm: null },
+          select: { id: true, nome: true, email: true, matricula: true },
+        })
+      : Promise.resolve(null),
+    prisma.user.count({
+      where: { role: 'TECNICO_ADMIN', deletadoEm: null, email: { endsWith: '@sem-email.invalid' } },
     }),
   ]);
 
@@ -94,7 +108,11 @@ export default async function Tecnicos({
       ]}
       linhas={pessoas.map((p) => [
         <span className="font-medium">{p.nome}</span>,
-        <span className="font-mono text-xs text-slate-500">{p.email}</span>,
+        semEmail(p.email) ? (
+          <Etiqueta tom="alerta">sem e-mail</Etiqueta>
+        ) : (
+          <span className="font-mono text-xs text-slate-500">{p.email}</span>
+        ),
         <span className="font-mono text-xs text-slate-400">{p.matricula}</span>,
         p.status !== 'ATIVO' ? (
           <Etiqueta tom="alerta">{p.status.toLowerCase()}</Etiqueta>
@@ -107,6 +125,13 @@ export default async function Tecnicos({
           {p.ultimoAcesso ? p.ultimoAcesso.toLocaleDateString('pt-BR') : 'nunca entrou'}
         </span>,
         <div className="flex gap-1.5">
+          <Link
+            href={`/cadastros/tecnicos?editar=${p.id}#editar`}
+            className="rounded-lg border border-brand-navy/10 px-2.5 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:border-brand-teal/40 hover:text-brand-teal-hover"
+          >
+            Editar
+          </Link>
+          {!semEmail(p.email) && (
           <FormComSenha acao={novaSenhaTecnico}>
             <input type="hidden" name="userId" value={p.id} />
             <button
@@ -117,6 +142,7 @@ export default async function Tecnicos({
               Nova senha
             </button>
           </FormComSenha>
+          )}
           <form>
             <button
               formAction={removerTecnico.bind(null, p.id)}
@@ -138,6 +164,79 @@ export default async function Tecnicos({
         <p className="mt-6 rounded-xl border border-brand-navy/10 bg-white px-4 py-3 text-sm text-slate-600">
           {aviso}
         </p>
+      )}
+      {erro && (
+        <p
+          role="alert"
+          className="mt-6 rounded-xl border border-brand-orange/30 bg-brand-orange/5 px-4 py-3 text-sm text-slate-600"
+        >
+          {erro}
+        </p>
+      )}
+      {semEmailTotal > 0 && (
+        <p className="mt-6 rounded-xl border border-brand-orange/30 bg-brand-orange/5 px-4 py-3 text-sm text-slate-600">
+          <strong>{semEmailTotal}</strong> técnico{semEmailTotal === 1 ? '' : 's'} sem e-mail —
+          inativo{semEmailTotal === 1 ? '' : 's'} até alguém informar o e-mail em <strong>Editar</strong>.
+          Sem e-mail não entram na avaliação.
+        </p>
+      )}
+
+      {emEdicao && (
+        <form
+          id="editar"
+          className="mt-6 rounded-2xl border border-brand-teal/40 bg-white px-5 py-5"
+        >
+          <p className="font-brand text-sm font-bold text-brand-navy">Editar técnico</p>
+          {semEmail(emEdicao.email) && (
+            <p className="mt-1 text-xs text-slate-500">
+              Este cadastro está sem e-mail. Ao informar um, a conta fica ativa.
+            </p>
+          )}
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto_auto]">
+            <label className={rotulo}>
+              Nome completo
+              <input
+                name="nome"
+                required
+                minLength={3}
+                defaultValue={emEdicao.nome}
+                className={`${campo} mt-1`}
+              />
+            </label>
+            <label className={rotulo}>
+              E-mail
+              <input
+                type="email"
+                name="email"
+                required
+                defaultValue={semEmail(emEdicao.email) ? '' : emEdicao.email}
+                placeholder="nome@insted.edu.br"
+                className={`${campo} mt-1`}
+              />
+            </label>
+            <label className={rotulo}>
+              Matrícula
+              <input
+                name="matricula"
+                required
+                defaultValue={emEdicao.matricula}
+                className={`${campo} mt-1 w-36`}
+              />
+            </label>
+            <button
+              formAction={editarTecnico.bind(null, emEdicao.id)}
+              className="self-end rounded-lg bg-brand-teal px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-teal-hover"
+            >
+              Salvar
+            </button>
+            <Link
+              href="/cadastros/tecnicos"
+              className="self-end px-2 py-2 text-xs font-semibold text-slate-500 hover:text-brand-teal"
+            >
+              Cancelar
+            </Link>
+          </div>
+        </form>
       )}
 
       <FormComSenha

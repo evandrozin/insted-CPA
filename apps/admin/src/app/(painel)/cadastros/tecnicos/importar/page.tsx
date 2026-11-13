@@ -44,17 +44,24 @@ export default async function ImportarTecnicos() {
             <strong>Matrícula</strong> é opcional (em branco, o sistema gera uma interna).
           </li>
           <li>
-            O <strong>e-mail é obrigatório</strong>: é com ele que o técnico entra. Relatórios do RH
-            costumam trazer só código, nome e cargo — acrescente a coluna de e-mail.
+            O <strong>e-mail é o acesso</strong> do técnico: sem ele a pessoa fica inativa. Relatórios
+            do RH costumam trazer só código, nome e cargo — acrescente a coluna de e-mail se a tiver.
           </li>
           <li>
             Formatos: <strong>.xlsx</strong> ou <strong>.csv</strong>. Arquivo .xls antigo: abra no
             Excel e salve como .xlsx.
           </li>
           <li>
-            Quem já existe como outro tipo de usuário (docente, aluno, comissão) <strong>não é
-            alterado</strong>: aparece como conflito.
+            Entram <strong>todas as linhas com nome</strong>. Sem e-mail (ou com e-mail inválido ou
+            repetido), a pessoa entra <strong>inativa</strong>, e você informa o e-mail depois em{' '}
+            <strong>Editar</strong> — a conta ativa sozinha.
           </li>
+          <li>
+            Se o e-mail já é de um aluno, docente ou da comissão, <strong>essa conta não é
+            alterada</strong>: o técnico entra como cadastro separado, sem e-mail, e você informa
+            outro e-mail na edição.
+          </li>
+          <li>Reenviar a mesma planilha não duplica ninguém: a matrícula reconhece quem já entrou.</li>
         </ul>
         <p className="mt-3">
           <a

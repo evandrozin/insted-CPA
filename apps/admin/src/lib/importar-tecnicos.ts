@@ -20,7 +20,15 @@ export type LinhaLida = {
   matricula: string;
 };
 
-export type SituacaoLinha = 'novo' | 'ja' | 'inativo' | 'conflito' | 'erro';
+/**
+ * - novo        pessoa nova, com e-mail
+ * - semEmail    pessoa nova que entra SEM e-mail (inativa, até alguém informar o dele)
+ * - completar   já cadastrada sem e-mail; a planilha agora traz o e-mail
+ * - ja          já cadastrada, nada a fazer
+ * - inativo     cadastrada, mas inativa
+ * - erro        não dá para importar (falta o nome)
+ */
+export type SituacaoLinha = 'novo' | 'semEmail' | 'completar' | 'ja' | 'inativo' | 'erro';
 
 export type LinhaAnalisada = LinhaLida & {
   situacao: SituacaoLinha;
