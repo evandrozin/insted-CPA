@@ -58,8 +58,10 @@ export default async function ImportarTecnicos() {
           </li>
           <li>
             Se o e-mail já é de um aluno, docente ou da comissão, <strong>essa conta não é
-            alterada</strong>: o técnico entra como cadastro separado, sem e-mail, e você informa
-            outro e-mail na edição.
+            alterada</strong>: o técnico entra como uma conta à parte, guardada como{' '}
+            <code className="font-mono text-xs">nome+tec@dominio</code>. A pessoa continua
+            digitando o e-mail de sempre em <code className="font-mono text-xs">/entrar/tecnico</code>{' '}
+            e responde como técnico; como aluno, segue pelo portal do aluno.
           </li>
           <li>Reenviar a mesma planilha não duplica ninguém: a matrícula reconhece quem já entrou.</li>
         </ul>

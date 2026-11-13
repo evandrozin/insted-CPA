@@ -21,9 +21,10 @@
  *   INATIVO, com um e-mail provisório (ver `lib/tecnicos.ts`). A CPA informa o
  *   e-mail depois, na edição do registro, e a conta ativa sozinha;
  * - e-mail que já é de outro papel (aluno, docente, comissão): o e-mail é único
- *   no sistema e fica com a conta que já o tem, então o técnico entra como
- *   cadastro separado, sem e-mail. A pessoa responde como aluno e, com outro
- *   e-mail, também como técnico;
+ *   no sistema e fica com a conta que já o tem, então o técnico entra como conta
+ *   à parte, com o e-mail `nome+tec@dominio` (ver `aliasTecnico`). Quem digita o
+ *   e-mail normal em `/entrar/tecnico` cai nessa conta: a pessoa responde como
+ *   aluno e como técnico, cada um na sua conta;
  * - matrícula já usada por outra pessoa: entra com uma matrícula interna.
  *
  * Reenviar a mesma planilha não duplica: quem já entrou sem e-mail é reconhecido
@@ -37,7 +38,7 @@ import { revalidatePath } from 'next/cache';
 import { hash } from 'bcryptjs';
 import { prisma, Prisma, matriculaInterna } from '@insted/database';
 import { exigirPainel } from '@/lib/sessao';
-import { emailSemEmail, semEmail, slugDoNome } from '@/lib/tecnicos';
+import { aliasTecnico, emailSemEmail, semEmail, slugDoNome } from '@/lib/tecnicos';
 import {
   LIMITE_BYTES,
   lerPlanilhaTecnicos,
@@ -78,13 +79,15 @@ async function analisar(linhas: LinhaLida[]): Promise<LinhaAnalisada[]> {
   const emails = [
     ...new Set(linhas.map((l) => l.email.trim().toLowerCase()).filter((e) => EMAIL.test(e))),
   ];
+  // Também o endereço `+tec`: é onde mora o técnico cujo e-mail é de outra conta.
+  const emailsConsulta = [...new Set([...emails, ...emails.map(aliasTecnico)])];
   const matriculasInformadas = [...new Set(linhas.map((l) => l.matricula).filter(Boolean))];
 
   const [porEmail, porMatriculaLista] = await Promise.all([
     emails.length
       ? prisma.$queryRaw<Existente[]>(
           Prisma.sql`SELECT id, email, matricula, role::text AS role, status::text AS status, "deletadoEm"
-                       FROM users WHERE lower(email) = ANY(${emails})`,
+                       FROM users WHERE lower(email) = ANY(${emailsConsulta})`,
         )
       : Promise.resolve([] as Existente[]),
     // As matrículas informadas e todas as internas (`tec-…`): a automática sai do
@@ -152,37 +155,60 @@ async function analisar(linhas: LinhaLida[]): Promise<LinhaAnalisada[]> {
 
     // ------------------------------------------------ com e-mail utilizável
     if (email) {
-      const u = existentePorEmail.get(email);
-      if (u && u.role !== 'TECNICO_ADMIN') {
-        // O e-mail fica com a conta que o tem; o técnico entra à parte.
-        motivoSem = `O e-mail já é de ${u.role.toLowerCase().replace('_', '-')}; o técnico entra sem e-mail.`;
-        email = '';
-      } else if (u) {
+      const dono = existentePorEmail.get(email);
+
+      // O e-mail é de uma conta de outro papel (aluno, docente, comissão): ela não
+      // é tocada, e o técnico entra como conta à parte, sob `+tec`. Na entrada, a
+      // pessoa digita o e-mail de sempre e cai na conta de técnico.
+      const dePessoaDeOutroPapel = dono && dono.role !== 'TECNICO_ADMIN' ? dono : null;
+      const emailDoTecnico = dePessoaDeOutroPapel ? aliasTecnico(email) : email;
+      const u = dePessoaDeOutroPapel ? existentePorEmail.get(emailDoTecnico) : dono;
+
+      if (u) {
         reclamadas.add(u.matricula);
         return u.status === 'ATIVO' && !u.deletadoEm
-          ? { ...base, email, matricula: u.matricula, situacao: 'ja', motivo: 'Já cadastrado.' }
+          ? {
+              ...base,
+              email: emailDoTecnico,
+              matricula: u.matricula,
+              situacao: 'ja',
+              motivo: 'Já cadastrado.',
+            }
           : {
               ...base,
-              email,
+              email: emailDoTecnico,
               matricula: u.matricula,
               situacao: 'inativo',
               motivo: 'Cadastrado, mas inativo.',
             };
-      } else {
-        const pedida = l.matricula || matriculaInterna(email, 'TECNICO_ADMIN');
-        const r = escolherMatricula(pedida);
-        const trocou = l.matricula && r.matricula !== l.matricula;
-        const nota = trocou ? `Matrícula ${l.matricula} já é de outra pessoa; usei ${r.matricula}.` : undefined;
-        return r.anterior
-          ? {
-              ...base,
-              email,
-              matricula: r.matricula,
-              situacao: 'completar',
-              motivo: 'Já cadastrado sem e-mail — o e-mail da planilha será colocado.',
-            }
-          : { ...base, email, matricula: r.matricula, situacao: 'novo', motivo: nota };
       }
+
+      const pedida = l.matricula || matriculaInterna(emailDoTecnico, 'TECNICO_ADMIN');
+      const r = escolherMatricula(pedida);
+      const trocou = l.matricula && r.matricula !== l.matricula;
+      const notas = [
+        dePessoaDeOutroPapel
+          ? `O e-mail já é de ${dePessoaDeOutroPapel.role.toLowerCase().replace('_', '-')}: o técnico é uma conta à parte (${emailDoTecnico}) e entra digitando o e-mail normal em /entrar/tecnico.`
+          : '',
+        trocou ? `Matrícula ${l.matricula} já é de outra pessoa; usei ${r.matricula}.` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      return r.anterior
+        ? {
+            ...base,
+            email: emailDoTecnico,
+            matricula: r.matricula,
+            situacao: 'completar',
+            motivo: 'Já cadastrado sem e-mail — o e-mail da planilha será colocado.',
+          }
+        : {
+            ...base,
+            email: emailDoTecnico,
+            matricula: r.matricula,
+            situacao: 'novo',
+            motivo: notas || undefined,
+          };
     }
 
     // ------------------------------------------------------------ sem e-mail

@@ -379,12 +379,14 @@ duplica: a matrícula reconhece quem já entrou, e se a planilha passa a trazer 
 daquela pessoa, ele é completado.
 
 Nunca converte quem já existe com outro papel — ao contrário do cadastro individual,
-que promove. Se o e-mail da planilha já é de um aluno, docente ou da comissão, essa
-conta fica como está (o e-mail é único) e o técnico entra como cadastro **separado**,
-sem e-mail: a pessoa responde como aluno e, com outro e-mail, também como técnico.
-Converter tiraria o aluno do ciclo que está respondendo. Não gera senha: o técnico
-entra só com o e-mail. Relatórios de RH em `.xls` antigo precisam ser salvos como
-`.xlsx`.
+que promove. Se o e-mail da planilha já é de um aluno, docente ou da comissão, essa conta
+fica como está (o e-mail é único) e o técnico é criado como **conta à parte**, guardada
+com `+tec` (`nome+tec@dominio`, ver `aliasTecnico` em `lib/tecnicos.ts`). Em
+`/entrar/tecnico` a pessoa digita o e-mail de sempre: a entrada procura o e-mail exato e
+o `+tec` e fica com a conta de técnico. Assim a mesma pessoa responde como aluno (pelo
+portal) e como técnico, cada um na sua conta — converter tiraria o aluno do ciclo que
+está respondendo. Não gera senha: o técnico entra só com o e-mail. Relatórios de RH em
+`.xls` antigo precisam ser salvos como `.xlsx`.
 
 O formulário é `npm run homolog -- formulario-tecnico` (rascunho). O que veio da
 conversão automática do PDF em `formularios-2026.ts` saiu quebrado e não deve ser

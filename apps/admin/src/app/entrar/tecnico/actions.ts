@@ -31,7 +31,7 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { prisma } from '@insted/database';
 import { abrirSessao, garantirSessaoPossivel } from '@/lib/sessao';
-import { semEmail } from '@/lib/tecnicos';
+import { aliasTecnico, semEmail } from '@/lib/tecnicos';
 
 const TELA = '/entrar/tecnico';
 const LIMITE_POR_EMAIL = 5;
@@ -114,16 +114,26 @@ export async function entrarTecnico(dados: FormData): Promise<void> {
     voltar(`Muitas tentativas. Espere ${JANELA_MIN} minutos e tente de novo, ou procure a CPA.`);
   }
 
-  const user = await prisma.user.findFirst({
-    where: { email: { equals: email, mode: 'insensitive' }, deletadoEm: null },
+  // O e-mail pode ser também de um aluno ou docente: nesse caso o técnico é uma
+  // conta à parte, guardada com `+tec` (ver `aliasTecnico`). Procura os dois e
+  // fica com a que é de técnico.
+  const candidatos = await prisma.user.findMany({
+    where: {
+      deletadoEm: null,
+      OR: [
+        { email: { equals: email, mode: 'insensitive' } },
+        { email: { equals: aliasTecnico(email), mode: 'insensitive' } },
+      ],
+    },
     select: { id: true, role: true, status: true },
   });
+  const user = candidatos.find((u) => u.role === 'TECNICO_ADMIN');
 
   // Quem não é técnico recebe a mesma resposta de quem não existe.
-  if (!user || user.role !== 'TECNICO_ADMIN') {
+  if (!user) {
     await registrar('TECNICO_LOGIN_RECUSADO', {
       identificador: email,
-      motivo: !user ? 'inexistente' : `papel ${user.role}`,
+      motivo: candidatos.length === 0 ? 'inexistente' : `papel ${candidatos[0].role}`,
     });
     voltar(NAO_ENCONTRADO);
   }

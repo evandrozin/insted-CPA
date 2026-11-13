@@ -15,6 +15,22 @@ export const DOMINIO_SEM_EMAIL = 'sem-email.invalid';
 export const semEmail = (email: string): boolean =>
   email.toLowerCase().endsWith(`@${DOMINIO_SEM_EMAIL}`);
 
+/**
+ * Endereço sob o qual o técnico é guardado quando o e-mail dele já pertence a
+ * outra conta (um aluno, um docente).
+ *
+ * `users.email` é único e cada conta tem um papel só, então quem é aluno E
+ * técnico precisa de duas contas. A do técnico leva `+tec` no e-mail
+ * (`ana+tec@insted.edu.br`), que é o mesmo endereço para quem lê e diferente
+ * para o banco. A pessoa nunca digita isso: em `/entrar/tecnico` ela informa o
+ * e-mail de sempre, e a entrada procura primeiro esse e depois o `+tec`.
+ */
+export function aliasTecnico(email: string): string {
+  const [local, dominio] = email.trim().toLowerCase().split('@');
+  if (!dominio) return email;
+  return `${local.split('+')[0]}+tec@${dominio}`;
+}
+
 /** E-mail provisório para a matrícula dada. */
 export function emailSemEmail(matricula: string): string {
   const local = matricula

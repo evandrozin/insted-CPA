@@ -5,7 +5,7 @@
  * linha e só então grava. Os dois passos usam a mesma ação; o que muda é o
  * campo `etapa`.
  */
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   importarTecnicos,
@@ -25,9 +25,14 @@ const ROTULO: Record<SituacaoLinha, { texto: string; classe: string }> = {
 export function ImportadorTecnicos() {
   const [estado, executar, pendente] = useActionState(importarTecnicos, { n: 0 } as EstadoImportacao);
 
+  const alerta = useRef<HTMLParagraphElement>(null);
+
   useEffect(() => {
     if (estado.n > 0) window.dispatchEvent(new Event('cpa:acao-terminou'));
-  }, [estado.n]);
+    // O botão de confirmar fica no fim de uma lista longa e o aviso de erro no
+    // topo: sem rolar até ele, parece que o clique não fez nada.
+    if (estado.erro) alerta.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [estado.n, estado.erro]);
 
   const linhas = estado.linhas ?? [];
   const conta = (s: SituacaoLinha) => linhas.filter((l) => l.situacao === s).length;
@@ -84,6 +89,7 @@ export function ImportadorTecnicos() {
     <div className="mt-8">
       {estado.erro && (
         <p
+          ref={alerta}
           role="alert"
           className="mb-4 rounded-xl border border-brand-orange/30 bg-brand-orange/5 px-4 py-3 text-sm text-slate-600"
         >
