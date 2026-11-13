@@ -31,7 +31,18 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { prisma } from '@insted/database';
 import { abrirSessao, garantirSessaoPossivel } from '@/lib/sessao';
-import { aliasTecnico, semEmail } from '@/lib/tecnicos';
+import { familiaDeEmails, semEmail } from '@/lib/tecnicos';
+
+/**
+ * Estado da tela de entrada. Só preenchido quando o e-mail é de mais de um
+ * técnico (caixa de setor): a tela então pergunta quem é a pessoa.
+ */
+export type EstadoEntrada = {
+  n: number;
+  /** E-mail digitado, para devolver junto com a escolha. */
+  email?: string;
+  opcoes?: { id: string; nome: string }[];
+};
 
 const TELA = '/entrar/tecnico';
 const LIMITE_POR_EMAIL = 5;
@@ -91,7 +102,7 @@ async function bloqueado(email: string, ip: string | null): Promise<boolean> {
   return doEmail >= LIMITE_POR_EMAIL || doIp >= LIMITE_POR_IP;
 }
 
-export async function entrarTecnico(dados: FormData): Promise<void> {
+export async function entrarTecnico(anterior: EstadoEntrada, dados: FormData): Promise<EstadoEntrada> {
   try {
     garantirSessaoPossivel();
   } catch {
@@ -114,33 +125,46 @@ export async function entrarTecnico(dados: FormData): Promise<void> {
     voltar(`Muitas tentativas. Espere ${JANELA_MIN} minutos e tente de novo, ou procure a CPA.`);
   }
 
-  // O e-mail pode ser também de um aluno ou docente: nesse caso o técnico é uma
-  // conta à parte, guardada com `+tec` (ver `aliasTecnico`). Procura os dois e
-  // fica com a que é de técnico.
-  const candidatos = await prisma.user.findMany({
-    where: {
-      deletadoEm: null,
-      OR: [
-        { email: { equals: email, mode: 'insensitive' } },
-        { email: { equals: aliasTecnico(email), mode: 'insensitive' } },
-      ],
-    },
-    select: { id: true, role: true, status: true },
-  });
-  const user = candidatos.find((u) => u.role === 'TECNICO_ADMIN');
+  // O e-mail pode ser de mais de um técnico, ou também de um aluno ou docente:
+  // cada um é uma conta, guardada com `+tec`, `+tec2`… (ver `familiaDeEmails`).
+  // Procura toda a família e fica só com as contas de técnico.
+  const familia = familiaDeEmails(email);
+  const candidatos = (
+    await prisma.user.findMany({
+      where: {
+        deletadoEm: null,
+        OR: familia.map((e) => ({ email: { equals: e, mode: 'insensitive' as const } })),
+      },
+      select: { id: true, nome: true, role: true, status: true },
+    })
+  ).filter((u) => u.role === 'TECNICO_ADMIN');
 
   // Quem não é técnico recebe a mesma resposta de quem não existe.
-  if (!user) {
-    await registrar('TECNICO_LOGIN_RECUSADO', {
-      identificador: email,
-      motivo: candidatos.length === 0 ? 'inexistente' : `papel ${candidatos[0].role}`,
-    });
+  if (candidatos.length === 0) {
+    await registrar('TECNICO_LOGIN_RECUSADO', { identificador: email, motivo: 'inexistente' });
     voltar(NAO_ENCONTRADO);
   }
 
-  if (user.status !== 'ATIVO') {
-    await registrar('TECNICO_LOGIN_RECUSADO', { identificador: email, motivo: 'inativo', userId: user.id });
+  const ativos = candidatos.filter((u) => u.status === 'ATIVO');
+  if (ativos.length === 0) {
+    await registrar('TECNICO_LOGIN_RECUSADO', {
+      identificador: email,
+      motivo: 'inativo',
+      userId: candidatos[0].id,
+    });
     voltar('Seu acesso está inativo. Procure a CPA.');
+  }
+
+  // Mais de um técnico com este e-mail: pergunta quem é. O servidor confere de
+  // novo, na volta, que a escolha está entre as contas deste e-mail.
+  const escolhido = String(dados.get('escolhido') ?? '');
+  let user = ativos.length === 1 ? ativos[0] : ativos.find((u) => u.id === escolhido);
+  if (!user) {
+    return {
+      n: anterior.n + 1,
+      email,
+      opcoes: ativos.map((u) => ({ id: u.id, nome: u.nome })).sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR')),
+    };
   }
 
   await prisma.user.update({ where: { id: user.id }, data: { ultimoAcesso: new Date() } });

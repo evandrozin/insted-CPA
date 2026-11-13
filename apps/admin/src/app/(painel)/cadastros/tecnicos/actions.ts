@@ -18,7 +18,7 @@ import { redirect } from 'next/navigation';
 import { prisma, criarConta, redefinirSenha, revogarAcesso } from '@insted/database';
 import { exigirPainel } from '@/lib/sessao';
 import type { EstadoSenha } from '@/lib/estado-senha';
-import { semEmail } from '@/lib/tecnicos';
+import { familiaDeEmails, semEmail } from '@/lib/tecnicos';
 
 function comoErro(anterior: EstadoSenha, e: unknown): EstadoSenha {
   return { n: anterior.n + 1, erro: e instanceof Error ? e.message : 'Erro inesperado.' };
@@ -107,21 +107,32 @@ export async function editarTecnico(userId: string, dados: FormData): Promise<vo
   });
   if (!atual) volta({ erro: 'Técnico não encontrado.' });
 
-  const outro = await prisma.user.findFirst({
-    where: {
-      id: { not: userId },
-      OR: [{ email: { equals: email, mode: 'insensitive' } }, { matricula }],
-    },
-    select: { email: true, matricula: true },
-  });
-  if (outro) {
-    volta({
-      erro:
-        outro.email.toLowerCase() === email
-          ? 'Esse e-mail já pertence a outra conta.'
-          : 'Essa matrícula já pertence a outra conta.',
-    });
-  }
+  const familia = familiaDeEmails(email);
+  const [outraMatricula, ocupados] = await Promise.all([
+    prisma.user.findFirst({
+      where: { id: { not: userId }, matricula },
+      select: { id: true },
+    }),
+    prisma.user.findMany({
+      where: {
+        id: { not: userId },
+        OR: familia.map((e) => ({ email: { equals: e, mode: 'insensitive' as const } })),
+      },
+      select: { email: true },
+    }),
+  ]);
+
+  if (outraMatricula) volta({ erro: 'Essa matrícula já pertence a outra conta.' });
+
+  // Os técnicos são independentes: o e-mail pode ser também de um aluno, de um
+  // docente ou de outro técnico, e nada disso é motivo de recusa. O banco só
+  // aceita um e-mail por conta, então este técnico fica com o primeiro endereço
+  // livre da família — o próprio e-mail, ou `+tec`, `+tec2`… (ver
+  // `familiaDeEmails`). Quem digita o e-mail normal em `/entrar/tecnico` o encontra.
+  const usados = new Set(ocupados.map((o) => o.email.toLowerCase()));
+  const emailFinal = familia.find((e) => !usados.has(e));
+  if (!emailFinal) volta({ erro: 'Já existem 10 contas com este e-mail; não dá para criar outra.' });
+  const comAlias = emailFinal !== email;
 
   // Quem estava sem e-mail passa a ter um: pronto para responder.
   const completouEmail = semEmail(atual.email);
@@ -129,7 +140,7 @@ export async function editarTecnico(userId: string, dados: FormData): Promise<vo
     where: { id: userId },
     data: {
       nome,
-      email,
+      email: emailFinal,
       matricula,
       ...(completouEmail ? { status: 'ATIVO' as const } : {}),
     },
@@ -139,12 +150,12 @@ export async function editarTecnico(userId: string, dados: FormData): Promise<vo
       acao: 'TECNICO_EDITADO',
       entidade: 'User',
       entidadeId: userId,
-      dadosDepois: { completouEmail },
+      dadosDepois: { completouEmail, comAlias },
     },
   });
 
   revalidatePath('/cadastros/tecnicos');
-  volta({ ok: completouEmail ? 'ativado' : 'editado' });
+  volta({ ok: comAlias ? 'editado-alias' : completouEmail ? 'ativado' : 'editado' });
 }
 
 export async function removerTecnico(userId: string): Promise<void> {

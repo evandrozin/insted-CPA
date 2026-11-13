@@ -8,13 +8,9 @@
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { respondenteAtual } from '@/lib/sessao';
-import { entrarTecnico } from './actions';
+import { EntradaTecnico } from '@/components/EntradaTecnico';
 
 export const dynamic = 'force-dynamic';
-
-const campo =
-  'w-full rounded-xl border border-brand-navy/15 bg-white px-3 py-2.5 text-sm text-brand-navy outline-none focus:border-brand-teal';
-const rotulo = 'text-xs font-semibold text-slate-500';
 
 export default async function EntrarTecnico({
   searchParams,
@@ -59,26 +55,7 @@ export default async function EntrarTecnico({
               </p>
             )}
 
-            <form method="post" className="mt-6 flex flex-col gap-3">
-              <label className={rotulo}>
-                Seu e-mail
-                <input
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  inputMode="email"
-                  placeholder="nome@insted.edu.br"
-                  required
-                  className={`${campo} mt-1`}
-                />
-              </label>
-              <button
-                formAction={entrarTecnico}
-                className="mt-2 rounded-xl bg-brand-teal px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal-hover"
-              >
-                Continuar
-              </button>
-            </form>
+            <EntradaTecnico />
           </div>
         </div>
 

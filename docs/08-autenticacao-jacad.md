@@ -378,15 +378,21 @@ repetido na planilha) entra como técnico **inativo**, com um e-mail provisório
 duplica: a matrícula reconhece quem já entrou, e se a planilha passa a trazer o e-mail
 daquela pessoa, ele é completado.
 
-Nunca converte quem já existe com outro papel — ao contrário do cadastro individual,
-que promove. Se o e-mail da planilha já é de um aluno, docente ou da comissão, essa conta
-fica como está (o e-mail é único) e o técnico é criado como **conta à parte**, guardada
-com `+tec` (`nome+tec@dominio`, ver `aliasTecnico` em `lib/tecnicos.ts`). Em
-`/entrar/tecnico` a pessoa digita o e-mail de sempre: a entrada procura o e-mail exato e
-o `+tec` e fica com a conta de técnico. Assim a mesma pessoa responde como aluno (pelo
-portal) e como técnico, cada um na sua conta — converter tiraria o aluno do ciclo que
-está respondendo. Não gera senha: o técnico entra só com o e-mail. Relatórios de RH em
-`.xls` antigo precisam ser salvos como `.xlsx`.
+**Os técnicos são independentes**: o mesmo e-mail pode ser de um aluno, de um docente, da
+comissão ou de outro técnico (caixa de setor, `financeiro@`). Nunca se converte a conta
+de quem já existe com outro papel — ao contrário do cadastro individual, que promove —
+nem se recusa o e-mail repetido. Como `users.email` é único, cada técnico é uma conta e
+leva o primeiro endereço livre da "família": `ana@dominio`, `ana+tec@dominio`,
+`ana+tec2@dominio`… (`familiaDeEmails` em `lib/tecnicos.ts`). A planilha e a edição do
+registro seguem essa regra, e reenviar a planilha não duplica: a mesma matrícula (ou, sem
+matrícula, o mesmo nome) reconhece a pessoa.
+
+Em `/entrar/tecnico` a pessoa digita o e-mail de sempre; a entrada procura toda a
+família. Uma conta só: entra direto. Mais de uma (técnicos que dividem o e-mail): a tela
+pergunta **"Quem é você?"** e lista só os nomes que usam aquele e-mail; o servidor
+confere de novo, na volta, que a escolha está entre eles. Converter um aluno em técnico
+tiraria o aluno do ciclo que está respondendo. Não gera senha: o técnico entra só com o
+e-mail. Relatórios de RH em `.xls` antigo precisam ser salvos como `.xlsx`.
 
 O formulário é `npm run homolog -- formulario-tecnico` (rascunho). O que veio da
 conversão automática do PDF em `formularios-2026.ts` saiu quebrado e não deve ser

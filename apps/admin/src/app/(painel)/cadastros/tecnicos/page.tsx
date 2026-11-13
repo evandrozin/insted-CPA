@@ -26,6 +26,8 @@ const AVISOS: Record<string, string> = {
   'revogado-respondente': 'Acesso revogado. A pessoa continua no sistema como respondente.',
   'revogado-desativado': 'Acesso revogado e cadastro desativado.',
   editado: 'Cadastro atualizado.',
+  'editado-alias':
+    'Salvo. Esse e-mail já é de outra conta (aluno, docente, comissão ou outro técnico), então este técnico ficou como conta à parte — o e-mail aparece com “+tec”. A pessoa continua digitando o e-mail normal em /entrar/tecnico (se forem vários técnicos com o mesmo e-mail, o sistema pergunta quem é).',
   ativado: 'E-mail informado — o técnico está ativo e já pode entrar em /entrar/tecnico.',
 };
 

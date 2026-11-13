@@ -17,18 +17,28 @@ export const semEmail = (email: string): boolean =>
 
 /**
  * Endereço sob o qual o técnico é guardado quando o e-mail dele já pertence a
- * outra conta (um aluno, um docente).
+ * outra conta (um aluno, um docente, outro técnico).
  *
- * `users.email` é único e cada conta tem um papel só, então quem é aluno E
- * técnico precisa de duas contas. A do técnico leva `+tec` no e-mail
- * (`ana+tec@insted.edu.br`), que é o mesmo endereço para quem lê e diferente
- * para o banco. A pessoa nunca digita isso: em `/entrar/tecnico` ela informa o
- * e-mail de sempre, e a entrada procura primeiro esse e depois o `+tec`.
+ * `users.email` é único e cada conta tem um papel só, mas os técnicos são
+ * independentes: o mesmo e-mail pode ser de um aluno e de um técnico, ou de dois
+ * técnicos que dividem a caixa do setor. Cada um vira uma conta, e as que não
+ * ficam com o endereço puro levam `+tec`, `+tec2`, `+tec3`…
+ * (`ana+tec@insted.edu.br`): o mesmo endereço para quem lê, diferente para o
+ * banco. A pessoa nunca digita isso — em `/entrar/tecnico` ela informa o e-mail
+ * de sempre, e a entrada procura toda a "família" de endereços.
  */
-export function aliasTecnico(email: string): string {
+export function aliasTecnico(email: string, n = 1): string {
   const [local, dominio] = email.trim().toLowerCase().split('@');
   if (!dominio) return email;
-  return `${local.split('+')[0]}+tec@${dominio}`;
+  return `${local.split('+')[0]}+tec${n > 1 ? n : ''}@${dominio}`;
+}
+
+/** O e-mail puro e os endereços `+tec…` que podem guardar técnicos dele. */
+export function familiaDeEmails(email: string, max = 10): string[] {
+  const puro = email.trim().toLowerCase();
+  const [local, dominio] = puro.split('@');
+  if (!dominio) return [puro];
+  return [`${local.split('+')[0]}@${dominio}`, ...Array.from({ length: max }, (_, i) => aliasTecnico(puro, i + 1))];
 }
 
 /** E-mail provisório para a matrícula dada. */

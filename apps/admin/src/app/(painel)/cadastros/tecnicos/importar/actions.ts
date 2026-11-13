@@ -17,14 +17,14 @@
  *
  * O que NÃO falta é gente. Toda linha com nome entra:
  *
- * - sem e-mail, e-mail inválido ou repetido na planilha: entra como técnico
+ * - sem e-mail ou com e-mail inválido: entra como técnico
  *   INATIVO, com um e-mail provisório (ver `lib/tecnicos.ts`). A CPA informa o
  *   e-mail depois, na edição do registro, e a conta ativa sozinha;
- * - e-mail que já é de outro papel (aluno, docente, comissão): o e-mail é único
- *   no sistema e fica com a conta que já o tem, então o técnico entra como conta
- *   à parte, com o e-mail `nome+tec@dominio` (ver `aliasTecnico`). Quem digita o
- *   e-mail normal em `/entrar/tecnico` cai nessa conta: a pessoa responde como
- *   aluno e como técnico, cada um na sua conta;
+ * - e-mail que já é de outra conta (aluno, docente, comissão ou outro técnico):
+ *   os técnicos são independentes, mas o e-mail é único no banco, então o técnico
+ *   entra como conta à parte, com `nome+tec@dominio`, `+tec2`… (ver
+ *   `familiaDeEmails`). Quem digita o e-mail normal em `/entrar/tecnico` cai
+ *   nela — ou, se são vários técnicos, escolhe quem é;
  * - matrícula já usada por outra pessoa: entra com uma matrícula interna.
  *
  * Reenviar a mesma planilha não duplica: quem já entrou sem e-mail é reconhecido
@@ -38,7 +38,7 @@ import { revalidatePath } from 'next/cache';
 import { hash } from 'bcryptjs';
 import { prisma, Prisma, matriculaInterna } from '@insted/database';
 import { exigirPainel } from '@/lib/sessao';
-import { aliasTecnico, emailSemEmail, semEmail, slugDoNome } from '@/lib/tecnicos';
+import { familiaDeEmails, emailSemEmail, semEmail, slugDoNome } from '@/lib/tecnicos';
 import {
   LIMITE_BYTES,
   lerPlanilhaTecnicos,
@@ -67,6 +67,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Existente = {
   id: string;
+  nome: string;
   email: string;
   matricula: string;
   role: string;
@@ -79,21 +80,22 @@ async function analisar(linhas: LinhaLida[]): Promise<LinhaAnalisada[]> {
   const emails = [
     ...new Set(linhas.map((l) => l.email.trim().toLowerCase()).filter((e) => EMAIL.test(e))),
   ];
-  // Também o endereço `+tec`: é onde mora o técnico cujo e-mail é de outra conta.
-  const emailsConsulta = [...new Set([...emails, ...emails.map(aliasTecnico)])];
+  // Também os endereços `+tec`, `+tec2`…: é onde moram os técnicos cujo e-mail é
+  // de outra conta ou de outro técnico.
+  const emailsConsulta = [...new Set(emails.flatMap((e) => familiaDeEmails(e)))];
   const matriculasInformadas = [...new Set(linhas.map((l) => l.matricula).filter(Boolean))];
 
   const [porEmail, porMatriculaLista] = await Promise.all([
     emails.length
       ? prisma.$queryRaw<Existente[]>(
-          Prisma.sql`SELECT id, email, matricula, role::text AS role, status::text AS status, "deletadoEm"
+          Prisma.sql`SELECT id, nome, email, matricula, role::text AS role, status::text AS status, "deletadoEm"
                        FROM users WHERE lower(email) = ANY(${emailsConsulta})`,
         )
       : Promise.resolve([] as Existente[]),
     // As matrículas informadas e todas as internas (`tec-…`): a automática sai do
     // e-mail ou do nome e pode colidir.
     prisma.$queryRaw<Existente[]>(
-      Prisma.sql`SELECT id, email, matricula, role::text AS role, status::text AS status, "deletadoEm"
+      Prisma.sql`SELECT id, nome, email, matricula, role::text AS role, status::text AS status, "deletadoEm"
                    FROM users
                   WHERE matricula LIKE 'tec-%'
                      OR matricula = ANY(${matriculasInformadas.length ? matriculasInformadas : ['']})`,
@@ -103,7 +105,7 @@ async function analisar(linhas: LinhaLida[]): Promise<LinhaAnalisada[]> {
   const existentePorEmail = new Map(porEmail.map((u) => [u.email.toLowerCase(), u]));
   const existentePorMatricula = new Map(porMatriculaLista.map((u) => [u.matricula, u]));
   const reclamadas = new Set<string>();
-  const emailsVistos = new Map<string, number>();
+  const enderecosUsados = new Set<string>();
 
   /**
    * Primeira matrícula livre a partir da base. Se a candidata já pertence a um
@@ -143,52 +145,58 @@ async function analisar(linhas: LinhaLida[]): Promise<LinhaAnalisada[]> {
     } else if (!EMAIL.test(email)) {
       motivoSem = `E-mail inválido na planilha (“${emailBruto.slice(0, 40)}”).`;
       email = '';
-    } else {
-      const repetido = emailsVistos.get(email);
-      if (repetido) {
-        motivoSem = `E-mail repetido na planilha (já na linha ${repetido}).`;
-        email = '';
-      } else {
-        emailsVistos.set(email, l.linha);
-      }
     }
 
     // ------------------------------------------------ com e-mail utilizável
     if (email) {
-      const dono = existentePorEmail.get(email);
+      // Os técnicos são independentes: o mesmo e-mail pode ser de um aluno, de um
+      // docente ou de outro técnico, e cada um é uma conta. O primeiro endereço
+      // livre da família (`ana@`, `ana+tec@`, `ana+tec2@`…) fica com o novo.
+      // Se o endereço já tem um técnico e ele é a MESMA pessoa (mesma matrícula
+      // ou, sem matrícula, mesmo nome), é a linha de uma importação anterior.
+      const mesmaPessoa = (u: Existente) =>
+        l.matricula
+          ? u.matricula === l.matricula
+          : u.nome.trim().toLowerCase() === nome.toLowerCase();
 
-      // O e-mail é de uma conta de outro papel (aluno, docente, comissão): ela não
-      // é tocada, e o técnico entra como conta à parte, sob `+tec`. Na entrada, a
-      // pessoa digita o e-mail de sempre e cai na conta de técnico.
-      const dePessoaDeOutroPapel = dono && dono.role !== 'TECNICO_ADMIN' ? dono : null;
-      const emailDoTecnico = dePessoaDeOutroPapel ? aliasTecnico(email) : email;
-      const u = dePessoaDeOutroPapel ? existentePorEmail.get(emailDoTecnico) : dono;
+      let escolhido: string | null = null;
+      for (const endereco of familiaDeEmails(email)) {
+        if (enderecosUsados.has(endereco)) continue;
+        const u = existentePorEmail.get(endereco);
 
-      if (u) {
-        reclamadas.add(u.matricula);
-        return u.status === 'ATIVO' && !u.deletadoEm
-          ? {
-              ...base,
-              email: emailDoTecnico,
-              matricula: u.matricula,
-              situacao: 'ja',
-              motivo: 'Já cadastrado.',
-            }
-          : {
-              ...base,
-              email: emailDoTecnico,
-              matricula: u.matricula,
-              situacao: 'inativo',
-              motivo: 'Cadastrado, mas inativo.',
-            };
+        if (!u) {
+          escolhido = endereco;
+          break;
+        }
+        if (u.role === 'TECNICO_ADMIN' && mesmaPessoa(u)) {
+          enderecosUsados.add(endereco);
+          reclamadas.add(u.matricula);
+          return u.status === 'ATIVO' && !u.deletadoEm
+            ? { ...base, email: endereco, matricula: u.matricula, situacao: 'ja', motivo: 'Já cadastrado.' }
+            : {
+                ...base,
+                email: endereco,
+                matricula: u.matricula,
+                situacao: 'inativo',
+                motivo: 'Cadastrado, mas inativo.',
+              };
+        }
+        // Endereço de outra pessoa: tenta o seguinte.
+      }
+      if (!escolhido) {
+        return { ...base, situacao: 'erro', motivo: 'Há 10 contas com este e-mail; não dá para criar outra.' };
       }
 
-      const pedida = l.matricula || matriculaInterna(emailDoTecnico, 'TECNICO_ADMIN');
+      enderecosUsados.add(escolhido);
+      const dono = existentePorEmail.get(email);
+      const pedida = l.matricula || matriculaInterna(escolhido, 'TECNICO_ADMIN');
       const r = escolherMatricula(pedida);
       const trocou = l.matricula && r.matricula !== l.matricula;
       const notas = [
-        dePessoaDeOutroPapel
-          ? `O e-mail já é de ${dePessoaDeOutroPapel.role.toLowerCase().replace('_', '-')}: o técnico é uma conta à parte (${emailDoTecnico}) e entra digitando o e-mail normal em /entrar/tecnico.`
+        escolhido !== email && dono
+          ? `O e-mail já é de ${
+              dono.role === 'TECNICO_ADMIN' ? 'outro técnico' : dono.role.toLowerCase().replace('_', '-')
+            }: este técnico é uma conta à parte (${escolhido}) e entra digitando o e-mail normal em /entrar/tecnico.`
           : '',
         trocou ? `Matrícula ${l.matricula} já é de outra pessoa; usei ${r.matricula}.` : '',
       ]
@@ -197,14 +205,14 @@ async function analisar(linhas: LinhaLida[]): Promise<LinhaAnalisada[]> {
       return r.anterior
         ? {
             ...base,
-            email: emailDoTecnico,
+            email: escolhido,
             matricula: r.matricula,
             situacao: 'completar',
             motivo: 'Já cadastrado sem e-mail — o e-mail da planilha será colocado.',
           }
         : {
             ...base,
-            email: emailDoTecnico,
+            email: escolhido,
             matricula: r.matricula,
             situacao: 'novo',
             motivo: notas || undefined,
