@@ -33,7 +33,11 @@ export default async function Relatorios({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await exigirPainel();
+  const eu = await exigirPainel();
+  // Quem administra a avaliação (CPA) vê a nota de professor com poucas respostas,
+  // marcada. O gestor continua sem ela: a média de uma ou duas pessoas, numa lista
+  // que pode chegar à coordenação, é a opinião de alguém identificável.
+  const verPoucos = eu.role === 'ADMIN';
   const sp = await searchParams;
   const escolhido = typeof sp.ciclo === 'string' ? sp.ciclo : '';
 
@@ -81,7 +85,9 @@ export default async function Relatorios({
 
   const respostas = blocos.reduce((t, b) => t + b.respostas, 0);
   const adesao = tarefas > 0 ? Math.round((concluidas / tarefas) * 100) : 0;
-  const ocultos = [...cursos, ...professores].filter((a) => a.suprimido).length;
+  const ocultos =
+    cursos.filter((a) => a.suprimido).length +
+    (verPoucos ? 0 : professores.filter((a) => a.suprimido).length);
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10 lg:px-8">
@@ -274,6 +280,7 @@ export default async function Relatorios({
           descricao="Ordem alfabética, de propósito: a avaliação serve à melhoria, não a um placar."
           alvos={professores}
           minimo={minimo}
+          mostrarPoucos={verPoucos}
         />
       </div>
 
@@ -295,14 +302,17 @@ function TabelaDeAlvos({
   descricao,
   alvos,
   minimo,
+  mostrarPoucos = false,
 }: {
   titulo: string;
   descricao: string;
   alvos: { refId: string; nome: string; detalhe: string | null; media: number | null; respondentes: number; suprimido: boolean }[];
   minimo: number;
+  /** Lista também os alvos abaixo do mínimo, marcados. Só para quem administra. */
+  mostrarPoucos?: boolean;
 }) {
-  const visiveis = alvos.filter((a) => !a.suprimido);
-  const ocultos = alvos.length - visiveis.length;
+  const visiveis = mostrarPoucos ? alvos : alvos.filter((a) => !a.suprimido);
+  const ocultos = alvos.length - alvos.filter((a) => !a.suprimido).length;
 
   return (
     <section>
@@ -320,11 +330,23 @@ function TabelaDeAlvos({
                   <td className="px-5 py-2.5 text-brand-navy">
                     {a.nome}
                     {a.detalhe && <span className="ml-2 text-xs text-slate-400">{a.detalhe}</span>}
+                    {a.suprimido && (
+                      <span
+                        className="ml-2 rounded bg-brand-orange/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-brand-orange"
+                        title={`Menos de ${minimo} respostas: a média é a opinião de poucas pessoas`}
+                      >
+                        poucas respostas
+                      </span>
+                    )}
                   </td>
                   <td className="px-5 py-2.5 text-right text-xs tabular-nums text-slate-400">
                     {a.respondentes}
                   </td>
-                  <td className="px-5 py-2.5 text-right font-semibold tabular-nums text-brand-navy">
+                  <td
+                    className={`px-5 py-2.5 text-right font-semibold tabular-nums ${
+                      a.suprimido ? 'text-slate-400' : 'text-brand-navy'
+                    }`}
+                  >
                     {media(a.media)}
                   </td>
                 </tr>
@@ -334,7 +356,15 @@ function TabelaDeAlvos({
         )}
       </div>
 
-      {ocultos > 0 && (
+      {ocultos > 0 && mostrarPoucos && (
+        <p className="mt-2 text-[11px] text-slate-400">
+          {ocultos} {ocultos === 1 ? 'aparece marcado' : 'aparecem marcados'} como &ldquo;poucas
+          respostas&rdquo; (menos de {minimo}). Com tão poucas, a média é a opinião de algumas
+          pessoas, não da turma — leia com cuidado. Só quem administra vê essas notas; elas não
+          saem desta tela.
+        </p>
+      )}
+      {ocultos > 0 && !mostrarPoucos && (
         <p className="mt-2 text-[11px] text-slate-400">
           {ocultos} {ocultos === 1 ? 'alvo ficou de fora' : 'alvos ficaram de fora'} por ter menos
           de {minimo} respostas — com tão poucas, a média deixa de ser anônima.
